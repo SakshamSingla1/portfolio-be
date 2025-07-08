@@ -25,7 +25,7 @@ public class ProjectService {
     public ResponseEntity<ResponseModel<ProjectResponse>> createProject(ProjectRequest projectRequest) throws GenericException {
         Project existingProject =  projectRepository.findByProjectName(projectRequest.getProjectName());
         if (existingProject != null) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROJECT,"Project with same name already exists");
+            return ApiResponse.failureResponse(null,"Project already exists");
         }
         Project project = Project.builder()
                 .projectName(projectRequest.getProjectName())
@@ -55,7 +55,7 @@ public class ProjectService {
     public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(int id) throws GenericException {
         Project existingProject = projectRepository.findById(id).get();
         if (existingProject == null) {
-            throw new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND,"Project not found");
+            return ApiResponse.failureResponse(null,"Project not found");
         }
         ProjectResponse response = ProjectResponse.builder()
                 .id(existingProject.getId())
@@ -75,7 +75,7 @@ public class ProjectService {
     public ResponseEntity<ResponseModel<ProjectResponse>> updateProjectById(int id, ProjectRequest projectRequest) throws GenericException {
         Project existingProject = projectRepository.findById(id).get();
         if (existingProject == null) {
-            throw new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND,"Project not found");
+            return  ApiResponse.failureResponse(null,"Project not found");
         }
         existingProject.setProjectName(projectRequest.getProjectName());
         existingProject.setProjectDescription(projectRequest.getProjectDescription());

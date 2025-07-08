@@ -42,9 +42,10 @@ public class ContactUsService {
     }
 
     public ResponseEntity<ResponseModel<ContactUsResponse>> getById(Integer id) throws GenericException {
-        ContactUs contact = contactUsRepository.findById(id)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Contact Us not found"));
-
+        ContactUs contact = contactUsRepository.findById(id).get();
+        if(contact == null){
+            return ApiResponse.failureResponse(null,"Contact Us data not present");
+        }
         ContactUsResponse response = ContactUsResponse.builder()
                 .id(contact.getId())
                 .name(contact.getName())
@@ -59,7 +60,7 @@ public class ContactUsService {
     public ResponseEntity<ResponseModel<List<ContactUsResponse>>> getByName(String name) throws GenericException {
         List<ContactUs> contacts = contactUsRepository.findByName(name);
         if(contacts == null){
-            throw new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Contact Us not found");
+            return ApiResponse.failureResponse(null,"Contact Us data not present");
         }
         List<ContactUsResponse> response = contacts.stream()
                 .map(contact -> ContactUsResponse.builder()
@@ -77,7 +78,7 @@ public class ContactUsService {
     public ResponseEntity<ResponseModel<List<ContactUsResponse>>> getByEmail(String email) throws GenericException {
         List<ContactUs> contacts = contactUsRepository.findByEmail(email);
         if(contacts == null){
-            throw new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Contact Us not found");
+            return ApiResponse.failureResponse(null,"Contact Us data not present");
         }
         List<ContactUsResponse> response = contacts.stream()
                 .map(contact -> ContactUsResponse.builder()
@@ -95,7 +96,7 @@ public class ContactUsService {
     public ResponseEntity<ResponseModel<List<ContactUsResponse>>> getByPhone(String phone) throws GenericException {
         List<ContactUs> contacts = contactUsRepository.findByPhone(phone);
         if(contacts == null){
-            throw new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Contact Us not found");
+            return  ApiResponse.failureResponse(null,"Contact Us data not present");
         }
         List<ContactUsResponse> response = contacts.stream()
                 .map(contact -> ContactUsResponse.builder()
@@ -112,7 +113,7 @@ public class ContactUsService {
     public ResponseEntity<ResponseModel<List<ContactUsResponse>>> getAllContactUs() throws GenericException {
         List<ContactUs> contacts = contactUsRepository.findAll();
         if(contacts == null){
-            throw new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Contact Us not found");
+            return ApiResponse.failureResponse(null,"Contact Us data not present");
         }
         List<ContactUsResponse> response = contacts.stream()
                 .map(contact -> ContactUsResponse.builder()

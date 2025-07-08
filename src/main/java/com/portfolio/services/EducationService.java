@@ -26,7 +26,7 @@ public class EducationService {
     public ResponseEntity<ResponseModel<EducationResponse>> createEducation(EducationRequest request) throws GenericException {
         Education existingEducation = educationRespository.findByDegree(request.getDegree());
         if (existingEducation != null) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_DEGREE,"Education with "+request.getDegree()+" already exists");
+            return ApiResponse.failureResponse(null,"Education with "+ request.getDegree()+" already exists");
         }
         Education education = Education.builder()
                 .institution(request.getInstitution())
@@ -54,7 +54,7 @@ public class EducationService {
     public ResponseEntity<ResponseModel<EducationResponse>> updateEducation(DegreeEnum degree, EducationRequest request) throws GenericException {
         Education education = educationRespository.findByDegree(request.getDegree());
         if (education == null) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,"Education with "+request.getDegree()+" does not exist");
+            return ApiResponse.failureResponse(null,"Education with "+ request.getDegree()+" doesn't exist");
         }
         education.setInstitution(request.getInstitution());
         education.setDegree(request.getDegree());
@@ -81,7 +81,7 @@ public class EducationService {
     public ResponseEntity<ResponseModel<EducationResponse>> findByDegree(DegreeEnum degree) throws GenericException {
         Education education = educationRespository.findByDegree(degree);
         if (education == null) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,"Education with "+degree+" does not exist");
+            return ApiResponse.failureResponse(null,"Education with " + degree + "doesn't exist");
         }
         EducationResponse response = EducationResponse.builder()
                 .id(education.getId())
@@ -99,7 +99,7 @@ public class EducationService {
     public ResponseEntity<ResponseModel<List<EducationResponse>>> findAllEducations() throws GenericException {
         List<Education> educations = educationRespository.findAll();
         if (educations == null) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,"Educations not found");
+            return ApiResponse.failureResponse(null,"No Educations found");
         }
         List<EducationResponse> response = educations.stream()
                 .map(education -> EducationResponse.builder()

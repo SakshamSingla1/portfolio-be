@@ -1,8 +1,6 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.AdminLoginRequest;
-import com.portfolio.dtos.AdminRegisterRequest;
-import com.portfolio.dtos.AdminResponse;
+import com.portfolio.dtos.*;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.AdminService;
@@ -28,5 +26,15 @@ public class AdminController {
     @PostMapping("/login")
     public ResponseEntity<ResponseModel<AdminResponse>> login(@RequestBody AdminLoginRequest request) throws GenericException {
         return adminService.login(request);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ResponseModel<String>> forgotPassword(@RequestBody ForgotPasswordRequest email) throws GenericException {
+        return adminService.forgotPassword(email);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseModel<String>> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest ) throws GenericException {
+        return adminService.resetPassword(resetPasswordRequest);
     }
 }

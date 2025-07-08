@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name="personal_details")
+@Table(name="profile")
 public class Profile {
 
     @Id

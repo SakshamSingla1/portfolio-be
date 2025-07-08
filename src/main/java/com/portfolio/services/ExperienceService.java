@@ -33,8 +33,7 @@ public class ExperienceService {
         // 🔒 Duplicacy Check
         if (experienceRepository.existsByCompanyNameAndJobTitleAndStartDate(
                 req.getCompanyName(), req.getJobTitle(), parsedStartDate)) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_EXPERIENCE,
-                    "Experience already exists with same company, title and start date");
+            return ApiResponse.failureResponse(null,"Experience already exists with same company, title and start date");
         }
 
         Experience exp = Experience.builder()
@@ -62,15 +61,16 @@ public class ExperienceService {
     public ResponseEntity<ResponseModel<ExperienceResponse>> getById(Integer id) throws GenericException {
         Optional<Experience> optional = experienceRepository.findById(id);
         if (optional.isEmpty()) {
-            throw new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found");
+            return ApiResponse.failureResponse(null,"Experience not found");
         }
         return ApiResponse.successResponse(mapToResponse(optional.get()), "Experience fetched");
     }
 
     public ResponseEntity<ResponseModel<ExperienceResponse>> update(Integer id, ExperienceRequest req) throws Exception {
-        Experience exp = experienceRepository.findById(id).orElseThrow(() ->
-                new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
-
+        Experience exp = experienceRepository.findById(id).get();
+        if(exp == null){
+            return ApiResponse.failureResponse(null,"Experience not found");
+        }
         exp.setCompanyName(req.getCompanyName());
         exp.setJobTitle(req.getJobTitle());
         exp.setLocation(req.getLocation());

@@ -24,7 +24,7 @@ public class ProfileService {
         Profile existingProfile = profileRepository.findByEmailAndPhone(req.getEmail(), req.getPhone());
 
         if (existingProfile != null) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Profile with the same email and phone already exists");
+            return ApiResponse.failureResponse(null,"Profile with the same email and phone already exists");
         }
 
         Profile profile = Profile.builder()
@@ -47,14 +47,16 @@ public class ProfileService {
     public ResponseEntity<ResponseModel<ProfileResponse>> get() throws GenericException {
         Optional<Profile> profile = profileRepository.findAll().stream().findFirst();
         if (profile.isEmpty()) {
-            throw new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found");
+            return ApiResponse.failureResponse(null,"Profile not found");
         }
         return ApiResponse.successResponse(mapToResponse(profile.get()), "Profile fetched");
     }
 
     public ResponseEntity<ResponseModel<ProfileResponse>> update(Integer id, ProfileRequest req) throws GenericException {
-        Profile existing = profileRepository.findById(id)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+        Profile existing = profileRepository.findById(id).get();
+        if(existing==null){
+            return ApiResponse.failureResponse(null,"Profile not found");
+        }
 
         existing.setFullName(req.getFullName());
         existing.setTitle(req.getTitle());
