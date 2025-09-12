@@ -1,19 +1,21 @@
 package com.portfolio.dtos;
 
+import com.portfolio.dtos.Skill.SkillDropdown;
 import lombok.Builder;
 import lombok.Data;
-
 import java.util.Date;
+import java.util.List;
 
 @Data
 @Builder
 public class ProjectResponse {
-    private int id;
+    private Integer id;
     private String projectName;
     private String projectDescription;
-    private String projectDuration;
     private String projectLink;
-    private String technologiesUsed;
+    private List<SkillDropdown> technologiesUsed; // mapped skill list
     private Date projectStartDate;
     private Date projectEndDate;
+    private boolean currentlyWorking;
+    private String projectImageUrl;
 }

@@ -2,119 +2,108 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.ProjectRequest;
 import com.portfolio.dtos.ProjectResponse;
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Project;
+import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.repositories.ProjectRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.portfolio.repositories.SkillRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
 
-    @Autowired
-    ProjectRepository projectRepository;
+    private final ProjectRepository projectRepository;
+    private final SkillRepository skillRepository;
 
-    public ResponseEntity<ResponseModel<ProjectResponse>> createProject(ProjectRequest projectRequest) throws GenericException {
-        Project existingProject =  projectRepository.findByProjectName(projectRequest.getProjectName());
-        if (existingProject != null) {
-            return ApiResponse.failureResponse(null,"Project already exists");
+    public ProjectService(ProjectRepository projectRepository, SkillRepository skillRepository) {
+        this.projectRepository = projectRepository;
+        this.skillRepository = skillRepository;
+    }
+
+    public ResponseEntity<ResponseModel<ProjectResponse>> createProject(ProjectRequest request) {
+        if (projectRepository.findByProjectName(request.getProjectName()) != null) {
+            return ApiResponse.failureResponse(null, "Project already exists with this name");
         }
+
+        // fetch skills from IDs
+        List<Skill> skills = skillRepository.findAllById(request.getTechnologiesUsed());
+
         Project project = Project.builder()
-                .projectName(projectRequest.getProjectName())
-                .projectDescription(projectRequest.getProjectDescription())
-                .projectDuration(projectRequest.getProjectDuration())
-                .projectLink(projectRequest.getProjectLink())
-                .technologiesUsed(projectRequest.getTechnologiesUsed())
+                .projectName(request.getProjectName())
+                .projectDescription(request.getProjectDescription())
+                .projectLink(request.getProjectLink())
+                .technologiesUsed(skills)
+                .projectStartDate(request.getProjectStartDate())
+                .projectEndDate(request.isCurrentlyWorking() ? null : request.getProjectEndDate())
+                .currentlyWorking(request.isCurrentlyWorking())
+                .projectImageUrl(request.getProjectImageUrl())
                 .build();
 
-        Project savedProject = projectRepository.save(project);
-
-        ProjectResponse response = ProjectResponse.builder()
-                .id(savedProject.getId())
-                .projectName(savedProject.getProjectName())
-                .projectDescription(savedProject.getProjectDescription())
-                .projectLink(savedProject.getProjectLink())
-                .projectDuration(savedProject.getProjectDuration())
-                .technologiesUsed(savedProject.getTechnologiesUsed())
-                .projectStartDate(savedProject.getProjectStartDate())
-                .projectEndDate(savedProject.getProjectEndDate())
-                .technologiesUsed(savedProject.getTechnologiesUsed())
-                .build();
-
-        return ApiResponse.successResponse(response,"Project created successfully");
+        Project saved = projectRepository.save(project);
+        return ApiResponse.successResponse(mapToResponse(saved), "Project created successfully");
     }
 
     public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(int id) throws GenericException {
-        Project existingProject = projectRepository.findById(id).get();
-        if (existingProject == null) {
-            return ApiResponse.failureResponse(null,"Project not found");
-        }
-        ProjectResponse response = ProjectResponse.builder()
-                .id(existingProject.getId())
-                .id(existingProject.getId())
-                .projectName(existingProject.getProjectName())
-                .projectDescription(existingProject.getProjectDescription())
-                .projectLink(existingProject.getProjectLink())
-                .projectDuration(existingProject.getProjectDuration())
-                .technologiesUsed(existingProject.getTechnologiesUsed())
-                .projectStartDate(existingProject.getProjectStartDate())
-                .projectEndDate(existingProject.getProjectEndDate())
-                .technologiesUsed(existingProject.getTechnologiesUsed())
-                .build();
-        return ApiResponse.successResponse(response,"Project found successfully");
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
+        return ApiResponse.successResponse(mapToResponse(project), "Project found successfully");
     }
 
-    public ResponseEntity<ResponseModel<ProjectResponse>> updateProjectById(int id, ProjectRequest projectRequest) throws GenericException {
-        Project existingProject = projectRepository.findById(id).get();
-        if (existingProject == null) {
-            return  ApiResponse.failureResponse(null,"Project not found");
-        }
-        existingProject.setProjectName(projectRequest.getProjectName());
-        existingProject.setProjectDescription(projectRequest.getProjectDescription());
-        existingProject.setProjectDuration(projectRequest.getProjectDuration());
-        existingProject.setProjectLink(projectRequest.getProjectLink());
-        existingProject.setTechnologiesUsed(projectRequest.getTechnologiesUsed());
+    public ResponseEntity<ResponseModel<ProjectResponse>> updateProjectById(int id, ProjectRequest request) throws GenericException {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
 
-        Project updatedProject = projectRepository.save(existingProject);
-        ProjectResponse response = ProjectResponse.builder()
-                .id(updatedProject.getId())
-                .id(updatedProject.getId())
-                .projectName(updatedProject.getProjectName())
-                .projectDescription(updatedProject.getProjectDescription())
-                .projectLink(updatedProject.getProjectLink())
-                .projectDuration(updatedProject.getProjectDuration())
-                .technologiesUsed(updatedProject.getTechnologiesUsed())
-                .projectStartDate(updatedProject.getProjectStartDate())
-                .projectEndDate(updatedProject.getProjectEndDate())
-                .technologiesUsed(updatedProject.getTechnologiesUsed())
-                .build();
+        // fetch updated skills from IDs
+        List<Skill> skills = skillRepository.findAllById(request.getTechnologiesUsed());
 
-        return ApiResponse.successResponse(response,"Project updated successfully");
+        project.setProjectName(request.getProjectName());
+        project.setProjectDescription(request.getProjectDescription());
+        project.setProjectLink(request.getProjectLink());
+        project.setTechnologiesUsed(skills);
+        project.setProjectStartDate(request.getProjectStartDate());
+        project.setProjectEndDate(request.isCurrentlyWorking() ? null : request.getProjectEndDate());
+        project.setCurrentlyWorking(request.isCurrentlyWorking());
+        project.setProjectImageUrl(request.getProjectImageUrl());
+
+        Project updated = projectRepository.save(project);
+        return ApiResponse.successResponse(mapToResponse(updated), "Project updated successfully");
     }
 
-    public ResponseEntity<ResponseModel<List<ProjectResponse>>> getAllProjects() throws GenericException {
+    public ResponseEntity<ResponseModel<List<ProjectResponse>>> getAllProjects() {
         List<Project> projects = projectRepository.findAll();
-        List<ProjectResponse> response = projects.stream()
-                .map(project -> ProjectResponse.builder()
-                        .id(project.getId())
-                        .projectName(project.getProjectName())
-                        .projectDescription(project.getProjectDescription())
-                        .projectLink(project.getProjectLink())
-                        .projectDuration(project.getProjectDuration())
-                        .projectStartDate(project.getProjectStartDate())
-                        .projectEndDate(project.getProjectEndDate())
-                        .technologiesUsed(project.getTechnologiesUsed())
-                        .build())
+        List<ProjectResponse> responses = projects.stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
-        return ApiResponse.successResponse(response,"Project found successfully");
+        return ApiResponse.successResponse(responses, "Projects fetched successfully");
     }
 
+    private ProjectResponse mapToResponse(Project project) {
+        return ProjectResponse.builder()
+                .id(project.getId())
+                .projectName(project.getProjectName())
+                .projectDescription(project.getProjectDescription())
+                .projectLink(project.getProjectLink())
+                .technologiesUsed(
+                        project.getTechnologiesUsed().stream()
+                                .map(skill -> new SkillDropdown(
+                                        skill.getId(),
+                                        skill.getLogo().getName(),
+                                        skill.getLogo().getUrl()
+                                ))
+                                .collect(Collectors.toList())
+                )
+                .projectStartDate(project.getProjectStartDate())
+                .projectEndDate(project.getProjectEndDate())
+                .currentlyWorking(project.isCurrentlyWorking())
+                .projectImageUrl(project.getProjectImageUrl())
+                .build();
+    }
 }

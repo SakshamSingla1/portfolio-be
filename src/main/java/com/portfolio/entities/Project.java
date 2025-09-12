@@ -1,5 +1,8 @@
 package com.portfolio.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.portfolio.dtos.Skill.SkillDropdown;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -23,23 +27,22 @@ public class Project {
 
     private String projectName;
     private String projectDescription;
-    private String projectDuration;
     private String projectLink;
-    private String technologiesUsed;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Temporal(TemporalType.TIMESTAMP)
     private Date projectStartDate;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Temporal(TemporalType.TIMESTAMP)
     private Date projectEndDate;
 
-    @PrePersist
-    public void onCreate() {
-        projectStartDate = new Date();
-        projectEndDate = new Date();
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        projectEndDate = new Date();
-    }
-
+    private boolean currentlyWorking=false;
+    private String projectImageUrl;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "project_skills",
+            joinColumns = @JoinColumn(name = "project_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> technologiesUsed;
 }

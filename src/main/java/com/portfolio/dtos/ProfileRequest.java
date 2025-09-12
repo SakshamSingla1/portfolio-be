@@ -14,4 +14,7 @@ public class ProfileRequest {
     private String githubUrl;
     private String linkedinUrl;
     private String websiteUrl;
+
+    private String profileImageUrl;
+    private String logo;
 }

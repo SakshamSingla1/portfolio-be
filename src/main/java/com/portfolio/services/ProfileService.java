@@ -8,7 +8,6 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.repositories.ProfileRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -17,14 +16,17 @@ import java.util.Optional;
 @Service
 public class ProfileService {
 
-    @Autowired
-    private ProfileRepository profileRepository;
+    private final ProfileRepository profileRepository;
+
+    public ProfileService(ProfileRepository profileRepository) {
+        this.profileRepository = profileRepository;
+    }
 
     public ResponseEntity<ResponseModel<ProfileResponse>> create(ProfileRequest req) throws GenericException {
         Profile existingProfile = profileRepository.findByEmailAndPhone(req.getEmail(), req.getPhone());
 
         if (existingProfile != null) {
-            return ApiResponse.failureResponse(null,"Profile with the same email and phone already exists");
+            return ApiResponse.failureResponse(null, "Profile with the same email and phone already exists");
         }
 
         Profile profile = Profile.builder()
@@ -37,26 +39,27 @@ public class ProfileService {
                 .githubUrl(req.getGithubUrl())
                 .linkedinUrl(req.getLinkedinUrl())
                 .websiteUrl(req.getWebsiteUrl())
+                .profileImageUrl(req.getProfileImageUrl())
+                .logo(req.getLogo())
                 .build();
 
         Profile saved = profileRepository.save(profile);
         return ApiResponse.successResponse(mapToResponse(saved), "Profile saved");
     }
 
-
     public ResponseEntity<ResponseModel<ProfileResponse>> get() throws GenericException {
         Optional<Profile> profile = profileRepository.findAll().stream().findFirst();
+
         if (profile.isEmpty()) {
-            return ApiResponse.failureResponse(null,"Profile not found");
+            return ApiResponse.failureResponse(null, "Profile not found");
         }
+
         return ApiResponse.successResponse(mapToResponse(profile.get()), "Profile fetched");
     }
 
     public ResponseEntity<ResponseModel<ProfileResponse>> update(Integer id, ProfileRequest req) throws GenericException {
-        Profile existing = profileRepository.findById(id).get();
-        if(existing==null){
-            return ApiResponse.failureResponse(null,"Profile not found");
-        }
+        Profile existing = profileRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND,"Profile not found"));
 
         existing.setFullName(req.getFullName());
         existing.setTitle(req.getTitle());
@@ -67,6 +70,8 @@ public class ProfileService {
         existing.setGithubUrl(req.getGithubUrl());
         existing.setLinkedinUrl(req.getLinkedinUrl());
         existing.setWebsiteUrl(req.getWebsiteUrl());
+        existing.setProfileImageUrl(req.getProfileImageUrl());
+        existing.setLogo(req.getLogo());
 
         Profile updated = profileRepository.save(existing);
         return ApiResponse.successResponse(mapToResponse(updated), "Profile updated");
@@ -84,6 +89,8 @@ public class ProfileService {
                 .githubUrl(profile.getGithubUrl())
                 .linkedinUrl(profile.getLinkedinUrl())
                 .websiteUrl(profile.getWebsiteUrl())
+                .profileImageUrl(profile.getProfileImageUrl())
+                .logo(profile.getLogo())
                 .build();
     }
 }

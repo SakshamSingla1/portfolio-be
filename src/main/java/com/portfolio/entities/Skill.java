@@ -1,4 +1,4 @@
-// com.portfolio.entities.Skill.java
+// Skill.java
 package com.portfolio.entities;
 
 import com.portfolio.enums.SkillCategoryEnum;
@@ -18,7 +18,10 @@ public class Skill {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String name;
+    @ManyToOne
+    @JoinColumn(name = "logo_id", nullable = false)
+    private Logo logo;
+
+    @Enumerated(EnumType.STRING)
     private SkillLevelEnum level;
-    private SkillCategoryEnum category;
 }

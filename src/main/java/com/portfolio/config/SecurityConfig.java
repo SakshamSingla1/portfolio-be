@@ -27,19 +27,24 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // Public viewer endpoints
                         .requestMatchers(
-                                "/admin/login",
-                                "/admin/register",
-                                "/admin/forgot-password",
-                                "/admin/reset-password",
-                                "/contact-us/**",
-                                "/profile/**",
-                                "/education/**",
-                                "/experience/**",
-                                "/skill/**",
-                                "/project/**",
-                                "/"
+                                "/",
+                                "/api/v1/profile/**",
+                                "/api/v1/project/**",
+                                "/api/v1/skill/**",
+                                "/api/v1/education/**",
+                                "/api/v1/experience/**",
+                                "/api/v1/contact-us/**",
+                                "/api/v1/logo/**"
                         ).permitAll()
+
+                        // Public admin auth endpoints
+                        .requestMatchers(
+                                "/api/v1/admin/**"
+                        ).permitAll()
+
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

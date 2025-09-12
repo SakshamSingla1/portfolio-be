@@ -1,18 +1,20 @@
-// src/main/java/com/portfolio/services/ExperienceService.java
 package com.portfolio.services;
 
 import com.portfolio.dtos.ExperienceRequest;
 import com.portfolio.dtos.ExperienceResponse;
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Experience;
+import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.repositories.ExperienceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.portfolio.repositories.SkillRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -22,71 +24,91 @@ import java.util.stream.Collectors;
 @Service
 public class ExperienceService {
 
-    @Autowired
-    ExperienceRepository experienceRepository;
-
+    private final ExperienceRepository experienceRepository;
+    private final SkillRepository skillRepository;
     private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-    public ResponseEntity<ResponseModel<ExperienceResponse>> create(ExperienceRequest req) throws Exception {
-        Date parsedStartDate = sdf.parse(req.getStartDate());
-
-        // 🔒 Duplicacy Check
-        if (experienceRepository.existsByCompanyNameAndJobTitleAndStartDate(
-                req.getCompanyName(), req.getJobTitle(), parsedStartDate)) {
-            return ApiResponse.failureResponse(null,"Experience already exists with same company, title and start date");
-        }
-
-        Experience exp = Experience.builder()
-                .companyName(req.getCompanyName())
-                .jobTitle(req.getJobTitle())
-                .location(req.getLocation())
-                .startDate(parsedStartDate)
-                .endDate(req.getEndDate() != null ? sdf.parse(req.getEndDate()) : null)
-                .currentlyWorking(req.isCurrentlyWorking())
-                .description(req.getDescription())
-                .technologiesUsed(req.getTechnologiesUsed())
-                .build();
-
-        Experience saved = experienceRepository.save(exp);
-        return ApiResponse.successResponse(mapToResponse(saved), "Experience created successfully");
+    public ExperienceService(ExperienceRepository experienceRepository, SkillRepository skillRepository) {
+        this.experienceRepository = experienceRepository;
+        this.skillRepository = skillRepository;
     }
 
+    public ExperienceResponse create(ExperienceRequest req) throws GenericException {
+        try {
+            Date parsedStartDate = sdf.parse(req.getStartDate());
 
-    public ResponseEntity<ResponseModel<List<ExperienceResponse>>> getAll() {
+            if (experienceRepository.existsByCompanyNameAndJobTitleAndStartDate(
+                    req.getCompanyName(), req.getJobTitle(), parsedStartDate)) {
+                return null;
+            }
+
+            List<Skill> skills = skillRepository.findAllById(req.getTechnologiesUsed());
+
+            Experience exp = Experience.builder()
+                    .companyName(req.getCompanyName())
+                    .jobTitle(req.getJobTitle())
+                    .location(req.getLocation())
+                    .startDate(parsedStartDate)
+                    .endDate(req.getEndDate() != null && !req.getEndDate().trim().isEmpty() ? sdf.parse(req.getEndDate()) : null)
+                    .currentlyWorking(req.isCurrentlyWorking())
+                    .description(req.getDescription())
+                    .technologiesUsed(skills)
+                    .build();
+
+            Experience saved = experienceRepository.save(exp);
+            return mapToResponse(saved);
+
+        } catch (ParseException e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS,"Invalid date format", e.getMessage());
+        }
+    }
+
+    public List<ExperienceResponse> getAll() {
         List<Experience> list = experienceRepository.findAll();
-        List<ExperienceResponse> result = list.stream().map(this::mapToResponse).collect(Collectors.toList());
-        return ApiResponse.successResponse(result, "Fetched all experiences");
+        List<ExperienceResponse> result = list.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return result;
     }
 
-    public ResponseEntity<ResponseModel<ExperienceResponse>> getById(Integer id) throws GenericException {
-        Optional<Experience> optional = experienceRepository.findById(id);
-        if (optional.isEmpty()) {
-            return ApiResponse.failureResponse(null,"Experience not found");
+    public ExperienceResponse getById(Integer id) throws GenericException {
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND,"Experience not found"));
+
+        return mapToResponse(experience);
+    }
+
+    public ExperienceResponse update(Integer id, ExperienceRequest req) throws GenericException {
+        try {
+            Experience exp = experienceRepository.findById(id)
+                    .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND,"Experience not found"));
+
+            List<Skill> skills = skillRepository.findAllById(req.getTechnologiesUsed());
+
+            exp.setCompanyName(req.getCompanyName());
+            exp.setJobTitle(req.getJobTitle());
+            exp.setLocation(req.getLocation());
+            exp.setStartDate(sdf.parse(req.getStartDate()));
+            exp.setEndDate(req.getEndDate() != null && !req.getEndDate().trim().isEmpty() ? sdf.parse(req.getEndDate()) : null);
+            exp.setCurrentlyWorking(req.isCurrentlyWorking());
+            exp.setDescription(req.getDescription());
+            exp.setTechnologiesUsed(skills);
+
+            Experience updated = experienceRepository.save(exp);
+            return mapToResponse(updated);
+
+        } catch (ParseException e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS,"Invalid date format", e.getMessage());
         }
-        return ApiResponse.successResponse(mapToResponse(optional.get()), "Experience fetched");
     }
 
-    public ResponseEntity<ResponseModel<ExperienceResponse>> update(Integer id, ExperienceRequest req) throws Exception {
-        Experience exp = experienceRepository.findById(id).get();
-        if(exp == null){
-            return ApiResponse.failureResponse(null,"Experience not found");
+    public String delete(Integer id) throws GenericException {
+        if (!experienceRepository.existsById(id)) {
+            return "Experience not found";
         }
-        exp.setCompanyName(req.getCompanyName());
-        exp.setJobTitle(req.getJobTitle());
-        exp.setLocation(req.getLocation());
-        exp.setStartDate(sdf.parse(req.getStartDate()));
-        exp.setEndDate(req.getEndDate() != null ? sdf.parse(req.getEndDate()) : null);
-        exp.setCurrentlyWorking(req.isCurrentlyWorking());
-        exp.setDescription(req.getDescription());
-        exp.setTechnologiesUsed(req.getTechnologiesUsed());
 
-        Experience updated = experienceRepository.save(exp);
-        return ApiResponse.successResponse(mapToResponse(updated), "Experience updated");
-    }
-
-    public ResponseEntity<ResponseModel<String>> delete(Integer id) {
         experienceRepository.deleteById(id);
-        return ApiResponse.successResponse("Experience deleted successfully", "Deleted");
+        return "Experience deleted successfully";
     }
 
     private ExperienceResponse mapToResponse(Experience exp) {
@@ -99,7 +121,15 @@ public class ExperienceService {
                 .endDate(exp.getEndDate() != null ? sdf.format(exp.getEndDate()) : null)
                 .currentlyWorking(exp.isCurrentlyWorking())
                 .description(exp.getDescription())
-                .technologiesUsed(exp.getTechnologiesUsed())
+                .technologiesUsed(
+                        exp.getTechnologiesUsed().stream()
+                                .map(skill -> new SkillDropdown(
+                                        skill.getId(),
+                                        skill.getLogo().getName(),
+                                        skill.getLogo().getUrl()
+                                ))
+                                .collect(Collectors.toList())
+                )
                 .build();
     }
 }

@@ -24,6 +24,7 @@ public class Education {
     private String location;
     private int startYear;
     private int endYear;
+    private String grade;
 
     @Column(length = 1000)
     private String description;

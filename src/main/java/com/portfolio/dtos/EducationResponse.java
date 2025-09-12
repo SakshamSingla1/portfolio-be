@@ -16,4 +16,5 @@ public class EducationResponse {
     private int startYear;
     private int endYear;
     private String description;
+    private String grade;
 }

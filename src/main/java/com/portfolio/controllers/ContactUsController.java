@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/contact-us")
+@RequestMapping("/api/v1/contact-us")
 public class ContactUsController {
 
     @Autowired

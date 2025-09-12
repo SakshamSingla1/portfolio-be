@@ -18,4 +18,7 @@ public class ProfileResponse {
     private String linkedinUrl;
     private String websiteUrl;
 
+    private String profileImageUrl;
+
+    private String logo;
 }

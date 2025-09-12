@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,10 +26,12 @@ public class Experience {
     private String jobTitle;
     private String location;
 
-    @Temporal(TemporalType.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date startDate;
 
-    @Temporal(TemporalType.DATE)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date endDate;
 
     private boolean currentlyWorking;
@@ -36,6 +39,12 @@ public class Experience {
     @Column(length = 1000)
     private String description;
 
-    private String technologiesUsed;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "experience_skills",
+            joinColumns = @JoinColumn(name = "experience_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> technologiesUsed;
 }
 

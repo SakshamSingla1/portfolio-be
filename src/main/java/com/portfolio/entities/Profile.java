@@ -29,6 +29,12 @@ public class Profile {
     private String linkedinUrl;
     private String websiteUrl;
 
+    private String profileImageUrl;
+
+    private String logo;
+
     private String role = "ADMIN";
+
+    private boolean verified;
 
 }

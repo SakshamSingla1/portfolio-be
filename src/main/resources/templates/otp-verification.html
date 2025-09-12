@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Portfolio OTP Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body style="margin: 0; padding: 0; background-color: #E8F8F5; font-family: 'Segoe UI', sans-serif;">
+
+<div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+
+    <!-- Header -->
+    <div style="padding: 25px 30px 10px 30px; text-align: center; background-color: #1ABC9C;">
+        <h1 style="margin: 0; color: #ffffff;">Portfolio</h1>
+        <p style="color: #D1F2EB; font-size: 14px; margin-top: 5px;">Secure Access to Your Portfolio</p>
+    </div>
+
+    <!-- Greeting -->
+    <div style="padding: 20px 30px;">
+        <p style="font-size: 16px; margin-bottom: 8px; color: #0B5345;">Hi <strong th:text="${name}">User</strong>,</p>
+
+        <p style="font-size: 15px; line-height: 1.6; color: #073B32;">
+            We received a request to verify your identity on your Portfolio account.
+            Use the following One-Time Password (OTP) to continue:
+        </p>
+
+        <!-- OTP Box -->
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background-color: #D1F2EB; border: 2px dashed #1ABC9C; border-radius: 10px; padding: 20px 30px;">
+                <p style="font-size: 30px; font-weight: bold; color: #148F77; font-family: 'Courier New', monospace; letter-spacing: 4px; margin: 0;" th:text="${otp}">123456</p>
+            </div>
+        </div>
+
+        <p style="font-size: 14px; color: #0E6655;">
+            This OTP is valid for <strong>5 minutes</strong>. Do not share this code with anyone.
+        </p>
+
+        <!-- Security Advisory -->
+        <div style="margin-top: 20px; padding: 15px; background-color: #E8F8F5; border-left: 5px solid #48C9B0; border-radius: 5px;">
+            <p style="margin: 0; font-size: 13px; color: #148F77;">
+                <strong>Security Tip:</strong> Portfolio will never ask for your password or OTP via call, message, or email.
+            </p>
+        </div>
+
+        <!-- Need Help CTA -->
+        <div style="margin-top: 30px; text-align: center;">
+            <p style="font-size: 14px; color: #0B5345;">Need help?</p>
+            <a href="mailto:support@portfolio.com" style="display: inline-block; padding: 10px 20px; background-color: #17A589; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Contact Support</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top: 40px; background-color: #F9FBFD; padding: 20px; text-align: center;">
+        <p style="font-size: 12px; color: #148F77; margin-bottom: 8px;">
+            &copy; 2025 Portfolio. All rights reserved.
+        </p>
+        <p style="font-size: 12px; color: #148F77;">
+            <a href="mailto:support@portfolio.com" style="color: #1ABC9C; text-decoration: none;">support@portfolio.com</a> |
+            <a href="https://portfolio.com" target="_blank" style="color: #1ABC9C; text-decoration: none;">www.portfolio.com</a>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

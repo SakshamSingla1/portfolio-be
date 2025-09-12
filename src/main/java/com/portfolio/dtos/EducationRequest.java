@@ -13,4 +13,5 @@ public class EducationRequest {
     private int startYear;
     private int endYear;
     private String description;
+    private String grade;
 }

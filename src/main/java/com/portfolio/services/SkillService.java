@@ -1,15 +1,19 @@
-// com.portfolio.services.SkillService.java
 package com.portfolio.services;
 
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.SkillRequest;
 import com.portfolio.dtos.SkillResponse;
+import com.portfolio.dtos.logo.LogoDropdown;
+import com.portfolio.entities.Logo;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.LogoRepository;
 import com.portfolio.repositories.SkillRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -19,68 +23,73 @@ import java.util.stream.Collectors;
 @Service
 public class SkillService {
 
-    @Autowired
-    SkillRepository skillRepository;
+    private final SkillRepository skillRepository;
+    private final LogoRepository logoRepository;
 
-    public ResponseEntity<ResponseModel<SkillResponse>> create(SkillRequest request) throws GenericException {
-        Skill existingSkill = skillRepository.findByName(request.getName());
+    public SkillService(SkillRepository skillRepository, LogoRepository logoRepository) {
+        this.skillRepository = skillRepository;
+        this.logoRepository = logoRepository;
+    }
 
-        if (existingSkill != null) {
-            return ApiResponse.failureResponse(null,"Skill already exists");
-        }
+    public Page<SkillDropdown> getAllSkillsByPage(Pageable pageable, String search) {
+        return skillRepository.findAllWithPagination(search, pageable);
+    }
+
+    public SkillResponse create(SkillRequest request) throws GenericException {
+        Logo logo = logoRepository.findById(request.getLogoId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Logo not found"));
 
         Skill skill = Skill.builder()
-                .name(request.getName())
+                .logo(logo)
                 .level(request.getLevel())
-                .category(request.getCategory())
                 .build();
 
         Skill saved = skillRepository.save(skill);
-        return ApiResponse.successResponse(mapToResponse(saved), "Skill created successfully");
+        return mapToResponse(saved);
     }
 
+    public SkillResponse update(Integer id, SkillRequest request) throws GenericException {
+        Skill existingSkill = skillRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
 
-    public ResponseEntity<ResponseModel<SkillResponse>> update(Integer id, SkillRequest request) throws GenericException {
-        Skill existingSkill = skillRepository.findById(id).get();
-        if(existingSkill==null){
-            return ApiResponse.failureResponse(null,"Skill not found");
-        }
-        Skill duplicateSkill = skillRepository.findByName(request.getName());
-        if (duplicateSkill != null && !duplicateSkill.getId().equals(id)) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_SKILL, "Another skill with the same name already exists");
-        }
-        existingSkill.setName(request.getName());
+        Logo logo = logoRepository.findById(request.getLogoId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Logo not found"));
+
+        existingSkill.setLogo(logo);
         existingSkill.setLevel(request.getLevel());
-        existingSkill.setCategory(request.getCategory());
+
         Skill saved = skillRepository.save(existingSkill);
-        return ApiResponse.successResponse(mapToResponse(saved), "Skill updated successfully");
+        return mapToResponse(saved);
     }
 
-    public ResponseEntity<ResponseModel<List<SkillResponse>>> getAll() {
-        List<Skill> list = skillRepository.findAll();
-        List<SkillResponse> response = list.stream().map(this::mapToResponse).collect(Collectors.toList());
-        return ApiResponse.successResponse(response, "Skills fetched successfully");
+    public List<SkillResponse> getAll() {
+        List<SkillResponse> response = skillRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+        return response;
     }
 
-    public ResponseEntity<ResponseModel<String>> delete(Integer id) {
-        skillRepository.deleteById(id);
-        return ApiResponse.successResponse("Skill deleted", "Deleted");
+    public SkillResponse getById(Integer id) throws GenericException {
+        Skill skill = skillRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
+        return mapToResponse(skill);
     }
 
-    public ResponseEntity<ResponseModel<SkillResponse>> getById(Integer id) throws GenericException {
-        Skill existingSkill = skillRepository.findById(id).orElse(null);
-        if (existingSkill == null) {
-           return ApiResponse.failureResponse(null,"Skill not found");
-        }
-        return ApiResponse.successResponse(mapToResponse(existingSkill), "Skill found successfully");
+    public String delete(Integer id) throws GenericException {
+        Skill skill = skillRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
+        skillRepository.delete(skill);
+        return "Skill deleted successfully";
     }
 
     private SkillResponse mapToResponse(Skill skill) {
         return SkillResponse.builder()
                 .id(skill.getId())
-                .name(skill.getName())
+                .logoName(skill.getLogo().getName())
+                .logoUrl(skill.getLogo().getUrl())
                 .level(skill.getLevel())
-                .category(skill.getCategory())
+                .category(skill.getLogo().getCategory())
                 .build();
     }
 }

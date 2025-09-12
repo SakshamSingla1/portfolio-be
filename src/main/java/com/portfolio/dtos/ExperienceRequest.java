@@ -2,6 +2,8 @@ package com.portfolio.dtos;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class ExperienceRequest {
     private String companyName;
@@ -11,6 +13,5 @@ public class ExperienceRequest {
     private String endDate;
     private boolean currentlyWorking;
     private String description;
-    private String technologiesUsed;
+    private List<Integer> technologiesUsed;
 }
-

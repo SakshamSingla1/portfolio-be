@@ -1,10 +1,22 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Skill;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Integer> {
-    Skill findByName(String name);
+    boolean existsByLogoId(Integer logoId);
+
+    @Query("""
+    SELECT new com.portfolio.dtos.Skill.SkillDropdown(s.id, s.logo.name, s.logo.url)
+    FROM Skill s
+    WHERE (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
+""")
+    Page<SkillDropdown> findAllWithPagination(String search, Pageable pageable);
+
 }
