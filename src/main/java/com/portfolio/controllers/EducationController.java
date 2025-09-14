@@ -7,24 +7,23 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.EducationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST controller for managing Education records.
- * Supports create, update, delete, fetch by degree, and paginated search.
- */
 @RestController
 @RequestMapping("/api/v1/education")
+@Tag(name = "Education", description = "Endpoints for managing education records")
 public class EducationController {
 
     @Autowired
     private EducationService educationService;
 
-    // 🔹 CREATE EDUCATION
+    @Operation(summary = "Create education", description = "Creates a new education record.")
     @PostMapping
     public ResponseEntity<ResponseModel<EducationResponse>> create(@RequestBody EducationRequest request) throws GenericException {
         return ApiResponse.respond(
@@ -34,7 +33,7 @@ public class EducationController {
         );
     }
 
-    // 🔹 UPDATE EDUCATION BY DEGREE
+    @Operation(summary = "Update education by degree", description = "Updates education details by degree type.")
     @PutMapping("/{degree}")
     public ResponseEntity<ResponseModel<EducationResponse>> update(
             @PathVariable DegreeEnum degree,
@@ -47,7 +46,7 @@ public class EducationController {
         );
     }
 
-    // 🔹 GET EDUCATION BY DEGREE AND PROFILE
+    @Operation(summary = "Get education by degree", description = "Fetches education record for a given degree and profile ID.")
     @GetMapping("/{degree}/{profileId}")
     public ResponseEntity<ResponseModel<EducationResponse>> getByDegree(
             @PathVariable DegreeEnum degree,
@@ -60,7 +59,7 @@ public class EducationController {
         );
     }
 
-    // 🔹 GET EDUCATIONS BY PROFILE (PAGINATED & FILTERABLE)
+    @Operation(summary = "Get education by profile", description = "Fetches paginated education records for a profile with optional search.")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<EducationResponse>>> getByProfile(
             @PathVariable Integer profileId,
@@ -74,7 +73,7 @@ public class EducationController {
         );
     }
 
-    // 🔹 DELETE EDUCATION
+    @Operation(summary = "Delete education", description = "Deletes education record by degree and profile ID.")
     @DeleteMapping("/{degree}/{profileId}")
     public ResponseEntity<ResponseModel<String>> delete(
             @PathVariable DegreeEnum degree,

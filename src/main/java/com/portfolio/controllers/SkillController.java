@@ -7,6 +7,9 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.SkillService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -15,40 +18,43 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/skill")
+@Tag(name = "Skills", description = "APIs for managing Skills")
 public class SkillController {
 
     private final SkillService skillService;
 
-    // Use constructor injection instead of field injection
     public SkillController(SkillService skillService) {
         this.skillService = skillService;
     }
 
-    // Create a new skill
+    @Operation(summary = "Create Skill", description = "Add a new skill to a profile")
     @PostMapping
     public ResponseEntity<ResponseModel<SkillResponse>> create(@RequestBody SkillRequest req) {
         try {
             SkillResponse response = skillService.create(req);
             return ApiResponse.successResponse(response, "Skill created successfully");
         } catch (GenericException e) {
-            return ApiResponse.failureResponse(null,e.getMessage() + "Failed to create skill");
+            return ApiResponse.failureResponse(null, e.getMessage() + "Failed to create skill");
         }
     }
 
-    // Update existing skill
+    @Operation(summary = "Update Skill", description = "Update an existing skill by ID")
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<SkillResponse>> update(@PathVariable Integer id, @RequestBody SkillRequest req) {
+    public ResponseEntity<ResponseModel<SkillResponse>> update(
+            @Parameter(description = "Skill ID", example = "12") @PathVariable Integer id,
+            @RequestBody SkillRequest req) {
         try {
             SkillResponse response = skillService.update(id, req);
             return ApiResponse.successResponse(response, "Skill updated successfully");
         } catch (GenericException e) {
-            return ApiResponse.failureResponse(null,e.getMessage() + "Failed to update skill");
+            return ApiResponse.failureResponse(null, e.getMessage() + "Failed to update skill");
         }
     }
 
-    // Get skill by id
+    @Operation(summary = "Get Skill by ID", description = "Retrieve details of a skill by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<SkillResponse>> findById(@PathVariable Integer id) {
+    public ResponseEntity<ResponseModel<SkillResponse>> findById(
+            @Parameter(description = "Skill ID", example = "12") @PathVariable Integer id) {
         try {
             SkillResponse response = skillService.getById(id);
             return ApiResponse.successResponse(response, "Skill fetched successfully");
@@ -57,10 +63,10 @@ public class SkillController {
         }
     }
 
-    // Get all skills for a profile with pagination and search
+    @Operation(summary = "Get Skills by Profile", description = "Fetch all skills of a profile with pagination and optional search")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<SkillDropdown>>> findSkillByProfileId(
-            @PathVariable Integer profileId,
+            @Parameter(description = "Profile ID", example = "5") @PathVariable Integer profileId,
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable
     ) {
@@ -68,9 +74,10 @@ public class SkillController {
         return ApiResponse.successResponse(response, "Skills fetched successfully");
     }
 
-    // Delete skill
+    @Operation(summary = "Delete Skill", description = "Delete a skill by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Integer id) {
+    public ResponseEntity<ResponseModel<String>> delete(
+            @Parameter(description = "Skill ID", example = "12") @PathVariable Integer id) {
         try {
             skillService.delete(id);
             return ApiResponse.successResponse("Skill deleted successfully");

@@ -26,7 +26,16 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Public Viewer Endpoints
+                        // Swagger + API docs
+                        .requestMatchers(
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/swagger-ui/index.html"
+                        ).permitAll()
+
+                        // public APIs
                         .requestMatchers(
                                 "/",
                                 "/api/v1/profile/**",
@@ -36,22 +45,11 @@ public class SecurityConfig {
                                 "/api/v1/experience/**",
                                 "/api/v1/contact-us/**",
                                 "/api/v1/logo/**",
-                                "/api/v1/profile-master/**"
-                        ).permitAll()
-
-                        // ✅ Public Admin Auth (login, register)
-                        .requestMatchers(
+                                "/api/v1/profile-master/**",
                                 "/api/v1/admin/**"
                         ).permitAll()
 
-                        // ✅ Swagger / API Docs (optional)
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-
-                        // ✅ Everything else requires auth
+                        // everything else needs auth
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

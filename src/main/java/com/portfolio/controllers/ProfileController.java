@@ -6,11 +6,14 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.ProfileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/profile")
+@Tag(name = "Profile", description = "Endpoints for managing user profiles")
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -19,7 +22,7 @@ public class ProfileController {
         this.profileService = profileService;
     }
 
-    // 🔹 GET PROFILE BY ID
+    @Operation(summary = "Get profile by ID", description = "Fetches user profile details by profile ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<ProfileResponse>> get(@PathVariable Integer id) throws GenericException {
         return ApiResponse.respond(
@@ -29,7 +32,7 @@ public class ProfileController {
         );
     }
 
-    // 🔹 UPDATE PROFILE
+    @Operation(summary = "Update profile", description = "Updates profile details for a given profile ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProfileResponse>> update(
             @PathVariable Integer id,
