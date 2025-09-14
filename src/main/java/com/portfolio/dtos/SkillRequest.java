@@ -12,4 +12,5 @@ import lombok.*;
 public class SkillRequest {
     private Integer logoId;  // reference Logo entity
     private SkillLevelEnum level;
+    private Integer profileId;
 }

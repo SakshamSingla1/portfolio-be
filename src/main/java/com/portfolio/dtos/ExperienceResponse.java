@@ -1,6 +1,7 @@
 package com.portfolio.dtos;
 
 import com.portfolio.dtos.Skill.SkillDropdown;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Data
 @Builder
+@AllArgsConstructor
 public class ExperienceResponse {
     private int id;
     private String companyName;

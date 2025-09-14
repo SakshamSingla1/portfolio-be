@@ -11,7 +11,13 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "experience")
+@Table(
+        name = "experience",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_profile_company_title_startdate",
+                columnNames = {"profile_id", "company_name", "job_title", "start_date"}
+        )
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -46,5 +52,9 @@ public class Experience {
             inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     private List<Skill> technologiesUsed;
+
+    @ManyToOne
+    @JoinColumn(name="profile_id", nullable = false)
+    private Profile profile;
 }
 

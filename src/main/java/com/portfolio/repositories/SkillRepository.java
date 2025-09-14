@@ -10,13 +10,16 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Integer> {
-    boolean existsByLogoId(Integer logoId);
 
+    // Check if a profile already has this skill
+    boolean existsByLogoIdAndProfileId(Integer logoId, Integer profileId);
+
+    // Fetch skills by profile with search and pagination
     @Query("""
-    SELECT new com.portfolio.dtos.Skill.SkillDropdown(s.id, s.logo.name, s.logo.url)
-    FROM Skill s
-    WHERE (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
-""")
-    Page<SkillDropdown> findAllWithPagination(String search, Pageable pageable);
-
+        SELECT new com.portfolio.dtos.Skill.SkillDropdown(s.id, s.logo.name, s.logo.url)
+        FROM Skill s
+        WHERE s.profile.id = :profileId
+          AND (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    Page<SkillDropdown> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
 }

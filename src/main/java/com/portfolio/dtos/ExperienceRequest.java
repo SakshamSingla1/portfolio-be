@@ -14,4 +14,5 @@ public class ExperienceRequest {
     private boolean currentlyWorking;
     private String description;
     private List<Integer> technologiesUsed;
+    private Integer profileId;
 }

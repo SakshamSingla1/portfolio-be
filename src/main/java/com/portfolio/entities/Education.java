@@ -12,14 +12,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="education")
+@Table(name="education",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"profile_id", "degree"})})
 public class Education {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String institution;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DegreeEnum degree;
+
     private String fieldOfStudy;
     private String location;
     private int startYear;
@@ -28,4 +33,8 @@ public class Education {
 
     @Column(length = 1000)
     private String description;
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
 }

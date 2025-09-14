@@ -5,13 +5,8 @@ import com.portfolio.dtos.ProfileResponse;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.payload.ApiResponse;
-import com.portfolio.payload.ResponseModel;
 import com.portfolio.repositories.ProfileRepository;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class ProfileService {
@@ -22,45 +17,30 @@ public class ProfileService {
         this.profileRepository = profileRepository;
     }
 
-    public ResponseEntity<ResponseModel<ProfileResponse>> create(ProfileRequest req) throws GenericException {
-        Profile existingProfile = profileRepository.findByEmailAndPhone(req.getEmail(), req.getPhone());
-
-        if (existingProfile != null) {
-            return ApiResponse.failureResponse(null, "Profile with the same email and phone already exists");
-        }
-
-        Profile profile = Profile.builder()
-                .fullName(req.getFullName())
-                .title(req.getTitle())
-                .aboutMe(req.getAboutMe())
-                .email(req.getEmail())
-                .phone(req.getPhone())
-                .location(req.getLocation())
-                .githubUrl(req.getGithubUrl())
-                .linkedinUrl(req.getLinkedinUrl())
-                .websiteUrl(req.getWebsiteUrl())
-                .profileImageUrl(req.getProfileImageUrl())
-                .logo(req.getLogo())
-                .build();
-
-        Profile saved = profileRepository.save(profile);
-        return ApiResponse.successResponse(mapToResponse(saved), "Profile saved");
-    }
-
-    public ResponseEntity<ResponseModel<ProfileResponse>> get() throws GenericException {
-        Optional<Profile> profile = profileRepository.findAll().stream().findFirst();
-
-        if (profile.isEmpty()) {
-            return ApiResponse.failureResponse(null, "Profile not found");
-        }
-
-        return ApiResponse.successResponse(mapToResponse(profile.get()), "Profile fetched");
-    }
-
-    public ResponseEntity<ResponseModel<ProfileResponse>> update(Integer id, ProfileRequest req) throws GenericException {
+    // 🔹 GET PROFILE BY ID
+    public ProfileResponse get(Integer id) throws GenericException {
         Profile existing = profileRepository.findById(id)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND,"Profile not found"));
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+        return mapToResponse(existing);
+    }
 
+    // 🔹 UPDATE PROFILE
+    public ProfileResponse update(Integer id, ProfileRequest req) throws GenericException {
+        Profile existing = profileRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+
+        // Check if email/phone is being updated to another existing profile
+        Profile emailOwner = profileRepository.findByEmail(req.getEmail());
+        if (emailOwner != null && emailOwner.getId() != id) {
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use by another profile");
+        }
+
+        Profile phoneOwner = profileRepository.findByPhone(req.getPhone());
+        if (phoneOwner != null && phoneOwner.getId() != id) {
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Phone already in use by another profile");
+        }
+
+        // Update profile fields
         existing.setFullName(req.getFullName());
         existing.setTitle(req.getTitle());
         existing.setAboutMe(req.getAboutMe());
@@ -74,9 +54,10 @@ public class ProfileService {
         existing.setLogo(req.getLogo());
 
         Profile updated = profileRepository.save(existing);
-        return ApiResponse.successResponse(mapToResponse(updated), "Profile updated");
+        return mapToResponse(updated);
     }
 
+    // 🔹 MAP ENTITY TO RESPONSE DTO
     private ProfileResponse mapToResponse(Profile profile) {
         return ProfileResponse.builder()
                 .id(profile.getId())

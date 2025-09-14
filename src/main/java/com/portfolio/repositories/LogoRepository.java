@@ -9,15 +9,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
 public interface LogoRepository extends JpaRepository<Logo, Integer> {
 
     @Query("""
-    SELECT l
-    FROM Logo l
-    WHERE (:search IS NULL OR :search = '' OR LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%')))
-""")
+        SELECT new com.portfolio.dtos.logo.LogoDropdown(l.id, l.name, l.url ,l.category)
+        FROM Logo l
+        WHERE (:search IS NULL OR :search = '' 
+               OR LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
     Page<LogoDropdown> findAllWithPagination(String search, Pageable pageable);
 }

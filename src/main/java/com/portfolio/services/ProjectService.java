@@ -3,15 +3,16 @@ package com.portfolio.services;
 import com.portfolio.dtos.ProjectRequest;
 import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
+import com.portfolio.entities.Profile;
 import com.portfolio.entities.Project;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.payload.ApiResponse;
-import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.repositories.ProjectRepository;
 import com.portfolio.repositories.SkillRepository;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,18 +23,23 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final SkillRepository skillRepository;
+    private final ProfileRepository profileRepository;
 
-    public ProjectService(ProjectRepository projectRepository, SkillRepository skillRepository) {
+    public ProjectService(ProjectRepository projectRepository, SkillRepository skillRepository, ProfileRepository profileRepository) {
         this.projectRepository = projectRepository;
         this.skillRepository = skillRepository;
+        this.profileRepository = profileRepository;
     }
 
-    public ResponseEntity<ResponseModel<ProjectResponse>> createProject(ProjectRequest request) {
-        if (projectRepository.findByProjectName(request.getProjectName()) != null) {
-            return ApiResponse.failureResponse(null, "Project already exists with this name");
+    // ---------------- CREATE PROJECT ----------------
+    public ProjectResponse createProject(ProjectRequest request) throws GenericException {
+        if (projectRepository.existsByProjectNameAndProfileId(request.getProjectName(), request.getProfileId())) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Project with same name exists");
         }
 
-        // fetch skills from IDs
+        Profile profile = profileRepository.findById(request.getProfileId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+
         List<Skill> skills = skillRepository.findAllById(request.getTechnologiesUsed());
 
         Project project = Project.builder()
@@ -45,61 +51,69 @@ public class ProjectService {
                 .projectEndDate(request.isCurrentlyWorking() ? null : request.getProjectEndDate())
                 .currentlyWorking(request.isCurrentlyWorking())
                 .projectImageUrl(request.getProjectImageUrl())
+                .profile(profile)
                 .build();
 
-        Project saved = projectRepository.save(project);
-        return ApiResponse.successResponse(mapToResponse(saved), "Project created successfully");
+        return mapToResponse(projectRepository.save(project));
     }
 
-    public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(int id) throws GenericException {
+    // ---------------- GET PROJECT BY ID ----------------
+    public ProjectResponse getProjectById(int id) throws GenericException {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
-        return ApiResponse.successResponse(mapToResponse(project), "Project found successfully");
+        return mapToResponse(project);
     }
 
-    public ResponseEntity<ResponseModel<ProjectResponse>> updateProjectById(int id, ProjectRequest request) throws GenericException {
+    // ---------------- UPDATE PROJECT ----------------
+    public ProjectResponse updateProjectById(int id, ProjectRequest request) throws GenericException {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
 
-        // fetch updated skills from IDs
-        List<Skill> skills = skillRepository.findAllById(request.getTechnologiesUsed());
+        Project duplicate = projectRepository.findByProjectNameAndProfileId(request.getProjectName(), request.getProfileId());
+        if (duplicate != null && !duplicate.getId().equals(id)) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Another project with same name exists");
+        }
+
+        Profile profile = profileRepository.findById(request.getProfileId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
 
         project.setProjectName(request.getProjectName());
         project.setProjectDescription(request.getProjectDescription());
         project.setProjectLink(request.getProjectLink());
-        project.setTechnologiesUsed(skills);
+        project.setTechnologiesUsed(skillRepository.findAllById(request.getTechnologiesUsed()));
         project.setProjectStartDate(request.getProjectStartDate());
         project.setProjectEndDate(request.isCurrentlyWorking() ? null : request.getProjectEndDate());
         project.setCurrentlyWorking(request.isCurrentlyWorking());
         project.setProjectImageUrl(request.getProjectImageUrl());
+        project.setProfile(profile);
 
-        Project updated = projectRepository.save(project);
-        return ApiResponse.successResponse(mapToResponse(updated), "Project updated successfully");
+        return mapToResponse(projectRepository.save(project));
     }
 
-    public ResponseEntity<ResponseModel<List<ProjectResponse>>> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-        List<ProjectResponse> responses = projects.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-        return ApiResponse.successResponse(responses, "Projects fetched successfully");
+    // ---------------- DELETE PROJECT ----------------
+    public String deleteProjectById(int id) throws GenericException {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
+        projectRepository.delete(project);
+        return "Project deleted successfully";
     }
 
+    // ---------------- GET PROJECTS BY PROFILE ----------------
+    public Page<ProjectResponse> getProjectByProfileId(Integer profileId, Pageable pageable, String search) {
+        return projectRepository.findByProfileIdWithSearch(profileId, search, pageable)
+                .map(this::mapToResponse);
+    }
+
+    // ---------------- MAP ENTITY TO DTO ----------------
     private ProjectResponse mapToResponse(Project project) {
         return ProjectResponse.builder()
                 .id(project.getId())
                 .projectName(project.getProjectName())
                 .projectDescription(project.getProjectDescription())
                 .projectLink(project.getProjectLink())
-                .technologiesUsed(
-                        project.getTechnologiesUsed().stream()
-                                .map(skill -> new SkillDropdown(
-                                        skill.getId(),
-                                        skill.getLogo().getName(),
-                                        skill.getLogo().getUrl()
-                                ))
-                                .collect(Collectors.toList())
-                )
+                .technologiesUsed(project.getTechnologiesUsed().stream()
+                        .map(skill -> new SkillDropdown(skill.getId(), skill.getLogo().getName(), skill.getLogo().getUrl()))
+                        .collect(Collectors.toList()))
                 .projectStartDate(project.getProjectStartDate())
                 .projectEndDate(project.getProjectEndDate())
                 .currentlyWorking(project.isCurrentlyWorking())

@@ -11,7 +11,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "skills")
+@Table(name = "skills",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"logo_id", "profile_id"}))
 public class Skill {
 
     @Id
@@ -24,4 +25,8 @@ public class Skill {
 
     @Enumerated(EnumType.STRING)
     private SkillLevelEnum level;
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
 }

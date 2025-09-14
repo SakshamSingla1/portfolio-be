@@ -4,8 +4,9 @@ import lombok.Data;
 
 @Data
 public class ContactUsRequest {
-    String name;
-    String email;
-    String message;
-    String phone;
+    private String name;
+    private String email;
+    private String message;
+    private String phone;
+    private Integer profileId;
 }

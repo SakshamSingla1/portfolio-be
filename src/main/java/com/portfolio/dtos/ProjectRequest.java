@@ -14,4 +14,5 @@ public class ProjectRequest {
     private Date projectEndDate;
     private boolean currentlyWorking;
     private String projectImageUrl;
+    private Integer profileId;
 }

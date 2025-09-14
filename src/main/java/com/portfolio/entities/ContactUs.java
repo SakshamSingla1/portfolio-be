@@ -13,15 +13,23 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name="contact_us")
+@Table(
+        name = "contact_us"
+)
 public class ContactUs {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
     private String name;
     private String email;
     private String message;
     private String phone;
+
+    @ManyToOne
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;

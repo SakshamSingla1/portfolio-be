@@ -17,6 +17,9 @@ public class LogoService {
     @Autowired
     private LogoRepository logoRepository;
 
+    /**
+     * Returns a paginated list of logos with optional search filter
+     */
     public Page<LogoDropdown> getAllLogosByPage(Pageable pageable, String search) {
         return logoRepository.findAllWithPagination(search, pageable);
     }

@@ -3,29 +3,37 @@ package com.portfolio.services;
 import com.portfolio.dtos.EducationRequest;
 import com.portfolio.dtos.EducationResponse;
 import com.portfolio.entities.Education;
+import com.portfolio.entities.Profile;
 import com.portfolio.enums.DegreeEnum;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.payload.ApiResponse;
-import com.portfolio.payload.ResponseModel;
-import com.portfolio.repositories.EducationRespository;
+import com.portfolio.repositories.EducationRepository;
+import com.portfolio.repositories.ProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EducationService {
 
     @Autowired
-    private EducationRespository educationRespository;
+    private EducationRepository educationRepository;
 
-    public ResponseEntity<ResponseModel<EducationResponse>> createEducation(EducationRequest request) {
-        Education existingEducation = educationRespository.findByDegree(request.getDegree());
-        if (existingEducation != null) {
-            return ApiResponse.failureResponse(null, "Education with " + request.getDegree() + " already exists");
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    // ---------------- CREATE EDUCATION ----------------
+    public EducationResponse createEducation(EducationRequest request) throws GenericException {
+        Profile profile = profileRepository.findById(request.getProfileId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+
+        if (educationRepository.findByDegreeAndProfile(request.getDegree(), profile) != null) {
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_DEGREE,
+                    "Education with degree " + request.getDegree() + " already exists for this profile");
         }
+
         Education education = Education.builder()
                 .institution(request.getInstitution())
                 .degree(request.getDegree())
@@ -35,48 +43,67 @@ public class EducationService {
                 .endYear(request.getEndYear())
                 .description(request.getDescription())
                 .grade(request.getGrade())
+                .profile(profile)
                 .build();
-        Education savedEducation = educationRespository.save(education);
-        return ApiResponse.successResponse(toDto(savedEducation), "Education created successfully");
+
+        return toDto(educationRepository.save(education));
     }
 
-    public ResponseEntity<ResponseModel<EducationResponse>> updateEducation(DegreeEnum degree, EducationRequest request) {
-        Education education = educationRespository.findByDegree(degree);
+    // ---------------- UPDATE EDUCATION (Degree cannot change) ----------------
+    public EducationResponse updateEducation(DegreeEnum degree, EducationRequest request) throws GenericException {
+        Profile profile = profileRepository.findById(request.getProfileId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+
+        Education education = educationRepository.findByDegreeAndProfile(degree, profile);
         if (education == null) {
-            return ApiResponse.failureResponse(null, "Education with " + degree + " doesn't exist");
+            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
+                    "Education with degree " + degree + " not found for this profile");
         }
+
+        // Update all fields except degree
         education.setInstitution(request.getInstitution());
-        education.setDegree(request.getDegree());
         education.setLocation(request.getLocation());
         education.setFieldOfStudy(request.getFieldOfStudy());
         education.setStartYear(request.getStartYear());
         education.setEndYear(request.getEndYear());
         education.setDescription(request.getDescription());
         education.setGrade(request.getGrade());
-        Education savedEducation = educationRespository.save(education);
-        return ApiResponse.successResponse(toDto(savedEducation), "Education updated successfully");
+
+        return toDto(educationRepository.save(education));
     }
 
-    public ResponseEntity<ResponseModel<EducationResponse>> findByDegree(DegreeEnum degree) {
-        Education education = educationRespository.findByDegree(degree);
+    // ---------------- GET EDUCATION BY DEGREE ----------------
+    public EducationResponse findByDegree(DegreeEnum degree, Integer profileId) throws GenericException {
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+
+        Education education = educationRepository.findByDegreeAndProfile(degree, profile);
         if (education == null) {
-            return ApiResponse.failureResponse(null, "Education with " + degree + " doesn't exist");
+            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
+                    "Education with degree " + degree + " not found for this profile");
         }
-        return ApiResponse.successResponse(toDto(education), "Education found successfully");
+
+        return toDto(education);
     }
 
-    public ResponseEntity<ResponseModel<List<EducationResponse>>> findAllEducations() {
-        List<Education> educations = educationRespository.findAll();
-        if (educations.isEmpty()) {
-            return ApiResponse.failureResponse(null, "No Educations found");
+    // ---------------- DELETE EDUCATION ----------------
+    @Transactional
+    public String delete(DegreeEnum degree, Integer profileId) throws GenericException {
+        if (!educationRepository.existsByDegreeAndProfileId(degree, profileId)) {
+            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
+                    "Education not found with degree " + degree + " and profile " + profileId);
         }
-        List<EducationResponse> response = educations.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-
-        return ApiResponse.successResponse(response, "Educations found successfully");
+        educationRepository.deleteByDegreeAndProfileId(degree, profileId);
+        return "Education deleted successfully";
     }
 
+    // ---------------- GET EDUCATION BY PROFILE (PAGINATED + SEARCH) ----------------
+    public Page<EducationResponse> getEducationByProfileId(Integer profileId, Pageable pageable, String search) {
+        return educationRepository.findByProfileIdWithSearch(profileId, search, pageable)
+                .map(this::toDto);
+    }
+
+    // ---------------- DTO MAPPING ----------------
     private EducationResponse toDto(Education education) {
         return EducationResponse.builder()
                 .id(education.getId())

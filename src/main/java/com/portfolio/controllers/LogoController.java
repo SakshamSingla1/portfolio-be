@@ -1,8 +1,6 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.logo.LogoDropdown;
-import com.portfolio.entities.Logo;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -24,16 +22,16 @@ public class LogoController {
     @Autowired
     private LogoService logoService;
 
+    /**
+     * GET /api/v1/logo
+     * Returns paginated list of logos with optional search by name
+     */
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<LogoDropdown>>> findSkill(
+    public ResponseEntity<ResponseModel<Page<LogoDropdown>>> findLogos(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 10) Pageable pageable
-    ) throws GenericException {
-        return ApiResponse.respond(
-                logoService.getAllLogosByPage(pageable,search),
-                ApiResponse.SUCCESS, ApiResponse.FAILED
-        );
+    ) {
+        Page<LogoDropdown> response = logoService.getAllLogosByPage(pageable, search);
+        return ApiResponse.respond(response, "Logos fetched successfully", "Failed to fetch logos");
     }
-
 }
-

@@ -1,8 +1,7 @@
 package com.portfolio.dtos.logo;
 
 import com.portfolio.enums.SkillCategoryEnum;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Data
 @Builder
