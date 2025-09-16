@@ -1,4 +1,9 @@
-FROM openjdk:17-jdk-slim
-VOLUME /tmp
-COPY target/Portfolio-0.0.1-SNAPSHOT.jar Portfolio.jar
-ENTRYPOINT ["java","-jar","/Portfolio.jar"]
+FROM maven:3.8.5-openjdk-17 AS build
+COPY . .
+RUN mvn clean package -DskipTests
+
+FROM openjdk:17.0.1-jdk-slim
+COPY --from=build /target/Portfolio-0.0.1-SNAPSHOT.jar Portfolio.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","Portfolio.jar"]
+
