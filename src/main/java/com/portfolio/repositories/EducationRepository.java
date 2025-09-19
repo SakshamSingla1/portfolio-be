@@ -7,7 +7,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface EducationRepository extends JpaRepository<Education, Integer> {
@@ -17,6 +20,8 @@ public interface EducationRepository extends JpaRepository<Education, Integer> {
     boolean existsByDegreeAndProfileId(DegreeEnum degree, Integer profileId);
 
     void deleteByDegreeAndProfileId(DegreeEnum degree, Integer profileId);
+
+    List<Education> getByProfileId(Integer profileId);
 
     @Query("""
     SELECT e 
@@ -29,5 +34,5 @@ public interface EducationRepository extends JpaRepository<Education, Integer> {
       )
     ORDER BY e.startYear DESC
 """)
-    Page<Education> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+    Page<Education> findByProfileIdWithSearch(@Param("profileId") Integer profileId, @Param("search") String search, Pageable pageable);
 }

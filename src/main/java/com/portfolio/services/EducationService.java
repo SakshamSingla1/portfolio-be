@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 public class EducationService {
 
@@ -29,7 +31,8 @@ public class EducationService {
         Profile profile = profileRepository.findById(request.getProfileId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
 
-        if (educationRepository.findByDegreeAndProfile(request.getDegree(), profile) != null) {
+        // Optional: enforce unique degree per profile
+        if (request.getDegree() != null && educationRepository.findByDegreeAndProfile(request.getDegree(), profile) != null) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_DEGREE,
                     "Education with degree " + request.getDegree() + " already exists for this profile");
         }
@@ -49,18 +52,23 @@ public class EducationService {
         return toDto(educationRepository.save(education));
     }
 
-    // ---------------- UPDATE EDUCATION (Degree cannot change) ----------------
-    public EducationResponse updateEducation(DegreeEnum degree, EducationRequest request) throws GenericException {
-        Profile profile = profileRepository.findById(request.getProfileId())
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+    // ---------------- UPDATE EDUCATION (by id) ----------------
+    public EducationResponse updateEducation(Integer id, EducationRequest request) throws GenericException {
+        Education education = educationRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
 
-        Education education = educationRepository.findByDegreeAndProfile(degree, profile);
-        if (education == null) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
-                    "Education with degree " + degree + " not found for this profile");
+        // Validate profile match (prevent updating another profile's education)
+        if (education.getProfile().getId()!=request.getProfileId()) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
         }
 
-        // Update all fields except degree
+        // If degree is changed in request and you want to prevent that, you can enforce:
+        if (request.getDegree() != null && education.getDegree() != null
+                && !education.getDegree().equals(request.getDegree())) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Degree cannot be changed");
+        }
+
+        // Update fields
         education.setInstitution(request.getInstitution());
         education.setLocation(request.getLocation());
         education.setFieldOfStudy(request.getFieldOfStudy());
@@ -72,28 +80,29 @@ public class EducationService {
         return toDto(educationRepository.save(education));
     }
 
-    // ---------------- GET EDUCATION BY DEGREE ----------------
-    public EducationResponse findByDegree(DegreeEnum degree, Integer profileId) throws GenericException {
-        Profile profile = profileRepository.findById(profileId)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
+    // ---------------- GET EDUCATION BY ID ----------------
+    public EducationResponse findById(Integer id, Integer profileId) throws GenericException {
+        Education education = educationRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
 
-        Education education = educationRepository.findByDegreeAndProfile(degree, profile);
-        if (education == null) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
-                    "Education with degree " + degree + " not found for this profile");
+        if (education.getProfile().getId()!=profileId) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
         }
 
         return toDto(education);
     }
 
-    // ---------------- DELETE EDUCATION ----------------
+    // ---------------- DELETE EDUCATION BY ID ----------------
     @Transactional
-    public String delete(DegreeEnum degree, Integer profileId) throws GenericException {
-        if (!educationRepository.existsByDegreeAndProfileId(degree, profileId)) {
-            throw new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND,
-                    "Education not found with degree " + degree + " and profile " + profileId);
+    public String delete(Integer id, Integer profileId) throws GenericException {
+        Education education = educationRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
+
+        if (education.getProfile().getId()!=profileId) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
         }
-        educationRepository.deleteByDegreeAndProfileId(degree, profileId);
+
+        educationRepository.delete(education);
         return "Education deleted successfully";
     }
 
@@ -101,6 +110,13 @@ public class EducationService {
     public Page<EducationResponse> getEducationByProfileId(Integer profileId, Pageable pageable, String search) {
         return educationRepository.findByProfileIdWithSearch(profileId, search, pageable)
                 .map(this::toDto);
+    }
+
+    // ---------------- GET EDUCATION BY PROFILE -----------------
+    public List<EducationResponse> getByProfileId(Integer profileId) {
+        List<Education> educationList = educationRepository.getByProfileId(profileId);
+        List<EducationResponse> responseList = educationList.stream().map(this::toDto).toList();
+        return responseList;
     }
 
     // ---------------- DTO MAPPING ----------------

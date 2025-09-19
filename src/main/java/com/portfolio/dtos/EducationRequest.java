@@ -1,7 +1,6 @@
 package com.portfolio.dtos;
 
 import com.portfolio.enums.DegreeEnum;
-import jakarta.persistence.Column;
 import lombok.Data;
 
 @Data

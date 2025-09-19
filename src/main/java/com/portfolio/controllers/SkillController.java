@@ -65,12 +65,12 @@ public class SkillController {
 
     @Operation(summary = "Get Skills by Profile", description = "Fetch all skills of a profile with pagination and optional search")
     @GetMapping("/profile/{profileId}")
-    public ResponseEntity<ResponseModel<Page<SkillDropdown>>> findSkillByProfileId(
+    public ResponseEntity<ResponseModel<Page<SkillResponse>>> findSkillByProfileId(
             @Parameter(description = "Profile ID", example = "5") @PathVariable Integer profileId,
             @RequestParam(required = false) String search,
-            @PageableDefault(size = 10) Pageable pageable
+            @PageableDefault(size = 50) Pageable pageable
     ) {
-        Page<SkillDropdown> response = skillService.getSkillByProfileId(profileId, pageable, search);
+        Page<SkillResponse> response = skillService.getSkillByProfileId(profileId, pageable, search);
         return ApiResponse.successResponse(response, "Skills fetched successfully");
     }
 

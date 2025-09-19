@@ -29,7 +29,7 @@ public class SkillService {
     }
 
     // Fetch skills by profile with search and pagination
-    public Page<SkillDropdown> getSkillByProfileId(Integer profileId, Pageable pageable, String search) {
+    public Page<SkillResponse> getSkillByProfileId(Integer profileId, Pageable pageable, String search) {
         return skillRepository.findByProfileIdWithSearch(profileId, search, pageable);
     }
 

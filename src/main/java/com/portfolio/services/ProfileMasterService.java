@@ -38,7 +38,7 @@ public class ProfileMasterService {
         Page<ProjectResponse> projects = projectService.getProjectByProfileId(profileId, pageable, search);
         Page<ExperienceResponse> experiences = experienceService.getExperienceByProfileId(profileId, pageable, search);
         Page<EducationResponse> educations = educationService.getEducationByProfileId(profileId, pageable, search);
-        Page<SkillDropdown> skills = skillService.getSkillByProfileId(profileId, pageable, search);
+        Page<SkillResponse> skills = skillService.getSkillByProfileId(profileId, pageable, search);
 
         return ProfileMasterResponse.builder()
                 .profile(profileResponse)

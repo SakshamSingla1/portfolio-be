@@ -17,5 +17,5 @@ public class ProfileMasterResponse {
     private Page<ProjectResponse> projects;
     private Page<ExperienceResponse> experiences;
     private Page<EducationResponse> educations;
-    private Page<SkillDropdown> skills;
+    private Page<SkillResponse> skills;
 }
