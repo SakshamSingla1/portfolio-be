@@ -18,8 +18,8 @@ public class CorsConfig {
                         .allowedOrigins(
                                 "http://localhost:5173",
                                 "http://localhost:5174",
-                                "https://portfolio-fe-jsvx.vercel.app/",
-                                "portfolio-fe-jsvx-sakshamsingla1s-projects.vercel.app"
+                                "https://portfolio-fe-66y6.vercel.app/",
+                                "portfolio-fe-66y6-sakshamsingla1s-projects.vercel.app"
                         )
                         .allowedMethods("*")
                         .allowedHeaders("*")
