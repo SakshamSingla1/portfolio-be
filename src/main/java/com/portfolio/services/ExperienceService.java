@@ -2,9 +2,11 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.ExperienceRequest;
 import com.portfolio.dtos.ExperienceResponse;
+import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Experience;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.Project;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * ExperienceService handles CRUD operations for user experiences.
@@ -88,6 +91,12 @@ public class ExperienceService {
     public Page<ExperienceResponse> getExperienceByProfileId(Integer profileId, Pageable pageable, String search) {
         return experienceRepository.findByProfileIdWithSearch(profileId, search, pageable)
                 .map(this::mapToResponse);
+    }
+
+    // ---------------- GET EXPERIENCES BY PROFILE ----------------
+    public List<ExperienceResponse> getExperienceByProfileId(Integer profileId) {
+        List<Experience> experiences = experienceRepository.findByProfileId(profileId);
+        return experiences.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     // ---------------- HELPER METHODS ----------------

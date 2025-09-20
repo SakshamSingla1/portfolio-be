@@ -1,10 +1,12 @@
 package com.portfolio.services;
 
+import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.SkillRequest;
 import com.portfolio.dtos.SkillResponse;
 import com.portfolio.entities.Logo;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.Project;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
@@ -14,6 +16,9 @@ import com.portfolio.repositories.SkillRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class SkillService {
@@ -89,6 +94,12 @@ public class SkillService {
         Skill skill = skillRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
         skillRepository.delete(skill);
+    }
+
+    // ---------------- GET SkillS BY PROFILE ----------------
+    public List<SkillResponse> getSkillByProfileId(Integer profileId) {
+        List<Skill> skills = skillRepository.findByProfileId(profileId);
+        return skills.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     // Map Skill entity to SkillResponse DTO

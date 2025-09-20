@@ -81,7 +81,7 @@ public class EducationController {
             @PathVariable Integer profileId
     ) {
         return ApiResponse.respond(
-                educationService.getByProfileId(profileId),
+                educationService.getEducationByProfileId(profileId),
                 "Educations fetched successfully",
                 "Failed to fetch educations"
         );

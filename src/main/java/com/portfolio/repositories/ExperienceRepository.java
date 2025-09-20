@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Repository for Experience entity.
@@ -48,4 +49,6 @@ public interface ExperienceRepository extends JpaRepository<Experience, Integer>
         ORDER BY e.startDate DESC
     """)
     Page<Experience> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+
+    List<Experience> findByProfileId(Integer profileId);
 }

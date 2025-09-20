@@ -98,10 +98,16 @@ public class ProjectService {
         return "Project deleted successfully";
     }
 
-    // ---------------- GET PROJECTS BY PROFILE ----------------
+    // ---------------- GET PROJECTS BY PROFILE ( With Pagination ) ----------------
     public Page<ProjectResponse> getProjectByProfileId(Integer profileId, Pageable pageable, String search) {
         return projectRepository.findByProfileIdWithSearch(profileId, search, pageable)
                 .map(this::mapToResponse);
+    }
+
+    // ---------------- GET PROJECTS BY PROFILE ----------------
+    public List<ProjectResponse> getProjectByProfileId(Integer profileId) {
+        List<Project> projects = projectRepository.findByProfileId(profileId);
+        return projects.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     // ---------------- MAP ENTITY TO DTO ----------------

@@ -21,7 +21,7 @@ public interface EducationRepository extends JpaRepository<Education, Integer> {
 
     void deleteByDegreeAndProfileId(DegreeEnum degree, Integer profileId);
 
-    List<Education> getByProfileId(Integer profileId);
+    List<Education> findByProfileId(Integer profileId);
 
     @Query("""
     SELECT e 

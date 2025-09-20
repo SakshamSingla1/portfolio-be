@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Integer> {
 
@@ -23,4 +25,6 @@ public interface SkillRepository extends JpaRepository<Skill, Integer> {
           AND (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
     """)
     Page<SkillResponse> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+
+    List<Skill> findByProfileId(Integer profileId);
 }

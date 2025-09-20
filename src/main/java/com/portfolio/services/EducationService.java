@@ -2,8 +2,10 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.EducationRequest;
 import com.portfolio.dtos.EducationResponse;
+import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.entities.Education;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.Project;
 import com.portfolio.enums.DegreeEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EducationService {
@@ -113,10 +116,9 @@ public class EducationService {
     }
 
     // ---------------- GET EDUCATION BY PROFILE -----------------
-    public List<EducationResponse> getByProfileId(Integer profileId) {
-        List<Education> educationList = educationRepository.getByProfileId(profileId);
-        List<EducationResponse> responseList = educationList.stream().map(this::toDto).toList();
-        return responseList;
+    public List<EducationResponse> getEducationByProfileId(Integer profileId) {
+        List<Education> educations = educationRepository.findByProfileId(profileId);
+        return educations.stream().map(this::toDto).collect(Collectors.toList());
     }
 
     // ---------------- DTO MAPPING ----------------

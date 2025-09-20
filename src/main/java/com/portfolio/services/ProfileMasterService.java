@@ -10,6 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ProfileMasterService {
 
@@ -32,13 +34,10 @@ public class ProfileMasterService {
     }
     public ProfileMasterResponse getProfileMasterData(Integer profileId, int page, int size, String search) throws GenericException {
         ProfileResponse profileResponse = profileService.get(profileId); // new service method to return ProfileResponse
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<ProjectResponse> projects = projectService.getProjectByProfileId(profileId, pageable, search);
-        Page<ExperienceResponse> experiences = experienceService.getExperienceByProfileId(profileId, pageable, search);
-        Page<EducationResponse> educations = educationService.getEducationByProfileId(profileId, pageable, search);
-        Page<SkillResponse> skills = skillService.getSkillByProfileId(profileId, pageable, search);
+        List<ProjectResponse> projects = projectService.getProjectByProfileId(profileId);
+        List<ExperienceResponse> experiences = experienceService.getExperienceByProfileId(profileId);
+        List<EducationResponse> educations = educationService.getEducationByProfileId(profileId);
+        List<SkillResponse> skills = skillService.getSkillByProfileId(profileId);
 
         return ProfileMasterResponse.builder()
                 .profile(profileResponse)
