@@ -99,7 +99,7 @@ public class AdminService {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Admin not verified.");
         }
 
-        String token = jwtUtil.generateAccessToken(admin);
+        String token = jwtUtil.generateAccessToken(admin.getEmail());
         return buildAdminResponse(admin, token);
     }
 
