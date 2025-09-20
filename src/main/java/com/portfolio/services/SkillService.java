@@ -95,6 +95,7 @@ public class SkillService {
     private SkillResponse mapToResponse(Skill skill) {
         return SkillResponse.builder()
                 .id(skill.getId())
+                .logoId(skill.getLogo().getId())
                 .logoName(skill.getLogo().getName())
                 .logoUrl(skill.getLogo().getUrl())
                 .level(skill.getLevel())

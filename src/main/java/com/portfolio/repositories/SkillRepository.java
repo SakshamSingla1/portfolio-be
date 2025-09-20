@@ -17,7 +17,7 @@ public interface SkillRepository extends JpaRepository<Skill, Integer> {
 
     // Fetch skills by profile with search and pagination
     @Query("""
-        SELECT new com.portfolio.dtos.SkillResponse(s.id, s.logo.name, s.logo.url,s.logo.category,s.level)
+        SELECT new com.portfolio.dtos.SkillResponse(s.id, s.logo.id,s.logo.name, s.logo.url,s.logo.category,s.level)
         FROM Skill s
         WHERE s.profile.id = :profileId
           AND (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
