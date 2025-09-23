@@ -8,6 +8,7 @@ import com.portfolio.services.ProfileMasterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,17 +24,29 @@ public class ProfileMasterController {
     }
 
     @Operation(
-            summary = "Get Profile Master Data",
-            description = "Fetch profile master data with pagination and optional search"
+            summary = "Get Profile Master Data by Domain",
+            description = "Fetch profile master data based on the request Host header"
     )
-    @GetMapping("/{profileId}")
-    public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMaster(
-            @Parameter(description = "Profile ID", example = "1") @PathVariable Integer profileId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search
+    @GetMapping
+    public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterByDomain(
+            HttpServletRequest request
     ) throws GenericException {
-        ProfileMasterResponse response = profileMasterService.getProfileMasterData(profileId, page, size, search);
+        String host = request.getHeader("Referer");
+        System.out.println("Host: " + host);
+        ProfileMasterResponse response = profileMasterService.getProfileMasterData(host);
         return ApiResponse.successResponse(response, ApiResponse.SUCCESS);
     }
+
+//    // ✅ Keep this only if you also want to fetch by profileId (e.g., for admin panel)
+//    @Operation(
+//            summary = "Get Profile Master Data by Profile ID",
+//            description = "Fetch profile master data using profileId (admin use only)"
+//    )
+//    @GetMapping("/{profileId}")
+//    public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterById(
+//            @PathVariable Integer profileId
+//    ) throws GenericException {
+//        ProfileMasterResponse response = profileMasterService.getProfileMasterData(profileId);
+//        return ApiResponse.successResponse(response, ApiResponse.SUCCESS);
+//    }
 }

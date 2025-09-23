@@ -44,7 +44,8 @@ public class SecurityConfig {
                                 "/api/v1/skill/**",
                                 "/api/v1/education/**",
                                 "/api/v1/experience/**",
-                                "/api/v1/logo/**"
+                                "/api/v1/logo/**",
+                                "/api/v1/profile-master/**"
                         ).permitAll()
 
                         // Contact form - open
