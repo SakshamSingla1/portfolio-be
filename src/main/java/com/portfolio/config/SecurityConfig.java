@@ -50,7 +50,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Contact form - open
-                        .requestMatchers("/api/v1/contact-us/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/v1/contact-us/**").permitAll()
 
                         // Admin auth endpoints - public
                         .requestMatchers(
@@ -59,7 +59,8 @@ public class SecurityConfig {
                                 "/api/v1/admin/login",
                                 "/api/v1/admin/forgot-password",
                                 "/api/v1/admin/reset-password",
-                                "/api/v1/admin/send-otp"
+                                "/api/v1/admin/send-otp",
+                                "/api/v1/contact-us"
                         ).permitAll()
 
                         // Protected Admin endpoints
