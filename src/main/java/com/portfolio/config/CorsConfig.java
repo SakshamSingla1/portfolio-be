@@ -1,50 +1,49 @@
 package com.portfolio.config;
 
+import com.portfolio.repositories.ProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Configuration
 public class CorsConfig {
 
-    private final DynamicCorsOrigins dynamicCorsOrigins;
-
-    public CorsConfig(DynamicCorsOrigins dynamicCorsOrigins) {
-        this.dynamicCorsOrigins = dynamicCorsOrigins;
-    }
+    @Autowired
+    ProfileRepository profileRepository;
 
     @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-        // register a config that resolves dynamically per request
-        source.registerCorsConfiguration("/api/**", new CorsConfiguration() {
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
             @Override
-            public List<String> getAllowedOrigins() {
-                Set<String> originSet = dynamicCorsOrigins.getOrigins();
-                List<String> origins = originSet.stream().toList();
-
-                if (origins.isEmpty()) {
-                    origins = List.of(
+            public void addCorsMappings(CorsRegistry registry) {
+                List<String> allowedOrigins = profileRepository.findAll()
+                                .stream()
+                                .map(profile -> profile.getWebsiteUrl())
+                                .filter(url -> url != null && !url.isBlank())
+                                .toList();
+                if(allowedOrigins.isEmpty()) {
+                    allowedOrigins = List.of(
                             "http://localhost:3000",
                             "http://127.0.0.1:3000",
                             "http://localhost:5173",
                             "http://127.0.0.1:5173",
                             "http://localhost:5174",
                             "http://127.0.0.1:5174",
-                            "https://portfolio-fe-66y6.vercel.app"
-                    );
+                            "https://portfolio-fe-66y6.vercel.app");
                 }
-                System.out.println("1"+origins);
-                return origins;
+                registry.addMapping("/api/**")
+                        .allowedOrigins(allowedOrigins.toArray(new String[0])) // pulled from env/properties
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true);
+                System.out.println(allowedOrigins);
             }
-        });
-
-        return new CorsFilter(source);
+        };
     }
 }
