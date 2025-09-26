@@ -1,5 +1,6 @@
 package com.portfolio.services;
 
+import com.portfolio.config.DynamicCorsOrigins;
 import com.portfolio.dtos.*;
 import com.portfolio.entities.PasswordResetToken;
 import com.portfolio.entities.Profile;
@@ -25,6 +26,7 @@ public class AdminService {
     private final PasswordResetRepository passwordResetRepository;
     private final MailService mailService;
     private final OtpStorageService otpStorageService;
+    private final DynamicCorsOrigins dynamicCorsOrigins;
 
     private static final long RESET_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 
@@ -33,13 +35,15 @@ public class AdminService {
                         JwtUtil jwtUtil,
                         PasswordResetRepository passwordResetRepository,
                         MailService mailService,
-                        OtpStorageService otpStorageService) {
+                        OtpStorageService otpStorageService,
+                        DynamicCorsOrigins dynamicCorsOrigins) {
         this.profileRepository = profileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.passwordResetRepository = passwordResetRepository;
         this.mailService = mailService;
         this.otpStorageService = otpStorageService;
+        this.dynamicCorsOrigins = dynamicCorsOrigins;
     }
 
     // 🔹 REGISTER NEW ADMIN
@@ -56,8 +60,8 @@ public class AdminService {
                 .verified(false) // wait until OTP validated
                 .build();
 
-        profileRepository.save(admin);
-
+        Profile saved = profileRepository.save(admin);
+        dynamicCorsOrigins.addOrigin(saved.getWebsiteUrl());
         // Send OTP to email
         sendOtpToUser(admin);
 
