@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillRequest {
-    private Integer logoId;  // reference Logo entity
+    private String logoId;
     private SkillLevelEnum level;
-    private Integer profileId;
+    private String profileId;
 }

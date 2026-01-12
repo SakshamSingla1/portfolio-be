@@ -1,8 +1,10 @@
 package com.portfolio.dtos;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class ChangeEmailRequest {
+@Builder
+public class PasswordResetRequestDTO {
     private String email;
 }

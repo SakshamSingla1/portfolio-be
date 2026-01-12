@@ -3,52 +3,65 @@ package com.portfolio.repositories;
 import com.portfolio.entities.Experience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
-/**
- * Repository for Experience entity.
- * Provides CRUD operations and custom queries:
- * - Check uniqueness of experiences
- * - Paginated search by profile with optional keyword
- */
 @Repository
-public interface ExperienceRepository extends JpaRepository<Experience, Integer> {
+public interface ExperienceRepository extends MongoRepository<Experience, String> {
 
-    /**
-     * Check if an experience already exists for a profile with the same company, job title, and start date
-     */
     boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(
-            Integer profileId, String companyName, String jobTitle, Date startDate
+            String profileId,
+            String companyName,
+            String jobTitle,
+            LocalDate startDate
     );
 
-    /**
-     * Check uniqueness for update operation (exclude current record)
-     */
     boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDateAndIdNot(
-            Integer profileId, String companyName, String jobTitle, Date startDate, Integer id
+            String profileId,
+            String companyName,
+            String jobTitle,
+            LocalDate startDate,
+            String id
     );
 
-    /**
-     * Paginated search by profile ID with optional search on companyName, jobTitle, location, or description
-     */
     @Query("""
-        SELECT e
-        FROM Experience e
-        WHERE e.profile.id = :profileId
-          AND (:search IS NULL OR :search = ''
-               OR LOWER(e.companyName) LIKE LOWER(CONCAT('%', :search, '%'))
-               OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%'))
-               OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%'))
-               OR LOWER(e.description) LIKE LOWER(CONCAT('%', :search, '%'))
-          )
-        ORDER BY e.startDate DESC
+    {
+      $and: [
+        {
+          $or: [
+            { "companyName": { "$regex": ?1, "$options": "i" } },
+            { "jobTitle": { "$regex": ?1, "$options": "i" } },
+            { "location": { "$regex": ?1, "$options": "i" } }
+          ]
+        },
+        { "profileId": ?0 }
+      ]
+    }
     """)
-    Page<Experience> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+    Page<Experience> findByProfileIdWithSearch(
+            String profileId,
+            String search,
+            Pageable pageable
+    );
 
-    List<Experience> findByProfileId(Integer profileId);
+    @Query("""
+    {
+      $or: [
+        { "companyName": { "$regex": ?0, "$options": "i" } },
+        { "jobTitle": { "$regex": ?0, "$options": "i" } },
+        { "location": { "$regex": ?0, "$options": "i" } }
+      ]
+    }
+    """)
+    Page<Experience> findBySearch(String search, Pageable pageable);
+
+    Page<Experience> findAll(Pageable pageable);
+
+    Page<Experience> findByProfileId(String profileId, Pageable pageable);
+
+    List<Experience> findByProfileId(String profileId);
 }
