@@ -1,59 +1,28 @@
 package com.portfolio.entities;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.portfolio.enums.WorkStatusEnum;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
+@Document(collection = "projects")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-@Entity
-@Table(name = "project",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"project_name", "profile_id"})
-        })
+@NoArgsConstructor
+@AllArgsConstructor
 public class Project {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    @Column(name = "project_name", nullable = false)
+    private String id;
+    private String profileId;
     private String projectName;
-
-    @Column(name = "project_description", length = 1000)
     private String projectDescription;
-
     private String projectLink;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date projectStartDate;
-
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date projectEndDate;
-
-    private boolean currentlyWorking = false;
-
+    private LocalDate projectStartDate;
+    private LocalDate projectEndDate;
+    private WorkStatusEnum workStatus;
     private String projectImageUrl;
-
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "project_skills",
-            joinColumns = @JoinColumn(name = "project_id"),
-            inverseJoinColumns = @JoinColumn(name = "skill_id")
-    )
-    private List<Skill> technologiesUsed;
-
-    @ManyToOne
-    @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
+    private List<String> skillIds;
 }

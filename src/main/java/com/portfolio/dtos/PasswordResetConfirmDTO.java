@@ -1,9 +1,11 @@
 package com.portfolio.dtos;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class ResetPasswordRequest {
+@Builder
+public class PasswordResetConfirmDTO {
     private String token;
     private String newPassword;
 }

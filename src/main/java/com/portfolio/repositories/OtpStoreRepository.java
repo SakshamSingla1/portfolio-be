@@ -1,15 +1,13 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.OtpStore;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
-public interface OtpStoreRepository extends JpaRepository<OtpStore, Integer> {
-    Optional<OtpStore> findTopByProfilePhoneOrderByCreatedAtDesc(String mobile);
-    void deleteAllByProfilePhone(String mobile);
-    void deleteAllByExpiryDateBefore(LocalDateTime now);
+public interface OtpStoreRepository extends MongoRepository<OtpStore, String> {
+    void deleteByProfileId(String email);
+    Optional<OtpStore> findByProfileId(String email);
 }

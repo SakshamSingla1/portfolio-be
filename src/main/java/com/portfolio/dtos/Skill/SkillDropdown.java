@@ -8,7 +8,7 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class SkillDropdown {
-    private Integer logoId;
+    private String id;
     private String logoName;
     private String logoUrl;
 }

@@ -5,7 +5,7 @@ import com.portfolio.dtos.ProfileResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
-import com.portfolio.services.ProfileService;
+import com.portfolio.servicesImpl.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ public class ProfileController {
 
     @Operation(summary = "Get profile by ID", description = "Fetches user profile details by profile ID.")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<ProfileResponse>> get(@PathVariable Integer id) throws GenericException {
+    public ResponseEntity<ResponseModel<ProfileResponse>> get(@PathVariable String id) throws GenericException {
         return ApiResponse.respond(
                 profileService.get(id),
                 "Profile fetched successfully",
@@ -35,9 +35,8 @@ public class ProfileController {
     @Operation(summary = "Update profile", description = "Updates profile details for a given profile ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProfileResponse>> update(
-            @PathVariable Integer id,
-            @RequestBody ProfileRequest req
-    ) throws GenericException {
+            @PathVariable String id,
+            @RequestBody ProfileRequest req) throws GenericException {
         return ApiResponse.respond(
                 profileService.update(id, req),
                 "Profile updated successfully",

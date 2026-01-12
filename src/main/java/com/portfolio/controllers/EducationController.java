@@ -3,6 +3,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.EducationRequest;
 import com.portfolio.dtos.EducationResponse;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -38,7 +39,7 @@ public class EducationController {
     @Operation(summary = "Update education by ID", description = "Updates education details by ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> update(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestBody EducationRequest request
     ) throws GenericException {
         return ApiResponse.respond(
@@ -51,8 +52,8 @@ public class EducationController {
     @Operation(summary = "Get education by ID", description = "Fetches education record for a given ID and profile ID.")
     @GetMapping("/{id}/{profileId}")
     public ResponseEntity<ResponseModel<EducationResponse>> getById(
-            @PathVariable Integer id,
-            @PathVariable Integer profileId
+            @PathVariable String id,
+            @PathVariable String profileId
     ) throws GenericException {
         return ApiResponse.respond(
                 educationService.findById(id, profileId),
@@ -64,24 +65,13 @@ public class EducationController {
     @Operation(summary = "Get education by profile", description = "Fetches paginated education records for a profile with optional search.")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<EducationResponse>>> getByProfile(
-            @PathVariable Integer profileId,
+            @PathVariable String profileId,
+            Pageable pageable,
             @RequestParam(required = false) String search,
-            Pageable pageable
-    ) {
+            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
         return ApiResponse.respond(
-                educationService.getEducationByProfileId(profileId, pageable, search),
-                "Educations fetched successfully",
-                "Failed to fetch educations"
-        );
-    }
-
-    @Operation(summary = "Get education by profile", description = "Fetches education records for a profile")
-    @GetMapping("/user/{profileId}")
-    public ResponseEntity<ResponseModel<List<EducationResponse>>> getByProfile(
-            @PathVariable Integer profileId
-    ) {
-        return ApiResponse.respond(
-                educationService.getEducationByProfileId(profileId),
+                educationService.getByProfile(profileId, search,sortDir,sortBy,pageable),
                 "Educations fetched successfully",
                 "Failed to fetch educations"
         );
@@ -90,8 +80,8 @@ public class EducationController {
     @Operation(summary = "Delete education", description = "Delete education record by ID and profile ID.")
     @DeleteMapping("/{id}/{profileId}")
     public ResponseEntity<ResponseModel<String>> delete(
-            @PathVariable Integer id,
-            @PathVariable Integer profileId
+            @PathVariable String id,
+            @PathVariable String profileId
     ) throws GenericException {
         return ApiResponse.respond(
                 educationService.delete(id, profileId),
