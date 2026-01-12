@@ -2,10 +2,11 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.ExperienceRequest;
 import com.portfolio.dtos.ExperienceResponse;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
-import com.portfolio.services.ExperienceService;
+import com.portfolio.servicesImpl.ExperienceServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class ExperienceController {
 
     @Autowired
-    private ExperienceService experienceService;
+    private ExperienceServiceImpl experienceService;
 
     @Operation(summary = "Create experience", description = "Creates a new work experience record.")
     @PostMapping
@@ -33,7 +34,7 @@ public class ExperienceController {
     @Operation(summary = "Update experience", description = "Updates an existing work experience record by ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ExperienceResponse>> update(
-            @PathVariable Integer id,
+            @PathVariable String id,
             @RequestBody ExperienceRequest req) throws GenericException {
         ExperienceResponse response = experienceService.update(id, req);
         return ApiResponse.respond(response, "Experience updated successfully", "Failed to update experience");
@@ -41,14 +42,14 @@ public class ExperienceController {
 
     @Operation(summary = "Get experience by ID", description = "Fetches a specific experience record by ID.")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<ExperienceResponse>> getById(@PathVariable Integer id) throws GenericException {
+    public ResponseEntity<ResponseModel<ExperienceResponse>> getById(@PathVariable String id) throws GenericException {
         ExperienceResponse response = experienceService.getById(id);
         return ApiResponse.respond(response, "Experience fetched successfully", "Failed to fetch experience");
     }
 
     @Operation(summary = "Delete experience", description = "Deletes a work experience record by ID.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Integer id) throws GenericException {
+    public ResponseEntity<ResponseModel<String>> delete(@PathVariable String id) throws GenericException {
         String response = experienceService.delete(id);
         return ApiResponse.respond(response, "Experience deleted successfully", "Failed to delete experience");
     }
@@ -56,13 +57,12 @@ public class ExperienceController {
     @Operation(summary = "Get experiences by profile", description = "Fetches paginated list of experiences for a profile with optional search.")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getByProfile(
-            @PathVariable Integer profileId,
+            @PathVariable String profileId,
+            Pageable pageable,
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-        Page<ExperienceResponse> response = experienceService.getExperienceByProfileId(profileId, pageable, search);
+            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
+        Page<ExperienceResponse> response = experienceService.getByProfile(profileId,search,sortDir,sortBy,pageable);
         return ApiResponse.respond(response, "Experiences fetched successfully", "Failed to fetch experiences");
     }
 }

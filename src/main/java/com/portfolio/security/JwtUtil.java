@@ -1,6 +1,8 @@
 package com.portfolio.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,37 +20,48 @@ public class JwtUtil {
     @Value("${jwt.access-token.expiration}")
     private long accessTokenExpiration;
 
+    // ================= SIGNING KEY =================
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // ================= GENERATE =================
     public String generateAccessToken(String email) {
         return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // ================= EXTRACT =================
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
     }
 
+    // ================= VALIDATE =================
     public boolean validateToken(String token, String email) {
-        return email.equals(extractEmail(token)) && !isTokenExpired(token);
+        try {
+            Claims claims = getClaims(token);
+            return email.equals(claims.getSubject())
+                    && claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false; // ✅ never crash filter
+        }
     }
 
-    private boolean isTokenExpired(String token) {
-        return getClaims(token).getExpiration().before(new Date());
-    }
-
+    // ================= CLAIMS =================
     private Claims getClaims(String token) {
+
+        // ✅ absolutely critical
+        String cleanToken = token.trim();
+
         return Jwts.parser()
-                .setSigningKey(getSigningKey())
+                .verifyWith(getSigningKey()) // ✅ new API
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(cleanToken)
+                .getPayload();
     }
 }

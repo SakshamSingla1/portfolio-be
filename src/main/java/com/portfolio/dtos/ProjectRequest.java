@@ -1,18 +1,20 @@
 package com.portfolio.dtos;
 
+import com.portfolio.enums.WorkStatusEnum;
 import lombok.Data;
-import java.util.Date;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 public class ProjectRequest {
+    private String profileId;
     private String projectName;
     private String projectDescription;
     private String projectLink;
-    private List<Integer> technologiesUsed;  // Skill IDs from frontend
-    private Date projectStartDate;
-    private Date projectEndDate;
-    private boolean currentlyWorking;
+    private LocalDate projectStartDate;
+    private LocalDate projectEndDate;
+    private WorkStatusEnum workStatus;
     private String projectImageUrl;
-    private Integer profileId;
+    private List<String> skillIds;
 }

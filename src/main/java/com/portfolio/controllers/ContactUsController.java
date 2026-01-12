@@ -2,10 +2,11 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.ContactUsRequest;
 import com.portfolio.dtos.ContactUsResponse;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
-import com.portfolio.services.ContactUsService;
+import com.portfolio.servicesImpl.ContactUsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,13 @@ public class ContactUsController {
     @Operation(summary = "Get contact messages by profile", description = "Fetches paginated contact messages for a profile with optional search.")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<ContactUsResponse>>> getByProfile(
-            @PathVariable Integer profileId,
+            @PathVariable String profileId,
+            Pageable pageable,
             @RequestParam(required = false) String search,
-            @PageableDefault(size = 10) Pageable pageable
+            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) throws GenericException {
-        Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, pageable, search);
+        Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, pageable, search,sortBy,sortDir);
         return ApiResponse.respond(page, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 }
