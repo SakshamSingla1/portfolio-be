@@ -34,6 +34,7 @@ public class Profile {
     private String logoUrl;
     private String role;
     private StatusEnum status;
+    private String themeName;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
     private LocalDateTime createdAt;

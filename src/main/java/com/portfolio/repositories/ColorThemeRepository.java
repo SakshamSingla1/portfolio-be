@@ -8,8 +8,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.awt.*;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -47,4 +45,6 @@ public interface ColorThemeRepository extends MongoRepository<ColorTheme, String
             StatusEnum status,
             Pageable pageable
     );
+
+    Optional<ColorTheme> findFirstByStatusOrderByCreatedAtDesc(StatusEnum active);
 }
