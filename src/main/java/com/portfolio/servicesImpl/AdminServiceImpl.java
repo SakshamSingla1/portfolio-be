@@ -1,9 +1,9 @@
 package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.*;
-import com.portfolio.entities.OtpStore;
-import com.portfolio.entities.PasswordResetToken;
-import com.portfolio.entities.Profile;
+import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
+import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
@@ -13,12 +13,15 @@ import com.portfolio.repositories.PasswordResetTokenRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.security.JwtUtil;
 import com.portfolio.services.AdminService;
+import com.portfolio.services.ColorThemeService;
 import com.portfolio.services.NTService;
+import com.portfolio.services.NavLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.portfolio.utils.Helper;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -37,6 +40,8 @@ public class AdminServiceImpl implements AdminService {
     private final JwtUtil jwtUtil;
     private final Helper helper;
     private final NTService ntService;
+    private final ColorThemeService colorThemeService;
+    private final NavLinkService navLinkService;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -227,14 +232,14 @@ public class AdminServiceImpl implements AdminService {
 
         Profile user;
 
-        if (dto.getEmail() != null) {
-            user = profileRepository.findByEmail(dto.getEmail())
+        if (StringUtils.hasText(dto.getEmail())) {
+            user = profileRepository.findByEmail(dto.getEmail().trim())
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
-        } else if (dto.getUsername() != null) {
-            user = profileRepository.findByUserName(dto.getUsername())
+        } else if (StringUtils.hasText(dto.getUsername())) {
+            user = profileRepository.findByUserName(dto.getUsername().trim())
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         } else {
-            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Invalid login request");
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Email or username is required");
         }
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword()))
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
@@ -243,12 +248,13 @@ public class AdminServiceImpl implements AdminService {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Account not verified");
 
         String token = jwtUtil.generateAccessToken(user.getEmail());
-//
-//        List<ColorTheme> themes = colorThemeRepository.findByRole(user.getRoleCode());
-//        ColorTheme defaultTheme = themes.stream()
-//                .filter(t -> "default".equalsIgnoreCase(t.getThemeName()))
-//                .findFirst()
-//                .orElse(null);
+        ColorThemeResponseDTO defaultTheme;
+        if (user.getThemeName() != null) {
+            defaultTheme = colorThemeService.getThemeByName(user.getThemeName());
+        } else {
+            defaultTheme = colorThemeService.getDefaultTheme();
+        }
+        List<NavLinkResponseDTO> navLinks = navLinkService.getAllNavLinks();
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -261,9 +267,8 @@ public class AdminServiceImpl implements AdminService {
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
                 .token("Bearer " + token)
-//                .themes(themes)
-//                .defaultTheme(defaultTheme)
-//                .navLinks(navLinkRepository.findByRole(user.getRoleCode()))
+                .defaultTheme(defaultTheme)
+                .navLinks(navLinks)
                 .build();
     }
 

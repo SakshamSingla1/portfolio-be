@@ -29,5 +29,7 @@ public interface ColorThemeService {
             Pageable pageable
     );
 
+    ColorThemeResponseDTO getDefaultTheme() throws GenericException;
+
     String deleteTheme(String id) throws GenericException;
 }

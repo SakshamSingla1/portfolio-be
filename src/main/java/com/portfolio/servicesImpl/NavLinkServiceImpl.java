@@ -125,6 +125,14 @@ public class NavLinkServiceImpl implements NavLinkService {
         return toResponseDTO(navLink);
     }
 
+    @Override
+    public List<NavLinkResponseDTO> getAllNavLinks() {
+        List<NavLink> navLinks = navLinkRepository.findAll();
+        return navLinks.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     private NavLinkResponseDTO toResponseDTO(NavLink navLink) {
         return NavLinkResponseDTO.builder()
                 .id(navLink.getId())
