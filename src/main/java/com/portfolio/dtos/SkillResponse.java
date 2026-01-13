@@ -10,8 +10,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillResponse {
-    private Integer id;
-    private Integer logoId;
+    private String id;
+    private String logoId;
     private String logoName;
     private String logoUrl;
     private SkillCategoryEnum category;

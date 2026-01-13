@@ -1,30 +1,49 @@
 package com.portfolio.repositories;
 
-import com.portfolio.dtos.Skill.SkillDropdown;
-import com.portfolio.dtos.SkillResponse;
 import com.portfolio.entities.Skill;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface SkillRepository extends JpaRepository<Skill, Integer> {
+public interface SkillRepository extends MongoRepository<Skill, String> {
 
-    // Check if a profile already has this skill
-    boolean existsByLogoIdAndProfileId(Integer logoId, Integer profileId);
-
-    // Fetch skills by profile with search and pagination
     @Query("""
-        SELECT new com.portfolio.dtos.SkillResponse(s.id, s.logo.id,s.logo.name, s.logo.url,s.logo.category,s.level)
-        FROM Skill s
-        WHERE s.profile.id = :profileId
-          AND (:search IS NULL OR :search = '' OR LOWER(s.logo.name) LIKE LOWER(CONCAT('%', :search, '%')))
+    {
+      $and: [
+        {
+          $or: [
+            { "logo.name": { "$regex": ?1, "$options": "i" } }
+          ]
+        },
+        { "profileId": ?0 }
+      ]
+    }
     """)
-    Page<SkillResponse> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+    Page<Skill> findByProfileIdWithSearch(
+            String profileId,
+            String search,
+            Pageable pageable
+    );
 
-    List<Skill> findByProfileId(Integer profileId);
+    @Query("""
+    {
+      $or: [
+        { "logo.name": { "$regex": ?0, "$options": "i" } }
+      ]
+    }
+    """)
+    Page<Skill> findBySearch(String search, Pageable pageable);
+
+    Page<Skill> findAll(Pageable pageable);
+
+    Page<Skill> findByProfileId(String profileId, Pageable pageable);
+
+    List<Skill> findByProfileId(String profileId);
+
+    boolean existsByLogoIdAndProfileId(String logoId, String profileId);
 }

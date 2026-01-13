@@ -1,12 +1,19 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Profile;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
-public interface ProfileRepository extends JpaRepository<Profile, Integer> {
-    Profile findByEmail(String email);
-    Profile findByPhone(String phone);
-    Profile findByWebsiteUrl(String websiteUrl);
+public interface ProfileRepository extends MongoRepository<Profile, String> {
+
+    Optional<Profile> findByEmail(String email);
+
+    Optional<Profile> findByPhone(String phone);
+
+    Optional<Profile> findByWebsiteUrl(String websiteUrl);
+
+    Optional<Profile> findByUserName(String userName);
 }

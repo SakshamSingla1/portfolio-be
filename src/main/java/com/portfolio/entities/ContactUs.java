@@ -1,41 +1,27 @@
 package com.portfolio.entities;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(
-        name = "contact_us"
-)
+@Document(collection = "contact-us")
 public class ContactUs {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
+    private String id;
     private String name;
     private String email;
     private String message;
     private String phone;
-
-    @ManyToOne
-    @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date created;
-
-    @PrePersist
-    public void onCreate() {
-        this.created = new Date();
-    }
+    private String profileId;
+    private LocalDateTime createdAt;
 }

@@ -1,25 +1,23 @@
 package com.portfolio.entities;
 
-import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@NoArgsConstructor
+@Document(collection = "otp_store")
 @Data
 @Builder
-@Entity
-@Table(name = "otp_store")
+@NoArgsConstructor
+@AllArgsConstructor
 public class OtpStore {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_id", nullable = false)
-    private Profile profile;
+    private String id;
+    private String profileId;
     private String otp;
     private LocalDateTime createdAt;
     private LocalDateTime expiryDate;
 }
+

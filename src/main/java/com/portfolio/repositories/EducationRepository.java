@@ -1,38 +1,54 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Education;
-import com.portfolio.entities.Profile;
 import com.portfolio.enums.DegreeEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface EducationRepository extends JpaRepository<Education, Integer> {
+public interface EducationRepository extends MongoRepository<Education, String> {
 
-    Education findByDegreeAndProfile(DegreeEnum degree, Profile profile);
+    boolean existsByDegreeAndProfileId(DegreeEnum degree, String profileId);
 
-    boolean existsByDegreeAndProfileId(DegreeEnum degree, Integer profileId);
-
-    void deleteByDegreeAndProfileId(DegreeEnum degree, Integer profileId);
-
-    List<Education> findByProfileId(Integer profileId);
+    List<Education> findByProfileId(String profileId);
 
     @Query("""
-    SELECT e 
-    FROM Education e
-    WHERE e.profile.id = :profileId
-      AND (:search IS NULL OR :search = ''
-           OR LOWER(e.institution) LIKE LOWER(CONCAT('%', :search, '%'))
-           OR LOWER(e.fieldOfStudy) LIKE LOWER(CONCAT('%', :search, '%'))
-           OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%'))
-      )
-    ORDER BY e.startYear DESC
-""")
-    Page<Education> findByProfileIdWithSearch(@Param("profileId") Integer profileId, @Param("search") String search, Pageable pageable);
+    {
+      $and: [
+        {
+          $or: [
+            { "institution": { "$regex": ?1, "$options": "i" } },
+            { "fieldOfStudy": { "$regex": ?1, "$options": "i" } },
+            { "location": { "$regex": ?1, "$options": "i" } }
+          ]
+        },
+        { "profileId": ?0 }
+      ]
+    }
+    """)
+    Page<Education> findByProfileIdWithSearch(
+            String profileId,
+            String search,
+            Pageable pageable
+    );
+
+    @Query("""
+    {
+      $or: [
+        { "institution": { "$regex": ?0, "$options": "i" } },
+        { "fieldOfStudy": { "$regex": ?0, "$options": "i" } },
+        { "location": { "$regex": ?0, "$options": "i" } }
+      ]
+    }
+    """)
+    Page<Education> findBySearch(String search, Pageable pageable);
+
+    Page<Education> findAll(Pageable pageable);
+
+    Page<Education> findByProfileId(String profileId, Pageable pageable);
 }

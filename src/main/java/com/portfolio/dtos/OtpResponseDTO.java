@@ -3,13 +3,12 @@ package com.portfolio.dtos;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
-public class AdminResponse {
-    private int id;
-    private String fullName;
+public class OtpResponseDTO {
     private String email;
-    private String role;
-    private String token;
     private String message;
+    private LocalDateTime expiresAt;
 }
