@@ -3,19 +3,43 @@ package com.portfolio.repositories;
 import com.portfolio.entities.ContactUs;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ContactUsRepository extends JpaRepository<ContactUs, Integer> {
+public interface ContactUsRepository extends MongoRepository<ContactUs, String> {
 
-    // ✅ Paginated search by profile, returning entities
     @Query("""
-        SELECT c
-        FROM ContactUs c
-        WHERE c.profile.id = :profileId
-          AND (:search IS NULL OR :search = '' OR LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')))
+    {
+      $and: [
+        {
+          $or: [
+            { "name":  { "$regex": ?1, "$options": "i" } },
+            { "email": { "$regex": ?1, "$options": "i" } }
+          ]
+        },
+        { "profileId": ?0 }
+      ]
+    }
     """)
-    Page<ContactUs> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+    Page<ContactUs> findByProfileIdWithSearch(
+            String profileId,
+            String search,
+            Pageable pageable
+    );
+
+    @Query("""
+    {
+      $or: [
+        { "name":  { "$regex": ?0, "$options": "i" } },
+        { "email": { "$regex": ?0, "$options": "i" } }
+      ]
+    }
+    """)
+    Page<ContactUs> findBySearch(String search, Pageable pageable);
+
+    Page<ContactUs> findAll(Pageable pageable);
+
+    Page<ContactUs> findByProfileId(String profileId, Pageable pageable);
 }

@@ -3,30 +3,47 @@ package com.portfolio.repositories;
 import com.portfolio.entities.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 
-@Repository
-public interface ProjectRepository extends JpaRepository<Project, Integer> {
+public interface ProjectRepository extends MongoRepository<Project, String> {
 
-    // Find a project by name within a profile
-    Project findByProjectNameAndProfileId(String projectName, Integer profileId);
+    boolean existsByProjectNameAndProfileId(String projectName, String profileId);
 
-    // Check existence by project name and profile
-    boolean existsByProjectNameAndProfileId(String projectName, Integer profileId);
+    List<Project> findByProfileId(String profileId);
 
-    // Paginated search by profile with optional search text
     @Query("""
-        SELECT p FROM Project p
-        WHERE p.profile.id = :profileId
-          AND (:search IS NULL OR :search = ''
-               OR LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%'))
-               OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%')))
+    {
+      $and: [
+        {
+          $or: [
+            { "projectName": { "$regex": ?1, "$options": "i" } },
+            { "projectDescription": { "$regex": ?1, "$options": "i" } }
+          ]
+        },
+        { "profileId": ?0 }
+      ]
+    }
     """)
-    Page<Project> findByProfileIdWithSearch(Integer profileId, String search, Pageable pageable);
+    Page<Project> findByProfileIdWithSearch(
+            String profileId,
+            String search,
+            Pageable pageable
+    );
 
-    List<Project> findByProfileId(Integer profileId);
+    @Query("""
+    {
+      $or: [
+        { "projectName": { "$regex": ?0, "$options": "i" } },
+        { "projectDescription": { "$regex": ?0, "$options": "i" } }
+      ]
+    }
+    """)
+    Page<Project> findBySearch(String search, Pageable pageable);
+
+    Page<Project> findAll(Pageable pageable);
+
+    Page<Project> findByProfileId(String profileId, Pageable pageable);
 }

@@ -1,30 +1,25 @@
 package com.portfolio.entities;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
+@Document(collection = "password_reset_tokens")
 @Data
 @Builder
-@Table
+@NoArgsConstructor
+@AllArgsConstructor
 public class PasswordResetToken {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
+    private String id;
     private String token;
-
-    @OneToOne
-    private Profile profile;
-
-    private Date expiryDate;
-
+    private String profileId;
+    private LocalDateTime expiryDate;
 }
