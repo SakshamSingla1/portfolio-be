@@ -1,11 +1,15 @@
 package com.portfolio.dtos;
 
-//import com.careHive.entities.ColorTheme;
-//import com.careHive.entities.NavLink;
+import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
+import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.entities.ColorTheme;
+import com.portfolio.entities.NavLink;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -20,7 +24,6 @@ public class LoginResponseDTO {
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
-//    private List<ColorTheme> themes;
-//    private ColorTheme defaultTheme;
-//    private List<NavLink> navLinks;
+    private ColorThemeResponseDTO defaultTheme;
+    private List<NavLinkResponseDTO> navLinks;
 }

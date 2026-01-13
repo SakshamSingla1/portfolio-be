@@ -125,6 +125,14 @@ public class ColorThemeServiceImpl implements ColorThemeService {
     }
 
     @Override
+    public ColorThemeResponseDTO getDefaultTheme() throws GenericException {
+        return repository.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
+                .map(this::mapToResponse)
+                .orElseThrow(() ->
+                        new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "No active default theme found"));
+    }
+
+    @Override
     public String deleteTheme(String id) throws GenericException {
         ColorTheme theme = repository.findById(id)
                 .orElseThrow(() ->
