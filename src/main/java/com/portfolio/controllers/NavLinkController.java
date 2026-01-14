@@ -2,6 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.NavLinks.NavLinkRequestDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/navlinks")
@@ -28,20 +31,22 @@ public class NavLinkController {
         return ApiResponse.respond(responseDTO, "Nav Link created successfully", "Failed to create nav link");
     }
 
-    @PutMapping("/{index}")
+    @PutMapping("/{role}/{index}")
     public ResponseEntity<ResponseModel<NavLinkResponseDTO>> updateNavLink(
+            @PathVariable RoleEnum role,
             @PathVariable String index,
             @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
 
-        NavLinkResponseDTO responseDTO = navLinkService.updateNavLink(index, navLinkRequestDTO);
+        NavLinkResponseDTO responseDTO = navLinkService.updateNavLink(index, role, navLinkRequestDTO);
         return ApiResponse.respond(responseDTO, "Nav Link updated successfully", "Failed to update nav link");
     }
 
-    @DeleteMapping("/{index}")
+    @DeleteMapping("/{role}/{index}")
     public ResponseEntity<ResponseModel<String>> deleteNavLink(
+            @PathVariable RoleEnum role,
             @PathVariable String index) throws GenericException {
 
-        navLinkService.deleteNavLink(index);
+        navLinkService.deleteNavLink(index, role);
 
         return ApiResponse.respond(
                 "OK",
@@ -50,23 +55,31 @@ public class NavLinkController {
         );
     }
 
+    @GetMapping("/role/{role}")
+    public ResponseEntity<ResponseModel<List<NavLinkResponseDTO>>> getNavLinks(@PathVariable RoleEnum role) {
+        List<NavLinkResponseDTO> responseDTO = navLinkService.getNavLinks(role);
+        return ApiResponse.respond(responseDTO, "Nav Links fetched successfully", "Failed to fetch nav links");
+    }
+
     @GetMapping
     public ResponseEntity<ResponseModel<Page<NavLinkResponseDTO>>> getAllNavLinks(
             Pageable pageable,
+            @RequestParam(required = false) RoleEnum role,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir,
             @RequestParam(required = false) StatusEnum status
     ) {
-        Page<NavLinkResponseDTO> responseDTO = navLinkService.getAllNavLinks(pageable, search, status, sortBy, sortDir);
+        Page<NavLinkResponseDTO> responseDTO = navLinkService.getAllNavLinks(pageable, role, search, status, sortBy, sortDir);
         return ApiResponse.respond(responseDTO, "Nav Links fetched successfully", "Failed to fetch nav links");
     }
 
-    @GetMapping("/{index}")
+    @GetMapping("/{role}/{index}")
     public ResponseEntity<ResponseModel<NavLinkResponseDTO>> getNavLink(
+            @PathVariable RoleEnum role,
             @PathVariable String index) throws GenericException {
 
-        NavLinkResponseDTO responseDTO = navLinkService.getNavLink(index);
+        NavLinkResponseDTO responseDTO = navLinkService.getNavLink(role, index);
         return ApiResponse.respond(responseDTO, "Nav Link fetched successfully", "Failed to fetch nav link");
     }
 }

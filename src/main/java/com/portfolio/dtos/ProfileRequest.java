@@ -15,5 +15,10 @@ public class ProfileRequest {
     private String linkedinUrl;
     private String websiteUrl;
     private String profileImageUrl;
+    private String profileImagePublicId;
+
     private String logoUrl;
+    private String logoPublicId;
+
+
 }
