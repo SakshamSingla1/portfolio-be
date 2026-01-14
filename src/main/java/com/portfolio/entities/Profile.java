@@ -31,7 +31,9 @@ public class Profile {
     private String linkedinUrl;
     private String websiteUrl;
     private String profileImageUrl;
+    private String profileImagePublicId;
     private String logoUrl;
+    private String logoPublicId;
     private String role;
     private StatusEnum status;
     private String themeName;

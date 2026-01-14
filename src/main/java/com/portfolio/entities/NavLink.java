@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,8 @@ public class NavLink {
     private String index;
     private String name;
     private String path;
+    private String icon;
+    private RoleEnum role;
     private StatusEnum status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -5,6 +5,7 @@ import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -254,7 +255,7 @@ public class AdminServiceImpl implements AdminService {
         } else {
             defaultTheme = colorThemeService.getDefaultTheme();
         }
-        List<NavLinkResponseDTO> navLinks = navLinkService.getAllNavLinks();
+        List<NavLinkResponseDTO> navLinks = navLinkService.getNavLinks(RoleEnum.valueOf(user.getRole()));
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
