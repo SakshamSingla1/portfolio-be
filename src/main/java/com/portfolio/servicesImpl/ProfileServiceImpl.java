@@ -73,6 +73,7 @@ public class ProfileServiceImpl implements ProfileService {
             existing.setLogoUrl(req.getLogoUrl());
             existing.setLogoPublicId(req.getLogoPublicId());
         }
+        existing.setThemeName(req.getThemeName());
         existing.setUpdatedAt(LocalDateTime.now());
         Profile updated = profileRepository.save(existing);
         return mapToResponse(updated);
@@ -110,12 +111,21 @@ public class ProfileServiceImpl implements ProfileService {
                 .aboutMe(profile.getAboutMe())
                 .email(profile.getEmail())
                 .phone(profile.getPhone())
+                .role(profile.getRole())
+                .status(profile.getStatus())
                 .location(profile.getLocation())
                 .githubUrl(profile.getGithubUrl())
                 .linkedinUrl(profile.getLinkedinUrl())
                 .websiteUrl(profile.getWebsiteUrl())
                 .profileImageUrl(profile.getProfileImageUrl())
+                .profileImagePublicId(profile.getProfileImagePublicId())
                 .logoUrl(profile.getLogoUrl())
+                .logoPublicId(profile.getLogoPublicId())
+                .themeName(profile.getThemeName())
+                .emailVerified(profile.getEmailVerified())
+                .phoneVerified(profile.getPhoneVerified())
+                .createdAt(profile.getCreatedAt())
+                .updatedAt(profile.getUpdatedAt())
                 .build();
     }
 }

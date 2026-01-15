@@ -84,7 +84,11 @@ public class AdminServiceImpl implements AdminService {
         );
         ntService.sendNotification(
                 "OTP-VERIFICATION",
-                Map.of("name", user.getFullName(), "otp", rawOtp),
+                Map.of(
+                        "fullName", user.getFullName(),
+                        "otp", rawOtp,
+                        "expiryMinutes", 5
+                ),
                 user.getEmail()
         );
         return AuthResponseDTO.builder()
@@ -122,7 +126,11 @@ public class AdminServiceImpl implements AdminService {
         );
         ntService.sendNotification(
                 "OTP-VERIFICATION",
-                Map.of("name", user.getFullName(), "otp", rawOtp),
+                Map.of(
+                        "fullName", user.getFullName(),
+                        "otp", rawOtp,
+                        "expiryMinutes", 5
+                ),
                 user.getEmail()
         );
 
@@ -167,7 +175,11 @@ public class AdminServiceImpl implements AdminService {
         );
         ntService.sendNotification(
                 "OTP-VERIFICATION",
-                Map.of("name", user.getFullName(), "otp", rawOtp),
+                Map.of(
+                        "fullName", user.getFullName(),
+                        "otp", rawOtp,
+                        "expiryMinutes", 5
+                ),
                 user.getEmail()
         );
         return "OTP resent successfully";
