@@ -123,6 +123,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .id(resume.getId())
                 .fileName(resume.getFileName())
                 .fileUrl(resume.getFileUrl())
+                .publicId(resume.getPublicId())
                 .status(resume.getStatus())
                 .updatedAt(resume.getUpdatedAt())
                 .build();

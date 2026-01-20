@@ -22,7 +22,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "folder", "portfolio/documents",
-                        "resource_type", "auto",
+                        "resource_type", "raw",
                         "access_mode", "authenticated",
                         "secure", true
                 )
