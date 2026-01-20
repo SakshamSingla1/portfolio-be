@@ -114,6 +114,7 @@ public class ResumeServiceImpl implements ResumeService {
             // log.warn("Cloudinary delete failed for resumeId={}", resumeId, ex);
         }
         resume.setStatus(StatusEnum.DELETED);
+        resume.setUpdatedAt(LocalDateTime.now());
         resumeRepository.save(resume);
     }
 
