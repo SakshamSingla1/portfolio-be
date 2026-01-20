@@ -82,4 +82,10 @@ public interface ResumeRepository extends MongoRepository<Resume, String> {
             String profileId,
             Pageable pageable
     );
+
+    Optional<Resume> findByProfileIdAndPublicIdAndStatus(
+            String profileId,
+            String publicId,
+            StatusEnum status
+    );
 }

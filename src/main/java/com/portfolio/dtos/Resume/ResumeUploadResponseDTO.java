@@ -12,6 +12,7 @@ public class ResumeUploadResponseDTO {
     private String id;
     private String fileName;
     private String fileUrl;
+    private String publicId;
     private StatusEnum status;
     private LocalDateTime updatedAt;
 }
