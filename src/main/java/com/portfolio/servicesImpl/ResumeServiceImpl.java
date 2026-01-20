@@ -1,14 +1,23 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.dtos.Resume.ResumeUploadResponseDTO;
+import com.portfolio.entities.NavLink;
+import com.portfolio.entities.Project;
 import com.portfolio.entities.Resume;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ResumeRepository;
 import com.portfolio.services.CloudinaryService;
 import com.portfolio.services.ResumeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -41,27 +50,41 @@ public class ResumeServiceImpl implements ResumeService {
                 .uploadedAt(LocalDateTime.now())
                 .build();
         Resume saved = resumeRepository.save(resume);
-        return ResumeUploadResponseDTO.builder()
-                .id(saved.getId())
-                .fileName(saved.getFileName())
-                .fileUrl(saved.getFileUrl())
-                .status(saved.getStatus())
-                .uploadedAt(saved.getUploadedAt())
-                .build();
+        return mapToResponse(saved);
     }
 
     @Override
-    public List<ResumeUploadResponseDTO> getResumes(String profileId) {
-        return resumeRepository.findByProfileIdAndStatusNotOrderByUploadedAtDesc(profileId,StatusEnum.DELETED)
-                .stream()
-                .map(r -> ResumeUploadResponseDTO.builder()
-                        .id(r.getId())
-                        .fileUrl(r.getFileUrl())
-                        .fileName(r.getFileName())
-                        .status(r.getStatus())
-                        .uploadedAt(r.getUploadedAt())
-                        .build())
-                .toList();
+    public Page<ResumeUploadResponseDTO> getByProfile(String profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy){
+        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
+                        ? Sort.Direction.DESC : Sort.Direction.ASC,
+                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                sort
+        );
+        boolean hasSearch = search != null && !search.isBlank();
+        boolean hasStatus = status != null;
+        boolean hasProfileId = profileId != null;
+        Page<Resume> resumes;
+        if(hasStatus && hasSearch && hasProfileId){
+            resumes = resumeRepository.searchByProfileIdAndStatus(search,status,profileId,sortedPageable);
+        }else if(hasStatus && hasSearch){
+            resumes = resumeRepository.searchByStatus(search,status,sortedPageable);
+        }else if(hasSearch && hasProfileId){
+            resumes = resumeRepository.searchByProfileId(search,profileId,sortedPageable);
+        }else if(hasStatus && hasProfileId){
+            resumes = resumeRepository.findByStatusAndProfileId(status,profileId,sortedPageable);
+        }else if(hasStatus){
+            resumes = resumeRepository.findByStatus(status,sortedPageable);
+        }else if(hasProfileId){
+            resumes = resumeRepository.findByProfileId(profileId,sortedPageable);
+        }else if(hasSearch){
+            resumes = resumeRepository.search(search,sortedPageable);
+        }else{
+            resumes = resumeRepository.findAll(sortedPageable);
+        }
+        return resumes.map(this::mapToResponse);
     }
 
     @Override
@@ -91,6 +114,16 @@ public class ResumeServiceImpl implements ResumeService {
         }
         resume.setStatus(StatusEnum.DELETED);
         resumeRepository.save(resume);
+    }
+
+    private ResumeUploadResponseDTO mapToResponse(Resume resume){
+        return ResumeUploadResponseDTO.builder()
+                .id(resume.getId())
+                .fileName(resume.getFileName())
+                .fileUrl(resume.getFileUrl())
+                .status(resume.getStatus())
+                .uploadedAt(resume.getUploadedAt())
+                .build();
     }
 
 }
