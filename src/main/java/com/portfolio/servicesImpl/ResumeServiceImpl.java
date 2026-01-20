@@ -47,7 +47,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .fileUrl(uploadResult.get("secure_url").toString())
                 .publicId(uploadResult.get("public_id").toString())
                 .status(StatusEnum.ACTIVE)
-                .uploadedAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         Resume saved = resumeRepository.save(resume);
         return mapToResponse(saved);
@@ -97,6 +97,7 @@ public class ResumeServiceImpl implements ResumeService {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND,"Resume not found"));
         resume.setStatus(StatusEnum.ACTIVE);
+        resume.setUpdatedAt(LocalDateTime.now());
         resumeRepository.save(resume);
     }
 
@@ -122,7 +123,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .fileName(resume.getFileName())
                 .fileUrl(resume.getFileUrl())
                 .status(resume.getStatus())
-                .uploadedAt(resume.getUploadedAt())
+                .updatedAt(resume.getUpdatedAt())
                 .build();
     }
 

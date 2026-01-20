@@ -23,5 +23,5 @@ public class Resume {
     private String fileUrl;
     private String publicId;
     private StatusEnum status;
-    private LocalDateTime uploadedAt;
+    private LocalDateTime updatedAt;
 }

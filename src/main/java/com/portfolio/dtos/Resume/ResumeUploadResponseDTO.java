@@ -13,5 +13,5 @@ public class ResumeUploadResponseDTO {
     private String fileName;
     private String fileUrl;
     private StatusEnum status;
-    private LocalDateTime uploadedAt;
+    private LocalDateTime updatedAt;
 }
