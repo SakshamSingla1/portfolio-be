@@ -56,9 +56,6 @@ public class ProfileServiceImpl implements ProfileService {
         existing.setEmail(req.getEmail());
         existing.setPhone(req.getPhone());
         existing.setLocation(req.getLocation());
-        existing.setGithubUrl(req.getGithubUrl());
-        existing.setLinkedinUrl(req.getLinkedinUrl());
-        existing.setWebsiteUrl(req.getWebsiteUrl());
         if (!Objects.equals(existing.getProfileImagePublicId(), req.getProfileImagePublicId())) {
             if (existing.getProfileImagePublicId() != null) {
                 cloudinaryService.deleteFile(existing.getProfileImagePublicId());
@@ -114,9 +111,6 @@ public class ProfileServiceImpl implements ProfileService {
                 .role(profile.getRole())
                 .status(profile.getStatus())
                 .location(profile.getLocation())
-                .githubUrl(profile.getGithubUrl())
-                .linkedinUrl(profile.getLinkedinUrl())
-                .websiteUrl(profile.getWebsiteUrl())
                 .profileImageUrl(profile.getProfileImageUrl())
                 .profileImagePublicId(profile.getProfileImagePublicId())
                 .logoUrl(profile.getLogoUrl())
