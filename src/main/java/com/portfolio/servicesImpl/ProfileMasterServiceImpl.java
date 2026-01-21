@@ -24,7 +24,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService{
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host) throws GenericException {
-        Profile profile = profileRepository.findByWebsiteUrl(host)
+        Profile profile = profileRepository.findByUserName(host)
                 .orElseThrow(() ->
                         new GenericException(
                                 ExceptionCodeEnum.BAD_REQUEST,
