@@ -13,7 +13,5 @@ public interface ProfileRepository extends MongoRepository<Profile, String> {
 
     Optional<Profile> findByPhone(String phone);
 
-    Optional<Profile> findByWebsiteUrl(String websiteUrl);
-
     Optional<Profile> findByUserName(String userName);
 }

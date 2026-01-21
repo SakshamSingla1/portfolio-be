@@ -27,9 +27,6 @@ public class Profile {
     private String phone;
     private String location;
     private String password;
-    private String githubUrl;
-    private String linkedinUrl;
-    private String websiteUrl;
     private String profileImageUrl;
     private String profileImagePublicId;
     private String logoUrl;
