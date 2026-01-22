@@ -1,5 +1,6 @@
 package com.portfolio.dtos;
 
+import com.portfolio.dtos.ProjectImages.ProjectImageRequest;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.enums.WorkStatusEnum;
 import lombok.Builder;
@@ -11,6 +12,7 @@ import java.util.List;
 @Data
 @Builder
 public class ProjectResponse {
+
     private String id;
     private String projectName;
     private String projectDescription;
@@ -18,6 +20,6 @@ public class ProjectResponse {
     private LocalDate projectStartDate;
     private LocalDate projectEndDate;
     private WorkStatusEnum workStatus;
-    private String projectImageUrl;
     private List<SkillDropdown> skills;
+    private List<ProjectImageRequest> projectImages;
 }
