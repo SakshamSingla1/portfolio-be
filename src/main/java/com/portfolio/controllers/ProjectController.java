@@ -1,5 +1,6 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dtos.ImageUploadResponse;
 import com.portfolio.dtos.ProjectRequest;
 import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.enums.StatusEnum;
@@ -16,6 +17,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v1/project")
@@ -79,5 +83,18 @@ public class ProjectController {
             @RequestParam(required = false, defaultValue = "desc") String sortDir) {
         Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search,sortDir,sortBy);
         return ApiResponse.successResponse(projects, "Projects fetched successfully");
+    }
+
+    @Operation(summary = "Upload a project image")
+    @PostMapping("/{profileId}/images")
+    public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProjectImage(
+            @PathVariable String profileId,
+            @RequestParam("file") MultipartFile file
+    ) throws IOException, GenericException {
+        return ApiResponse.respond(
+                projectService.uploadProjectImage(profileId, file),
+                "Project image uploaded successfully",
+                "Failed to upload project image"
+        );
     }
 }
