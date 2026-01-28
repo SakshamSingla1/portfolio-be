@@ -1,6 +1,6 @@
 package com.portfolio.repositories;
 
-import com.portfolio.entities.Testimonial;
+import com.portfolio.entities.Achievements;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -8,22 +8,22 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface TestimonialRepository extends MongoRepository<Testimonial, String> {
+public interface AchievementRepository extends MongoRepository<Achievements, String> {
+
     @Query("""
     {
       $and: [
         {
           $or: [
-            { "name":  { "$regex": ?1, "$options": "i" } },
-            { "company": { "$regex": ?1, "$options": "i" } },
-            { "role": { "$regex": ?1, "$options": "i" } },
+            { "title":  { "$regex": ?1, "$options": "i" } },
+            { "issuer": { "$regex": ?1, "$options": "i" } }
           ]
         },
         { "profileId": ?0 }
       ]
     }
     """)
-    Page<Testimonial> findByProfileIdWithSearch(
+    Page<Achievements> findByProfileIdWithSearch(
             String profileId,
             String search,
             Pageable pageable
@@ -32,17 +32,16 @@ public interface TestimonialRepository extends MongoRepository<Testimonial, Stri
     @Query("""
     {
       $or: [
-        { "name":  { "$regex": ?1, "$options": "i" } },
-        { "company": { "$regex": ?1, "$options": "i" } },
-        { "role": { "$regex": ?1, "$options": "i" } },
+        { "title":  { "$regex": ?0, "$options": "i" } },
+        { "issuer": { "$regex": ?0, "$options": "i" } }
       ]
     }
     """)
-    Page<Testimonial> findBySearch(String search, Pageable pageable);
+    Page<Achievements> findBySearch(String search, Pageable pageable);
 
-    Page<Testimonial> findAll(Pageable pageable);
+    Page<Achievements> findAll(Pageable pageable);
 
-    Page<Testimonial> findByProfileId(String profileId, Pageable pageable);
+    Page<Achievements> findByProfileId(String profileId, Pageable pageable);
 
     boolean existsByProfileIdAndOrder(String profileId, String order);
 
