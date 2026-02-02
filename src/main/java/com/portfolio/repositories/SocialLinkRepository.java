@@ -8,15 +8,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SocialLinkRepository extends MongoRepository<SocialLinks,String> {
-    List<SocialLinks> getByProfileId(String profileId);
 
-    Optional<SocialLinks> findByPlatform(PlatformEnum platform);
+    Optional<SocialLinks> findByPlatformAndUrl(PlatformEnum platform,String url);
 
     Optional<SocialLinks> findByProfileIdAndPlatformAndStatus(String profileId,PlatformEnum platform,StatusEnum status);
 
@@ -86,4 +84,6 @@ public interface SocialLinkRepository extends MongoRepository<SocialLinks,String
             String profileId,
             Pageable pageable
     );
+
+    List<SocialLinks> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
 }
