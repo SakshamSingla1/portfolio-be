@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/api/v1/project")
+@RequestMapping("/api/v1/projects")
 @Tag(name = "Projects", description = "APIs for managing Projects")
 @RequiredArgsConstructor
 public class ProjectController {

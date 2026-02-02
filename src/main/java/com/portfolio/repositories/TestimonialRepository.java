@@ -1,11 +1,15 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Testimonial;
+import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface TestimonialRepository extends MongoRepository<Testimonial, String> {
@@ -47,4 +51,6 @@ public interface TestimonialRepository extends MongoRepository<Testimonial, Stri
     boolean existsByProfileIdAndOrder(String profileId, String order);
 
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
+
+    List<Testimonial> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
 }

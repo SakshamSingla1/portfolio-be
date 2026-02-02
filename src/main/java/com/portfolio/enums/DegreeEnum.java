@@ -4,6 +4,7 @@ public enum DegreeEnum {
     HIGH_SCHOOL("10th"),
     SENIOR_SECONDARY("12th"),
     BACHELORS("Bachelors"),
+    BTECH("Bachelors of Technology"),
     MASTERS("Masters"),
     DIPLOMA("Diploma"),
     PHD("PhD"),
