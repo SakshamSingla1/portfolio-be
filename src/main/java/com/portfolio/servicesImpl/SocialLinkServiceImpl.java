@@ -2,6 +2,7 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
+import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -76,11 +77,12 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public List<SocialLinkResponseDTO> getAllSocialLinks(String profileId) {
-        return socialLinkRepository.getByProfileId(profileId)
+    public List<SocialLinkResponseDTO> getByProfile(String profileId) {
+        return socialLinkRepository
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -1,10 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.dtos.ImageUploadResponse;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.TestimonialRepository;
 import com.portfolio.repositories.ProfileRepository;
@@ -17,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -109,6 +112,14 @@ public class TestimonialServiceImpl implements TestimonialService {
         }
         testimonialRepository.deleteById(id);
         return null;
+    }
+
+    public List<TestimonialResponseDTO> getByProfile(String profileId) {
+        return testimonialRepository
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     @Override
