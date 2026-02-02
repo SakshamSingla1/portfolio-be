@@ -1,10 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Certifications.CertificationRequestDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
 import com.portfolio.dtos.ImageUploadResponse;
 import com.portfolio.entities.Certifications;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.CertificationsRepository;
 import com.portfolio.repositories.ProfileRepository;
@@ -17,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -118,6 +121,14 @@ public class CertificationServiceImpl implements CertificationService {
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         Map uploadResult = cloudinaryService.uploadFile(file);
         return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+    }
+
+    public List<CertificationResponseDTO> getByProfile(String profileId) {
+        return certificationsRepository
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private CertificationResponseDTO mapToResponse(Certifications c) {

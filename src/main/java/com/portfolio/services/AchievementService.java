@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface AchievementService {
     AchievementResponseDTO createAchievement(AchievementRequestDTO AchievementRequestDTO) throws GenericException;
@@ -17,4 +18,5 @@ public interface AchievementService {
     Page<AchievementResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable);
     Void deleteById(String id) throws GenericException;
     ImageUploadResponse uploadImage(String id,MultipartFile file) throws GenericException, IOException;
+    List<AchievementResponseDTO> getByProfile(String profileId);
 }

@@ -1,11 +1,14 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Achievements;
+import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface AchievementRepository extends MongoRepository<Achievements, String> {
@@ -46,4 +49,6 @@ public interface AchievementRepository extends MongoRepository<Achievements, Str
     boolean existsByProfileIdAndOrder(String profileId, String order);
 
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
+
+    List<Achievements> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum status);
 }

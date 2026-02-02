@@ -1,11 +1,15 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Certifications;
+import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
 
 @Repository
 public interface CertificationsRepository extends MongoRepository<Certifications, String> {
@@ -46,4 +50,6 @@ public interface CertificationsRepository extends MongoRepository<Certifications
     boolean existsByProfileIdAndOrder(String profileId, String order);
 
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
+
+    List<Certifications> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
 }
