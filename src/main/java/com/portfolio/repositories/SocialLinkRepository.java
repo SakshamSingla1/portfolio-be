@@ -86,4 +86,9 @@ public interface SocialLinkRepository extends MongoRepository<SocialLinks,String
     );
 
     List<SocialLinks> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
+
+    Optional<SocialLinks> findPortfolioUrlByPlatformAndStatus(
+            PlatformEnum platform,
+            StatusEnum status
+    );
 }

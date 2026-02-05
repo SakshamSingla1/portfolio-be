@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/contact-us")
+@RequestMapping("/api/v1/public/contact-us")
 @Tag(name = "Contact Us", description = "Endpoints for managing Contact Us messages")
 public class ContactUsController {
 
