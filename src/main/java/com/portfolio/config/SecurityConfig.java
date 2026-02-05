@@ -12,7 +12,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -39,6 +38,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
@@ -48,38 +48,48 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/health",
-                                "/api/v1/**",
+                                "/api/v1/public/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration config = new CorsConfiguration();
-
-        List<String> allowedOrigins =
-                Arrays.stream(frontendUrls.split(","))
-                        .map(String::trim)
-                        .toList();
-
-        config.setAllowedOrigins(allowedOrigins);
-        config.setAllowedMethods(List.of(
+        CorsConfiguration publicApi = new CorsConfiguration();
+        publicApi.setAllowedOriginPatterns(List.of("*"));
+        publicApi.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
+        publicApi.setAllowedHeaders(List.of("*"));
+        publicApi.setAllowCredentials(false);
+
+        CorsConfiguration adminApi = new CorsConfiguration();
+        adminApi.setAllowedOrigins(
+                Arrays.stream(frontendUrls.split(","))
+                        .map(String::trim)
+                        .toList()
+        );
+        adminApi.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+        adminApi.setAllowedHeaders(List.of("*"));
+        adminApi.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
 
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/api/v1/public/**", publicApi);
+        source.registerCorsConfiguration("/api/v1/**", adminApi);
 
         return source;
     }
