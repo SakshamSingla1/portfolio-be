@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/profile-master")
+@RequestMapping("/api/v1/public/profile-master")
 @Tag(name = "Profile Master", description = "APIs for managing Profile Master details")
 @RequiredArgsConstructor
 public class ProfileMasterController {
