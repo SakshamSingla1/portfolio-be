@@ -23,6 +23,9 @@ public class ProfileResponse {
     private String profileImageUrl;
     private String profileImagePublicId;
 
+    private String aboutMeImageUrl;
+    private String aboutMeImagePublicId;
+
     private String logoUrl;
     private String logoPublicId;
 
