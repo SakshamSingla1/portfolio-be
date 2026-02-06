@@ -53,6 +53,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .profileId(req.getProfileId())
                 .projectName(req.getProjectName())
                 .projectDescription(req.getProjectDescription())
+                .githubRepositories(req.getGithubRepositories())
                 .projectLink(req.getProjectLink())
                 .projectStartDate(req.getProjectStartDate())
                 .projectEndDate(
@@ -78,6 +79,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
         project.setProjectName(req.getProjectName());
         project.setProjectDescription(req.getProjectDescription());
+        project.setGithubRepositories(req.getGithubRepositories());
         project.setProjectLink(req.getProjectLink());
         project.setProjectStartDate(req.getProjectStartDate());
         project.setProjectEndDate(
@@ -176,6 +178,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .id(project.getId())
                 .projectName(project.getProjectName())
                 .projectDescription(project.getProjectDescription())
+                .githubRepositories(project.getGithubRepositories())
                 .projectLink(project.getProjectLink())
                 .projectStartDate(project.getProjectStartDate())
                 .projectEndDate(project.getProjectEndDate())
