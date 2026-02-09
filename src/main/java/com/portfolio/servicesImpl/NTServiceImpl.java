@@ -104,13 +104,13 @@ public class NTServiceImpl implements NTService {
     @Override
     public void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException {
         NotificationTemplate template = ntRepository.findByName(templateName)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND,"Template not found: " + templateName));
-        String body = template.getBody();
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Template not found: " + templateName));
         String subject = template.getSubject();
+        String body = template.getBody();
         for (Map.Entry<String, Object> entry : variables.entrySet()) {
-            String key = "{{" + entry.getKey() + "}}";
-            subject = subject.replace(key, String.valueOf(entry.getValue()));
-            body = body.replace(key, String.valueOf(entry.getValue()));
+            String value = entry.getValue() == null ? "" : entry.getValue().toString();
+            subject = subject.replace("{{" + entry.getKey() + "}}", value);
+            body = body.replace("{{" + entry.getKey() + "}}", value);
         }
         emailService.sendEmail(toEmail, subject, body);
     }
