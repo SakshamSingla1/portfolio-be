@@ -20,64 +20,100 @@ import java.util.stream.Collectors;
 public class NavLinkServiceImpl implements NavLinkService {
 
     private final NavLinkRepository navLinkRepository;
+
     public NavLinkServiceImpl(NavLinkRepository navLinkRepository) {
         this.navLinkRepository = navLinkRepository;
     }
 
     @Override
     public NavLinkResponseDTO createNavLink(NavLinkRequestDTO request) throws GenericException {
-        if (request == null) {
-            throw new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND, "Request is null");
+
+        if (request == null || request.getRoles() == null || request.getRoles().isEmpty()) {
+            throw new GenericException(
+                    ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
+                    "Request or roles cannot be null"
+            );
         }
 
-        if (navLinkRepository.existsByRoleAndIndex(request.getRole(), request.getIndex())) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_NAV_LINK,"NavLink already exists for this role and index");
+        for (String role : request.getRoles()) {
+            RoleEnum.valueOf(role);
+
+            if (navLinkRepository.existsByRolesContainingAndIndex(role, request.getIndex())) {
+                throw new GenericException(
+                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
+                        "NavLink already exists for role and index"
+                );
+            }
+
+            if (navLinkRepository.existsByRolesContainingAndPath(role, request.getPath())) {
+                throw new GenericException(
+                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
+                        "Path already exists for role"
+                );
+            }
         }
 
-        if (navLinkRepository.existsByRoleAndPath(request.getRole(), request.getPath())) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_NAV_LINK,"Path already exists for this role");
-        }
         NavLink navLink = NavLink.builder()
-                .role(request.getRole())
+                .roles(request.getRoles())
                 .index(request.getIndex())
                 .name(request.getName())
                 .path(request.getPath())
-                .status(StatusEnum.ACTIVE)
+                .icon(request.getIcon())
+                .status(request.getStatus() != null ? request.getStatus() : StatusEnum.ACTIVE)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
-        navLinkRepository.save(navLink);
 
+        navLinkRepository.save(navLink);
         return toResponseDTO(navLink);
     }
 
     @Override
-    public NavLinkResponseDTO updateNavLink(String roleIndex, RoleEnum role, NavLinkRequestDTO request) throws GenericException {
-        NavLink existing = navLinkRepository.findByRoleAndIndex(role, roleIndex)
+    public NavLinkResponseDTO updateNavLink(String id, NavLinkRequestDTO request)
+            throws GenericException {
+
+        NavLink existing = navLinkRepository.findById(id)
                 .orElseThrow(() -> new GenericException(
-                        ExceptionCodeEnum.NAV_LINK_NOT_FOUND, "Nav Link not found"
+                        ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
+                        "Nav Link not found"
                 ));
-        NavLink pathConflict = navLinkRepository.findByRoleAndPath(role, request.getPath())
-                .orElse(null);
-        if (pathConflict != null && !pathConflict.getId().equals(existing.getId())) {
-            throw new GenericException(
-                    ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                    "Path already exists for this role"
-            );
+
+        List<String> effectiveRoles =
+                request.getRoles() != null ? request.getRoles() : existing.getRoles();
+
+        for (String role : effectiveRoles) {
+            RoleEnum.valueOf(role);
+
+            navLinkRepository
+                    .findByRolesContainingAndPath(role, request.getPath())
+                    .filter(conflict -> !conflict.getId().equals(existing.getId()))
+                    .ifPresent(conflict -> {
+                        throw new RuntimeException(
+                                new GenericException(
+                                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
+                                        "Path already exists for role"
+                                )
+                        );
+                    });
+
+            navLinkRepository
+                    .findByRolesContainingAndIndex(role, request.getIndex())
+                    .filter(conflict -> !conflict.getId().equals(existing.getId()))
+                    .ifPresent(conflict -> {
+                        throw new RuntimeException(
+                                new GenericException(
+                                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
+                                        "Index already exists for role"
+                                )
+                        );
+                    });
         }
-        NavLink indexConflict = navLinkRepository
-                .findByRoleAndIndex(request.getRole(), request.getIndex())
-                .orElse(null);
-        if (indexConflict != null && !indexConflict.getId().equals(existing.getId())) {
-            throw new GenericException(
-                    ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                    "Index already exists for this role"
-            );
-        }
+
         existing.setName(request.getName());
         existing.setIndex(request.getIndex());
         existing.setPath(request.getPath());
-        existing.setRole(request.getRole());
+        existing.setIcon(request.getIcon());
+        existing.setRoles(effectiveRoles);
         existing.setStatus(request.getStatus());
         existing.setUpdatedAt(LocalDateTime.now());
 
@@ -86,68 +122,114 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
-    public void deleteNavLink(String roleIndex, RoleEnum role) throws GenericException {
-        NavLink navLink = navLinkRepository.findByRoleAndIndex(role, roleIndex)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND, "Nav Link not found"));
-        navLinkRepository.delete(navLink);
+    public void deleteNavLink(String id) throws GenericException {
+
+        NavLink navLink = navLinkRepository.findById(id)
+                .orElseThrow(() -> new GenericException(
+                        ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
+                        "Nav Link not found"
+                ));
+
+        navLink.setStatus(StatusEnum.INACTIVE);
+        navLink.setUpdatedAt(LocalDateTime.now());
+        navLinkRepository.save(navLink);
     }
 
     @Override
-    public List<NavLinkResponseDTO> getNavLinks(RoleEnum role) {
-        List<NavLink> navLinks = navLinkRepository.findByRole(role);
-        return navLinks.stream().map(this::toResponseDTO).collect(Collectors.toList());
+    public List<NavLinkResponseDTO> getNavLinks(String role) {
+
+        RoleEnum.valueOf(role);
+
+        return navLinkRepository.findByRolesContaining(role)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     public Page<NavLinkResponseDTO> getAllNavLinks(
-            Pageable pageable, RoleEnum role, String search, StatusEnum status, String sortBy, String sortDir) {
-        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
+            Pageable pageable,
+            String role,
+            String search,
+            StatusEnum status,
+            String sortBy,
+            String sortDir
+    ) {
+
+        Sort sort = Sort.by(
+                "desc".equalsIgnoreCase(sortDir)
+                        ? Sort.Direction.DESC
+                        : Sort.Direction.ASC,
+                (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy
+        );
+
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort
         );
+
         boolean hasSearch = search != null && !search.isBlank();
         boolean hasStatus = status != null;
-        boolean hasRole = role != null;
+        boolean hasRole = role != null && !role.isBlank();
 
-        Page<NavLink> navlinks;
-        if(hasStatus && hasSearch && hasRole){
-            navlinks = navLinkRepository.searchByRoleAndStatus(search,status,role,sortedPageable);
-        }else if(hasStatus && hasSearch){
-            navlinks = navLinkRepository.searchByStatus(search,status,sortedPageable);
-        }else if(hasSearch && hasRole){
-            navlinks = navLinkRepository.searchByRole(search,role,sortedPageable);
-        }else if(hasStatus && hasRole){
-            navlinks = navLinkRepository.findByStatusAndRole(status,role,sortedPageable);
-        }else if(hasStatus){
-            navlinks = navLinkRepository.findByStatus(status,sortedPageable);
-        }else if(hasRole){
-            navlinks = navLinkRepository.findByRole(role,sortedPageable);
-        }else if(hasSearch){
-            navlinks = navLinkRepository.search(search,sortedPageable);
-        }else{
-            navlinks = navLinkRepository.findAll(sortedPageable);
+        Page<NavLink> navLinks;
+
+        if (hasSearch && hasStatus && hasRole) {
+            navLinks = navLinkRepository.searchByRoleAndStatus(
+                    search, status, role, sortedPageable
+            );
+        } else if (hasSearch && hasStatus) {
+            navLinks = navLinkRepository.searchByStatus(
+                    search, status, sortedPageable
+            );
+        } else if (hasSearch && hasRole) {
+            navLinks = navLinkRepository.searchByRole(
+                    search, role, sortedPageable
+            );
+        } else if (hasStatus && hasRole) {
+            navLinks = navLinkRepository.findByStatusAndRolesContaining(
+                    status, role, sortedPageable
+            );
+        } else if (hasStatus) {
+            navLinks = navLinkRepository.findByStatus(
+                    status, sortedPageable
+            );
+        } else if (hasRole) {
+            navLinks = navLinkRepository.findByRolesContaining(
+                    role, sortedPageable
+            );
+        } else if (hasSearch) {
+            navLinks = navLinkRepository.search(
+                    search, sortedPageable
+            );
+        } else {
+            navLinks = navLinkRepository.findAll(sortedPageable);
         }
-        return navlinks.map(this::toResponseDTO);
+
+        return navLinks.map(this::toResponseDTO);
     }
 
     @Override
-    public NavLinkResponseDTO getNavLink(RoleEnum role, String roleIndex) throws GenericException {
-        NavLink navLink = navLinkRepository.findByRoleAndIndex(role, roleIndex)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND, "Nav Link not found"));
+    public NavLinkResponseDTO getNavLink(String id) throws GenericException {
+
+        NavLink navLink = navLinkRepository.findById(id)
+                .orElseThrow(() -> new GenericException(
+                        ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
+                        "Nav Link not found"
+                ));
+
         return toResponseDTO(navLink);
     }
 
     private NavLinkResponseDTO toResponseDTO(NavLink navLink) {
         return NavLinkResponseDTO.builder()
                 .id(navLink.getId())
-                .role(navLink.getRole())
+                .roles(navLink.getRoles())
                 .index(navLink.getIndex())
                 .name(navLink.getName())
                 .path(navLink.getPath())
+                .icon(navLink.getIcon())
                 .status(navLink.getStatus())
                 .createdAt(navLink.getCreatedAt())
                 .updatedAt(navLink.getUpdatedAt())
