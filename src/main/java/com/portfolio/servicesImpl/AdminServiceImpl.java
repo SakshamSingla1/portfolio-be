@@ -267,7 +267,7 @@ public class AdminServiceImpl implements AdminService {
         } else {
             defaultTheme = colorThemeService.getDefaultTheme();
         }
-        List<NavLinkResponseDTO> navLinks = navLinkService.getNavLinks(RoleEnum.valueOf(user.getRole()));
+        List<NavLinkResponseDTO> navLinks = navLinkService.getNavLinks(user.getRole());
 
         return LoginResponseDTO.builder()
                 .id(user.getId())

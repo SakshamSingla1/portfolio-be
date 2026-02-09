@@ -11,31 +11,36 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
-
 @Repository
 public interface NavLinkRepository extends MongoRepository<NavLink, String> {
 
-    boolean existsByRoleAndIndex(RoleEnum role, String index);
-    boolean existsByRoleAndPath(RoleEnum role, String path);
+    boolean existsByRolesContainingAndIndex(String role, String index);
 
-    Optional<NavLink> findByRoleAndIndex(RoleEnum role, String index);
-    Optional<NavLink> findByRoleAndPath(RoleEnum role, String path);
+    boolean existsByRolesContainingAndPath(String role, String path);
 
-    List<NavLink> findByRole(RoleEnum role);
+    Optional<NavLink> findByRolesContainingAndIndex(String role, String index);
+
+    Optional<NavLink> findByRolesContainingAndPath(String role, String path);
+
+    List<NavLink> findByRolesContaining(String role);
 
     Page<NavLink> findAll(Pageable pageable);
 
     Page<NavLink> findByStatus(StatusEnum status, Pageable pageable);
 
-    Page<NavLink> findByRole(RoleEnum role, Pageable pageable);
+    Page<NavLink> findByRolesContaining(String role, Pageable pageable);
 
-    Page<NavLink> findByStatusAndRole(StatusEnum status, RoleEnum role, Pageable pageable);
+    Page<NavLink> findByStatusAndRolesContaining(
+            StatusEnum status,
+            String role,
+            Pageable pageable
+    );
 
     @Query("""
     {
       $or: [
-        { "label": { $regex: ?0, $options: "i" } },
-        { "path": { $regex: ?0, $options: "i" } },
+        { "name": { $regex: ?0, $options: "i" } },
+        { "path": { $regex: ?0, $options: "i" } }
       ]
     }
     """)
@@ -46,49 +51,57 @@ public interface NavLinkRepository extends MongoRepository<NavLink, String> {
       $and: [
         {
           $or: [
-            { "label": { $regex: ?0, $options: "i" } },
-            { "path": { $regex: ?0, $options: "i" } },
+            { "name": { $regex: ?0, $options: "i" } },
+            { "path": { $regex: ?0, $options: "i" } }
           ]
         },
         { "status": ?1 }
       ]
     }
     """)
-    Page<NavLink> searchByStatus(String search, StatusEnum status, Pageable pageable);
+    Page<NavLink> searchByStatus(
+            String search,
+            StatusEnum status,
+            Pageable pageable
+    );
 
     @Query("""
     {
       $and: [
         {
           $or: [
-            { "label": { $regex: ?0, $options: "i" } },
-            { "path": { $regex: ?0, $options: "i" } },
+            { "name": { $regex: ?0, $options: "i" } },
+            { "path": { $regex: ?0, $options: "i" } }
           ]
         },
-        { "role": ?1 }
+        { "roles": ?1 }
       ]
     }
     """)
-    Page<NavLink> searchByRole(String search, RoleEnum role, Pageable pageable);
+    Page<NavLink> searchByRole(
+            String search,
+            String role,
+            Pageable pageable
+    );
 
     @Query("""
     {
       $and: [
         {
           $or: [
-            { "label": { $regex: ?0, $options: "i" } },
-            { "path": { $regex: ?0, $options: "i" } },
+            { "name": { $regex: ?0, $options: "i" } },
+            { "path": { $regex: ?0, $options: "i" } }
           ]
         },
         { "status": ?1 },
-        { "role": ?2 }
+        { "roles": ?2 }
       ]
     }
     """)
     Page<NavLink> searchByRoleAndStatus(
             String search,
             StatusEnum status,
-            RoleEnum role,
+            String role,
             Pageable pageable
     );
 }

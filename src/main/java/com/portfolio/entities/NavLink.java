@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,7 +24,7 @@ public class NavLink {
     private String name;
     private String path;
     private String icon;
-    private RoleEnum role;
+    private List<String> roles;
     private StatusEnum status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
