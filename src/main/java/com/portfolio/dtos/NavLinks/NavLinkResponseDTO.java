@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -15,7 +16,7 @@ public class NavLinkResponseDTO {
     private String name;
     private String path;
     private String icon;
-    private RoleEnum role;
+    private List<String> roles;
     private StatusEnum status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
