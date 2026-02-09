@@ -63,6 +63,13 @@ public class ProfileServiceImpl implements ProfileService {
             existing.setProfileImageUrl(req.getProfileImageUrl());
             existing.setProfileImagePublicId(req.getProfileImagePublicId());
         }
+        if (!Objects.equals(existing.getAboutMeImageUrl(), req.getAboutMeImagePublicId())) {
+            if (existing.getAboutMeImageUrl() != null) {
+                cloudinaryService.deleteFile(existing.getAboutMeImagePublicId());
+            }
+            existing.setAboutMeImageUrl(req.getAboutMeImageUrl());
+            existing.setAboutMeImagePublicId(req.getAboutMeImagePublicId());
+        }
         if (!Objects.equals(existing.getLogoPublicId(), req.getLogoPublicId())) {
             if (existing.getLogoPublicId() != null) {
                 cloudinaryService.deleteFile(existing.getLogoPublicId());
@@ -78,6 +85,17 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ImageUploadResponse uploadProfileImage(
+            String profileId,
+            MultipartFile file
+    ) throws IOException, GenericException {
+        profileRepository.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+        Map uploadResult = cloudinaryService.uploadProfileImage(file);
+        return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+    }
+
+    @Override
+    public ImageUploadResponse uploadAboutMeImage(
             String profileId,
             MultipartFile file
     ) throws IOException, GenericException {
@@ -113,6 +131,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .location(profile.getLocation())
                 .profileImageUrl(profile.getProfileImageUrl())
                 .profileImagePublicId(profile.getProfileImagePublicId())
+                .aboutMeImageUrl(profile.getAboutMeImageUrl())
+                .aboutMeImagePublicId(profile.getAboutMeImagePublicId())
                 .logoUrl(profile.getLogoUrl())
                 .logoPublicId(profile.getLogoPublicId())
                 .themeName(profile.getThemeName())
