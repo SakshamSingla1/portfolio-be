@@ -42,19 +42,27 @@ public class ContactUsService {
                 .build();
         ContactUs saved = contactUsRepository.save(contact);
         if (profile.getEmail() != null) {
-            ntService.sendNotification(
-                    "CONTACT-US",
-                    Map.of(
-                            "profileName", profile.getFullName(),
-                            "senderName", request.getName(),
-                            "senderEmail", request.getEmail(),
-                            "senderPhone", request.getPhone(),
-                            "message", request.getMessage()
-                    ),
-                    profile.getEmail()
-            );
+            try {
+                ntService.sendNotification(
+                        "CONTACT-US",
+                        Map.of(
+                                "profileName", safe(profile.getFullName()),
+                                "senderName", safe(request.getName()),
+                                "senderEmail", safe(request.getEmail()),
+                                "senderPhone", safe(request.getPhone()),
+                                "message", safe(request.getMessage())
+                        ),
+                        profile.getEmail()
+                );
+            } catch (Exception e) {
+                e.getMessage();
+            }
         }
         return toDto(saved);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 
     public Page<ContactUsResponse> getContactUsByProfileId(String profileId, Pageable pageable, String search,String sortBy, String sortDir) throws GenericException {
