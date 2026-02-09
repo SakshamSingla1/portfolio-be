@@ -56,4 +56,5 @@ public class EmailServiceImpl implements EmailService {
             throw new RuntimeException("Failed to send email via Resend: " + e.getMessage(), e);
         }
     }
+
 }

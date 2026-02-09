@@ -12,5 +12,6 @@ public interface ProfileService {
     ProfileResponse get(String id) throws GenericException;
     ProfileResponse update(String id, ProfileRequest request) throws GenericException, IOException;
     ImageUploadResponse uploadProfileImage(String profileId, MultipartFile file) throws IOException, GenericException;
+    ImageUploadResponse uploadAboutMeImage(String profileId, MultipartFile file) throws IOException, GenericException;
     ImageUploadResponse uploadLogoImage(String profileId, MultipartFile file) throws IOException, GenericException;
 }

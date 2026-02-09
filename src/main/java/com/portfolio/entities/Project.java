@@ -19,10 +19,10 @@ public class Project {
     private String profileId;
     private String projectName;
     private String projectDescription;
+    private List<String> githubRepositories;
     private String projectLink;
     private LocalDate projectStartDate;
     private LocalDate projectEndDate;
     private WorkStatusEnum workStatus;
-    private String projectImageUrl;
     private List<String> skillIds;
 }

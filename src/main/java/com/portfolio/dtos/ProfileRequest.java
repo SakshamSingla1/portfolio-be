@@ -13,6 +13,8 @@ public class ProfileRequest {
     private String location;
     private String profileImageUrl;
     private String profileImagePublicId;
+    private String aboutMeImageUrl;
+    private String aboutMeImagePublicId;
     private String logoUrl;
     private String logoPublicId;
     private String themeName;

@@ -51,6 +51,15 @@ public class ProfileController {
         return ApiResponse.respond(profileService.uploadProfileImage(id, file), "Profile image uploaded successfully", "Failed to upload profile image");
     }
 
+    @Operation(summary = "Upload About Me image")
+    @PutMapping("/{id}/upload/about-me-image")
+    public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadAboutMeImage(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file
+    ) throws IOException, GenericException {
+        return ApiResponse.respond(profileService.uploadAboutMeImage(id, file), "About Me image uploaded successfully", "Failed to upload about me image");
+    }
+
     @Operation(summary = "Upload logo")
     @PutMapping("/{id}/upload/logo")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadLogo(
