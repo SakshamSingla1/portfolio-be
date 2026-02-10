@@ -24,13 +24,6 @@ public class ContactUsController {
     @Autowired
     private ContactUsService contactUsService;
 
-    @Operation(summary = "Create contact message", description = "Saves a new contact us message.")
-    @PostMapping
-    public ResponseEntity<ResponseModel<ContactUsResponse>> create(@RequestBody ContactUsRequest request) throws GenericException {
-        ContactUsResponse response = contactUsService.create(request);
-        return ApiResponse.respond(response, ApiResponse.SUCCESS, ApiResponse.FAILED);
-    }
-
     @Operation(summary = "Get contact messages by profile", description = "Fetches paginated contact messages for a profile with optional search.")
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<ResponseModel<Page<ContactUsResponse>>> getByProfile(
