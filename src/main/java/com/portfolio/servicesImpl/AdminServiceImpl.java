@@ -5,7 +5,6 @@ import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -22,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.portfolio.utils.Helper;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -286,28 +286,110 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String changePassword(String authorizationHeader, ChangePasswordDTO dto) throws GenericException {
-
         String email = helper.extractEmailFromHeader(authorizationHeader);
-
         Profile user = profileRepository.findByEmail(email)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
-
-        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword()))
+                .orElseThrow(() -> new GenericException( ExceptionCodeEnum.PROFILE_NOT_FOUND,"User not found" ));
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Incorrect current password");
-
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword()))
-            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Passwords do not match");
-
-        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword()))
-            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "New password must be different from old password");
-
+        }
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST,"New password and confirm password do not match");
+        }
+        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST,"New password must be different from old password");
+        }
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
-
         profileRepository.save(user);
-
         return "Password changed successfully";
     }
+
+    @Transactional
+    @Override
+    public String requestEmailChange(String authorizationHeader, ChangeEmailRequestDTO dto)throws GenericException {
+        String email = helper.extractEmailFromHeader(authorizationHeader);
+        Profile user = profileRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new GenericException(
+                                ExceptionCodeEnum.PROFILE_NOT_FOUND,
+                                "User not found"
+                        )
+                );
+        if (dto.getNewEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new GenericException(
+                    ExceptionCodeEnum.BAD_REQUEST,
+                    "New email must be different"
+            );
+        }
+        String rawOtp = helper.generateRawOtp();
+        String encodedOtp = passwordEncoder.encode(rawOtp);
+        otpRepository.deleteByProfileId(user.getId());
+        otpRepository.save(
+                OtpStore.builder()
+                        .profileId(user.getId())
+                        .otp(encodedOtp)
+                        .createdAt(LocalDateTime.now())
+                        .expiryDate(LocalDateTime.now().plusMinutes(5))
+                        .build()
+        );
+        ntService.sendNotification(
+                "OTP-VERIFICATION",
+                Map.of(
+                        "fullName", user.getFullName(),
+                        "otp", rawOtp,
+                        "expiryMinutes", 5
+                ),
+                dto.getNewEmail()
+        );
+        return "OTP sent to new email for verification";
+    }
+
+    @Transactional
+    @Override
+    public String verifyEmailChangeOtp(String authorizationHeader, VerifyEmailChangeDTO dto) throws GenericException {
+        String email = helper.extractEmailFromHeader(authorizationHeader);
+        Profile user = profileRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new GenericException(
+                                ExceptionCodeEnum.PROFILE_NOT_FOUND,
+                                "User not found"
+                        )
+                );
+
+        OtpStore otpStore = otpRepository.findByProfileId(user.getId())
+                .orElseThrow(() ->
+                        new GenericException(
+                                ExceptionCodeEnum.BAD_REQUEST,
+                                "No OTP request found"
+                        )
+                );
+        if (otpStore.getExpiryDate().isBefore(LocalDateTime.now())) {
+            otpRepository.deleteByProfileId(user.getId());
+            throw new GenericException(
+                    ExceptionCodeEnum.BAD_REQUEST,
+                    "OTP expired"
+            );
+        }
+        if (!passwordEncoder.matches(dto.getOtp(), otpStore.getOtp())) {
+            throw new GenericException(
+                    ExceptionCodeEnum.INVALID_CREDENTIALS,
+                    "Invalid OTP"
+            );
+        }
+        if (profileRepository.existsByEmail(dto.getNewEmail())) {
+            throw new GenericException(
+                    ExceptionCodeEnum.BAD_REQUEST,
+                    "Email already attached with a profile"
+            );
+        }
+        user.setEmail(dto.getNewEmail());
+        user.setUpdatedAt(LocalDateTime.now());
+        profileRepository.save(user);
+        otpRepository.deleteByProfileId(user.getId());
+        return "Email updated successfully";
+    }
+
 
 }
