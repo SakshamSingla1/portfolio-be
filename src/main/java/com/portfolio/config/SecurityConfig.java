@@ -25,6 +25,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -87,23 +88,28 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        System.out.println(allowedOrigins);
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(
+        CorsConfiguration publicApi = new CorsConfiguration();
+        publicApi.setAllowedOriginPatterns(List.of("*"));
+        publicApi.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+        publicApi.setAllowedHeaders(List.of("*"));
+        publicApi.setAllowCredentials(false);
+
+        CorsConfiguration adminApi = new CorsConfiguration();
+        adminApi.setAllowedOrigins(
                 Arrays.stream(allowedOrigins.split(","))
                         .map(String::trim)
-                        .toList()
-        );
-        configuration.setAllowedMethods(
-                Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-        );
-        configuration.setAllowedHeaders(
-                Arrays.asList("Content-Type", "Authorization")
-        );
-        configuration.setAllowCredentials(true);
+                        .toList());
+        adminApi.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+        adminApi.setAllowedHeaders(List.of("*"));
+        adminApi.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/api/v1/public/**", publicApi);
+        source.registerCorsConfiguration("/api/v1/**", adminApi);
         return source;
     }
 }
