@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.enums.ContactUsStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,5 +24,6 @@ public class ContactUs {
     private String message;
     private String phone;
     private String profileId;
+    private ContactUsStatusEnum status;
     private LocalDateTime createdAt;
 }
