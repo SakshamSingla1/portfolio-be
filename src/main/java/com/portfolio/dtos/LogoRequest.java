@@ -7,5 +7,4 @@ import lombok.Data;
 public class LogoRequest {
     private String name;
     private String url;
-    private SkillCategoryEnum category;
 }

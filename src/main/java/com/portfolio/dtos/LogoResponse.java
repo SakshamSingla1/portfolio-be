@@ -10,5 +10,4 @@ public class LogoResponse {
     private String id;
     private String name;
     private String url;
-    private SkillCategoryEnum category;
 }
