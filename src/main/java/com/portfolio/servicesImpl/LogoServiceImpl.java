@@ -29,7 +29,6 @@ public class LogoServiceImpl implements LogoService {
         Logo logo = Logo.builder()
                 .name(request.getName())
                 .url(request.getUrl())
-                .category(request.getCategory())
                 .build();
 
         Logo savedLogo = logoRepository.save(logo);
@@ -48,7 +47,6 @@ public class LogoServiceImpl implements LogoService {
         }
         existingLogo.setName(request.getName());
         existingLogo.setUrl(request.getUrl());
-        existingLogo.setCategory(request.getCategory());
         Logo updatedLogo = logoRepository.save(existingLogo);
         return mapToResponse(updatedLogo);
     }
@@ -92,7 +90,6 @@ public class LogoServiceImpl implements LogoService {
                 .id(logo.getId())
                 .name(logo.getName())
                 .url(logo.getUrl())
-                .category(logo.getCategory())
                 .build();
     }
 
@@ -101,7 +98,6 @@ public class LogoServiceImpl implements LogoService {
                 .id(logo.getId())
                 .name(logo.getName())
                 .url(logo.getUrl())
-                .category(logo.getCategory())
                 .build();
     }
 }

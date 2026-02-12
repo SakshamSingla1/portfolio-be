@@ -37,6 +37,7 @@ public class SkillServiceImpl implements SkillService {
         Skill skill = Skill.builder()
                 .logo(logo)
                 .level(request.getLevel())
+                .category(request.getCategory())
                 .profileId(request.getProfileId())
                 .build();
         return mapToResponse(skillRepository.save(skill));
@@ -53,6 +54,7 @@ public class SkillServiceImpl implements SkillService {
         }
         skill.setLogo(logo);
         skill.setLevel(request.getLevel());
+        skill.setCategory(request.getCategory());
         skill.setProfileId(request.getProfileId());
         return mapToResponse(skillRepository.save(skill));
     }
@@ -111,7 +113,7 @@ public class SkillServiceImpl implements SkillService {
                 .logoId(skill.getLogo().getId())
                 .logoName(skill.getLogo().getName())
                 .logoUrl(skill.getLogo().getUrl())
-                .category(skill.getLogo().getCategory())
+                .category(skill.getCategory())
                 .level(skill.getLevel())
                 .build();
     }

@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -16,5 +17,6 @@ public class Skill {
     private String id;
     private Logo logo;
     private SkillLevelEnum level;
+    private SkillCategoryEnum category;
     private String profileId;
 }

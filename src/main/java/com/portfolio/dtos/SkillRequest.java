@@ -12,5 +12,6 @@ import lombok.*;
 public class SkillRequest {
     private String logoId;
     private SkillLevelEnum level;
+    private SkillCategoryEnum category;
     private String profileId;
 }
