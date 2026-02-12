@@ -90,4 +90,22 @@ public class AdminController {
         String message = adminService.changePassword(authorizationHeader,requestDTO);
         return ApiResponse.respond(message, "Password changed successfully", "Failed to change password");
     }
+
+    @Operation(summary = "Request email change (send OTP to new email)")
+    @PostMapping("/request-email-change")
+    public ResponseEntity<ResponseModel<String>> requestEmailChange(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestBody ChangeEmailRequestDTO requestDTO) throws GenericException {
+        String message = adminService.requestEmailChange(authorizationHeader, requestDTO);
+        return ApiResponse.respond(message,"OTP sent to new email for verification","Failed to send OTP");
+    }
+
+    @Operation(summary = "Verify OTP and update email")
+    @PutMapping("/verify-email-change")
+    public ResponseEntity<ResponseModel<String>> verifyEmailChange(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestBody VerifyEmailChangeDTO requestDTO) throws GenericException {
+        String message = adminService.verifyEmailChangeOtp(authorizationHeader, requestDTO);
+        return ApiResponse.respond(message,"Email updated successfully","Failed to update email");
+    }
 }
