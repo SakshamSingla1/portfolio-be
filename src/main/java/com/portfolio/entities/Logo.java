@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "logos")
 @Data
 @Builder
@@ -19,5 +21,7 @@ public class Logo {
     private String id;
     private String name;
     private String url;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
 

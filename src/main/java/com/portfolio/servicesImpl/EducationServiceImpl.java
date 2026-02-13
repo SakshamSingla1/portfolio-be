@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ public class EducationServiceImpl implements EducationService {
                 .description(request.getDescription())
                 .grade(request.getGrade())
                 .profileId(request.getProfileId())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         return mapToResponse(educationRepository.save(education));
@@ -62,6 +65,7 @@ public class EducationServiceImpl implements EducationService {
         education.setEndYear(request.getEndYear());
         education.setDescription(request.getDescription());
         education.setGrade(request.getGrade());
+        education.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(educationRepository.save(education));
     }
 
@@ -133,6 +137,8 @@ public class EducationServiceImpl implements EducationService {
                 .endYear(education.getEndYear())
                 .description(education.getDescription())
                 .grade(education.getGrade())
+                .createdAt(education.getCreatedAt())
+                .updatedAt(education.getUpdatedAt())
                 .build();
     }
 }

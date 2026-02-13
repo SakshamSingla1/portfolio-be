@@ -4,6 +4,8 @@ import com.portfolio.enums.DegreeEnum;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 public class EducationResponse {
@@ -16,4 +18,6 @@ public class EducationResponse {
     private Integer endYear;
     private String description;
     private String grade;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

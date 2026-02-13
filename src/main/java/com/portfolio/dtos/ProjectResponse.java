@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -23,4 +24,6 @@ public class ProjectResponse {
     private WorkStatusEnum workStatus;
     private List<SkillDropdown> skills;
     private List<ProjectImageRequest> projectImages;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

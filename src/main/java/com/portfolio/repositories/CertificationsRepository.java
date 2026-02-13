@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CertificationsRepository extends MongoRepository<Certifications, String> {
@@ -52,4 +53,8 @@ public interface CertificationsRepository extends MongoRepository<Certifications
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
 
     List<Certifications> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
+
+    long countByProfileId(String profileId);
+
+    Optional<Certifications> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
 }

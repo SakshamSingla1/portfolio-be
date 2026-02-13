@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AchievementRepository extends MongoRepository<Achievements, String> {
@@ -51,4 +52,8 @@ public interface AchievementRepository extends MongoRepository<Achievements, Str
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
 
     List<Achievements> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum status);
+
+    long countByProfileId(String profileId);
+
+    Optional<Achievements> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
 }

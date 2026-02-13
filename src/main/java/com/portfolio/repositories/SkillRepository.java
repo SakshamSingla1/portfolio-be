@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SkillRepository extends MongoRepository<Skill, String> {
@@ -46,4 +47,8 @@ public interface SkillRepository extends MongoRepository<Skill, String> {
     List<Skill> findByProfileId(String profileId);
 
     boolean existsByLogoIdAndProfileId(String logoId, String profileId);
+
+    long countByProfileId(String profileId);
+
+    Optional<Skill> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
 }
