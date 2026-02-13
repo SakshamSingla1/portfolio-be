@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,6 +64,8 @@ public class ProjectServiceImpl implements ProjectService {
                 )
                 .workStatus(req.getWorkStatus())
                 .skillIds(req.getSkillIds())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         Project savedProject = projectRepository.save(project);
         saveProjectImages(
@@ -89,6 +92,7 @@ public class ProjectServiceImpl implements ProjectService {
         );
         project.setWorkStatus(req.getWorkStatus());
         project.setSkillIds(req.getSkillIds());
+        project.setUpdatedAt(LocalDateTime.now());
         Project updatedProject = projectRepository.save(project);
         projectImageRepository.deleteByProjectId(id);
         saveProjectImages(
@@ -189,6 +193,9 @@ public class ProjectServiceImpl implements ProjectService {
                     dto.setUrl(img.getUrl());
                     dto.setPublicId(img.getPublicId());
                     return dto;
-                }).toList()).build();
+                }).toList())
+                .createdAt(project.getCreatedAt())
+                .updatedAt(project.getUpdatedAt())
+                .build();
     }
 }

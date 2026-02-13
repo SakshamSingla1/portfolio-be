@@ -2,6 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.ContactUsRequest;
 import com.portfolio.dtos.ContactUsResponse;
+import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -36,4 +37,14 @@ public class ContactUsController {
         Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, pageable, search,sortBy,sortDir);
         return ApiResponse.respond(page, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
+
+    @Operation(summary = "Marks as Read", description = "Make unread message to read")
+    @PatchMapping("/{id}/mark-read")
+    public ResponseEntity<ResponseModel<String>> updateStatus(
+            @PathVariable String id
+    ) throws GenericException {
+        contactUsService.updateStatus(id, ContactUsStatusEnum.READ);
+        return ApiResponse.respond("Success", ApiResponse.SUCCESS, ApiResponse.FAILED);
+    }
+
 }
