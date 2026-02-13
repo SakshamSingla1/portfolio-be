@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(collection = "projects")
@@ -25,4 +26,6 @@ public class Project {
     private LocalDate projectEndDate;
     private WorkStatusEnum workStatus;
     private List<String> skillIds;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

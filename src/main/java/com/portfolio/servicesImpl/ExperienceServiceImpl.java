@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -47,6 +48,8 @@ public class ExperienceServiceImpl implements ExperienceService {
                 .employmentStatus(req.getEmploymentStatus())
                 .description(req.getDescription())
                 .skillIds(req.getSkillIds())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(experienceRepository.save(experience));
     }
@@ -67,6 +70,7 @@ public class ExperienceServiceImpl implements ExperienceService {
         experience.setEmploymentStatus(req.getEmploymentStatus());
         experience.setDescription(req.getDescription());
         experience.setSkillIds(req.getSkillIds());
+        experience.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(experienceRepository.save(experience));
     }
 
@@ -158,6 +162,8 @@ public class ExperienceServiceImpl implements ExperienceService {
                 .employmentStatus(exp.getEmploymentStatus())
                 .description(exp.getDescription())
                 .skills(skills)
+                .createdAt(exp.getCreatedAt())
+                .updatedAt(exp.getUpdatedAt())
                 .build();
     }
 }

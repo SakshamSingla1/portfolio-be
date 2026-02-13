@@ -5,6 +5,7 @@ import com.portfolio.enums.EmploymentStatusEnum;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -19,4 +20,6 @@ public class ExperienceResponse {
     private EmploymentStatusEnum employmentStatus;
     private String description;
     private List<SkillDropdown> skills;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

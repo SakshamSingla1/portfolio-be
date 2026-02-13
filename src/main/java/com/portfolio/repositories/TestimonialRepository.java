@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TestimonialRepository extends MongoRepository<Testimonial, String> {
@@ -53,4 +54,8 @@ public interface TestimonialRepository extends MongoRepository<Testimonial, Stri
     boolean existsByProfileIdAndOrderAndIdNot(String profileId, String order, String id);
 
     List<Testimonial> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
+
+    long countByProfileId(String profileId);
+
+    Optional<Testimonial> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
 }

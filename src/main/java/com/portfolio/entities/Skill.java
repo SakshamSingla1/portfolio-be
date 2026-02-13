@@ -6,6 +6,8 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,4 +21,6 @@ public class Skill {
     private SkillLevelEnum level;
     private SkillCategoryEnum category;
     private String profileId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
