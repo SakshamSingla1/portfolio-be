@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Document(collection = "educations")
 @Data
 @Builder
@@ -28,4 +30,6 @@ public class Education {
     private String description;
 
     private String profileId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -5,6 +5,7 @@ import com.portfolio.dtos.ContactUsResponse;
 import com.portfolio.entities.ContactUs;
 import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.entities.Profile;
+import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ContactUsRepository;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -37,6 +39,7 @@ public class ContactUsService {
                 .email(request.getEmail())
                 .phone(request.getPhone())
                 .message(request.getMessage())
+                .status(ContactUsStatusEnum.UNREAD)
                 .profileId(request.getProfileId())
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -89,6 +92,20 @@ public class ContactUsService {
         return contactUses.map(this::toDto);
     }
 
+    @Transactional
+    public void updateStatus(String id, ContactUsStatusEnum status)
+            throws GenericException {
+
+        if (!contactUsRepository.existsById(id)) {
+            throw new GenericException(
+                    ExceptionCodeEnum.CONTACT_US_NOT_FOUND,
+                    "Message not found"
+            );
+        }
+
+        contactUsRepository.updateStatusById(id, status);
+    }
+
     private ContactUsResponse toDto(ContactUs contact) {
         return ContactUsResponse.builder()
                 .id(contact.getId())
@@ -96,6 +113,7 @@ public class ContactUsService {
                 .email(contact.getEmail())
                 .phone(contact.getPhone())
                 .message(contact.getMessage())
+                .status(contact.getStatus())
                 .createdAt(contact.getCreatedAt())
                 .build();
     }

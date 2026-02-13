@@ -1,11 +1,17 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.ContactUs;
+import com.portfolio.enums.ContactUsStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ContactUsRepository extends MongoRepository<ContactUs, String> {
@@ -42,4 +48,16 @@ public interface ContactUsRepository extends MongoRepository<ContactUs, String> 
     Page<ContactUs> findAll(Pageable pageable);
 
     Page<ContactUs> findByProfileId(String profileId, Pageable pageable);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$set': { 'status': ?1 } }")
+    void updateStatusById(String id, ContactUsStatusEnum status);
+
+    List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(String profileId);
+
+    long countByProfileId(String profileId);
+
+    long countByStatusAndProfileId(ContactUsStatusEnum contactUsStatusEnum,String profileId);
+
+    Optional<ContactUs> findTop1ByProfileIdOrderByCreatedAtDesc(String profileId);
 }

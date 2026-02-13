@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class LogoServiceImpl implements LogoService {
@@ -29,7 +31,8 @@ public class LogoServiceImpl implements LogoService {
         Logo logo = Logo.builder()
                 .name(request.getName())
                 .url(request.getUrl())
-                .category(request.getCategory())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
 
         Logo savedLogo = logoRepository.save(logo);
@@ -48,7 +51,7 @@ public class LogoServiceImpl implements LogoService {
         }
         existingLogo.setName(request.getName());
         existingLogo.setUrl(request.getUrl());
-        existingLogo.setCategory(request.getCategory());
+        existingLogo.setUpdatedAt(LocalDateTime.now());
         Logo updatedLogo = logoRepository.save(existingLogo);
         return mapToResponse(updatedLogo);
     }
@@ -92,7 +95,8 @@ public class LogoServiceImpl implements LogoService {
                 .id(logo.getId())
                 .name(logo.getName())
                 .url(logo.getUrl())
-                .category(logo.getCategory())
+                .createdAt(logo.getCreatedAt())
+                .updatedAt(logo.getUpdatedAt())
                 .build();
     }
 
@@ -101,7 +105,6 @@ public class LogoServiceImpl implements LogoService {
                 .id(logo.getId())
                 .name(logo.getName())
                 .url(logo.getUrl())
-                .category(logo.getCategory())
                 .build();
     }
 }

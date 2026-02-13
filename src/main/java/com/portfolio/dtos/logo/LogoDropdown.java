@@ -10,5 +10,4 @@ public class LogoDropdown {
     private String id;
     private String name;
     private String url;
-    private SkillCategoryEnum category;
 }
