@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EducationRepository extends MongoRepository<Education, String> {
@@ -51,4 +52,8 @@ public interface EducationRepository extends MongoRepository<Education, String> 
     Page<Education> findAll(Pageable pageable);
 
     Page<Education> findByProfileId(String profileId, Pageable pageable);
+
+    long countByProfileId(String profileId);
+
+    Optional<Education> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
 }

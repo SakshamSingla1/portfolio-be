@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,8 @@ public class SkillServiceImpl implements SkillService {
                 .level(request.getLevel())
                 .category(request.getCategory())
                 .profileId(request.getProfileId())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(skillRepository.save(skill));
     }
@@ -56,6 +59,7 @@ public class SkillServiceImpl implements SkillService {
         skill.setLevel(request.getLevel());
         skill.setCategory(request.getCategory());
         skill.setProfileId(request.getProfileId());
+        skill.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(skillRepository.save(skill));
     }
 
@@ -115,6 +119,8 @@ public class SkillServiceImpl implements SkillService {
                 .logoUrl(skill.getLogo().getUrl())
                 .category(skill.getCategory())
                 .level(skill.getLevel())
+                .createdAt(skill.getCreatedAt())
+                .updatedAt(skill.getUpdatedAt())
                 .build();
     }
 }
