@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -16,14 +18,21 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@CompoundIndex(name = "profile_updated", def = "{ 'id': 1, 'updatedAt': -1 }")
 public class Profile {
     @Id
     private String id;
     private String fullName;
+
+    @Indexed(unique = true)
     private String userName;
     private String title;
     private String aboutMe;
+
+    @Indexed(unique = true)
     private String email;
+
+    @Indexed(unique = true)
     private String phone;
     private String location;
     private String password;
