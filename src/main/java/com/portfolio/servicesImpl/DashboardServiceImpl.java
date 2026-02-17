@@ -12,6 +12,7 @@ import com.portfolio.services.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -30,10 +31,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardSummaryDTO getDashboardSummary(String profileId) {
 
-        // =====================================================
-        // 1️⃣ Stats Section
-        // =====================================================
-
+        // ✅ FAST COUNTS (indexed queries, no async overhead)
         long totalSkills = skillRepository.countByProfileId(profileId);
         long totalEducation = educationRepository.countByProfileId(profileId);
         long totalExperience = experienceRepository.countByProfileId(profileId);
@@ -42,12 +40,10 @@ public class DashboardServiceImpl implements DashboardService {
         long totalTestimonials = testimonialRepository.countByProfileId(profileId);
         long totalCertification = certificationsRepository.countByProfileId(profileId);
         long totalMessages = contactUsRepository.countByProfileId(profileId);
-
-        long unreadMessages =
-                contactUsRepository.countByStatusAndProfileId(
-                        ContactUsStatusEnum.UNREAD,
-                        profileId
-                );
+        long unreadMessages = contactUsRepository.countByStatusAndProfileId(
+                ContactUsStatusEnum.UNREAD,
+                profileId
+        );
 
         StatsDTO stats = StatsDTO.builder()
                 .totalSkills(totalSkills)
@@ -61,10 +57,6 @@ public class DashboardServiceImpl implements DashboardService {
                 .unreadMessages(unreadMessages)
                 .build();
 
-        // =====================================================
-        // 2️⃣ Profile Completion Section
-        // =====================================================
-
         ProfileCompletionDTO profileCompletion =
                 calculateProfileCompletion(
                         totalProjects,
@@ -75,10 +67,7 @@ public class DashboardServiceImpl implements DashboardService {
                         totalCertification
                 );
 
-        // =====================================================
-        // 3️⃣ Recent Messages
-        // =====================================================
-
+        // ✅ Uses indexed compound index (profileId + createdAt)
         List<ContactUsResponse> recentMessages =
                 contactUsRepository
                         .findTop5ByProfileIdOrderByCreatedAtDesc(profileId)
@@ -86,12 +75,8 @@ public class DashboardServiceImpl implements DashboardService {
                         .map(this::mapToResponse)
                         .toList();
 
-        // =====================================================
-        // 4️⃣ Activity Feed (Fetch → Then Map)
-        // =====================================================
-
-        List<ActivityDTO> recentActivities =
-                buildLatestActivities(profileId);
+        // ✅ Optimized activity building (still readable, indexed)
+        List<ActivityDTO> recentActivities = buildLatestActivities(profileId);
 
         return DashboardSummaryDTO.builder()
                 .stats(stats)
@@ -101,9 +86,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    // =====================================================
-    // Weighted Profile Completion
-    // =====================================================
+    // ---------------- PROFILE COMPLETION ----------------
 
     private ProfileCompletionDTO calculateProfileCompletion(
             long projects,
@@ -117,23 +100,12 @@ public class DashboardServiceImpl implements DashboardService {
         int score = 0;
         List<String> missingSections = new ArrayList<>();
 
-        if (projects > 0) score += 20;
-        else missingSections.add("Add at least one project");
-
-        if (skills >= 5) score += 15;
-        else missingSections.add("Add at least 5 skills");
-
-        if (experience > 0) score += 20;
-        else missingSections.add("Add work experience");
-
-        if (education > 0) score += 15;
-        else missingSections.add("Add education");
-
-        if (testimonials > 0) score += 10;
-        else missingSections.add("Add testimonials");
-
-        if (certifications > 0) score += 10;
-        else missingSections.add("Add certifications");
+        score += addScore(projects > 0, 20, "Add at least one project", missingSections);
+        score += addScore(skills >= 5, 15, "Add at least 5 skills", missingSections);
+        score += addScore(experience > 0, 20, "Add work experience", missingSections);
+        score += addScore(education > 0, 15, "Add education", missingSections);
+        score += addScore(testimonials > 0, 10, "Add testimonials", missingSections);
+        score += addScore(certifications > 0, 10, "Add certifications", missingSections);
 
         return ProfileCompletionDTO.builder()
                 .percentage(Math.min(score, 100))
@@ -141,127 +113,135 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    // =====================================================
-    // Fetch Latest Record First → Then Map to Activity
-    // =====================================================
+    private int addScore(boolean condition, int value, String message, List<String> missing) {
+        if (condition) return value;
+        missing.add(message);
+        return 0;
+    }
+
+    // ---------------- RECENT ACTIVITY ----------------
 
     private List<ActivityDTO> buildLatestActivities(String profileId) {
 
         List<ActivityDTO> activities = new ArrayList<>();
 
-        // 1️⃣ Skill
-        Optional<Skill> latestSkill =
-                skillRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestSkill.ifPresent(skill ->
-                activities.add(
-                        createActivity(
-                                "SKILL",
-                                "Skill updated: " + skill.getLogo().getName(),
-                                skill.getUpdatedAt()
+        skillRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(skill ->
+                        activities.add(
+                                createActivity(
+                                        "SKILL",
+                                        buildAction("Skill",
+                                                skill.getCreatedAt(),
+                                                skill.getUpdatedAt(),
+                                                safe(skill.getLogo() != null ? skill.getLogo().getName() : null)
+                                        ),
+                                        skill.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 2️⃣ Education
-        Optional<Education> latestEducation =
-                educationRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestEducation.ifPresent(education ->
-                activities.add(
-                        createActivity(
-                                "EDUCATION",
-                                "Education updated: " + education.getDegree(),
-                                education.getUpdatedAt()
+        educationRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(edu ->
+                        activities.add(
+                                createActivity(
+                                        "EDUCATION",
+                                        buildAction(
+                                                "Education",
+                                                edu.getCreatedAt(),
+                                                edu.getUpdatedAt(),
+                                                edu.getDegree() + " at " + edu.getInstitution()
+                                        ),
+                                        edu.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 3️⃣ Experience
-        Optional<Experience> latestExperience =
-                experienceRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestExperience.ifPresent(exp ->
-                activities.add(
-                        createActivity(
-                                "EXPERIENCE",
-                                "Experience updated",
-                                exp.getUpdatedAt()
+        experienceRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(exp ->
+                        activities.add(
+                                createActivity(
+                                        "EXPERIENCE",
+                                        buildAction(
+                                                "Experience",
+                                                exp.getCreatedAt(),
+                                                exp.getUpdatedAt(),
+                                                exp.getJobTitle() + " at " + exp.getCompanyName()
+                                        ),
+                                        exp.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 4️⃣ Project
-        Optional<Project> latestProject =
-                projectRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestProject.ifPresent(project ->
-                activities.add(
-                        createActivity(
-                                "PROJECT",
-                                "Project updated: " + project.getProjectName(),
-                                project.getUpdatedAt()
+        projectRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(project ->
+                        activities.add(
+                                createActivity(
+                                        "PROJECT",
+                                        buildAction(
+                                                "Project",
+                                                project.getCreatedAt(),
+                                                project.getUpdatedAt(),
+                                                project.getProjectName()
+                                        ),
+                                        project.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 5️⃣ Achievement
-        Optional<Achievements> latestAchievement =
-                achievementRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestAchievement.ifPresent(achievement ->
-                activities.add(
-                        createActivity(
-                                "ACHIEVEMENT",
-                                "Achievement updated",
-                                achievement.getUpdatedAt()
+        achievementRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(achievement ->
+                        activities.add(
+                                createActivity(
+                                        "ACHIEVEMENT",
+                                        buildAction(
+                                                "Achievement",
+                                                achievement.getCreatedAt(),
+                                                achievement.getUpdatedAt(),
+                                                achievement.getTitle()
+                                        ),
+                                        achievement.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 6️⃣ Certification
-        Optional<Certifications> latestCertification =
-                certificationsRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestCertification.ifPresent(cert ->
-                activities.add(
-                        createActivity(
-                                "CERTIFICATION",
-                                "Certification updated",
-                                cert.getUpdatedAt()
+        certificationsRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(cert ->
+                        activities.add(
+                                createActivity(
+                                        "CERTIFICATION",
+                                        buildAction(
+                                                "Certification",
+                                                cert.getCreatedAt(),
+                                                cert.getUpdatedAt(),
+                                                cert.getTitle()
+                                        ),
+                                        cert.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 7️⃣ Testimonial
-        Optional<Testimonial> latestTestimonial =
-                testimonialRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId);
-
-        latestTestimonial.ifPresent(testimonial ->
-                activities.add(
-                        createActivity(
-                                "TESTIMONIAL",
-                                "Testimonial updated",
-                                testimonial.getUpdatedAt()
+        testimonialRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
+                .ifPresent(testimonial ->
+                        activities.add(
+                                createActivity(
+                                        "TESTIMONIAL",
+                                        "Testimonial received from " + safe(testimonial.getName()),
+                                        testimonial.getUpdatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // 8️⃣ Message
-        Optional<ContactUs> latestMessage =
-                contactUsRepository.findTop1ByProfileIdOrderByCreatedAtDesc(profileId);
-
-        latestMessage.ifPresent(message ->
-                activities.add(
-                        createActivity(
-                                "MESSAGE",
-                                "Message updated from " + message.getName(),
-                                message.getCreatedAt()
+        contactUsRepository.findTop1ByProfileIdOrderByCreatedAtDesc(profileId)
+                .ifPresent(message ->
+                        activities.add(
+                                createActivity(
+                                        "MESSAGE",
+                                        "New message from " + safe(message.getName()),
+                                        message.getCreatedAt()
+                                )
                         )
-                )
-        );
+                );
 
-        // Sort by updatedAt DESC
         activities.sort(
                 Comparator.comparing(
                         ActivityDTO::getTimestamp,
@@ -272,17 +252,27 @@ public class DashboardServiceImpl implements DashboardService {
         return activities.stream().limit(10).toList();
     }
 
-    private ActivityDTO createActivity(String type, String description, java.time.LocalDateTime time) {
+    private String buildAction(String entity, LocalDateTime created, LocalDateTime updated, String value) {
+        String action = isCreated(created, updated) ? "added" : "updated";
+        return entity + " " + action + ": " + safe(value);
+    }
+
+    private boolean isCreated(LocalDateTime created, LocalDateTime updated) {
+        if (created == null || updated == null) return false;
+        return created.isEqual(updated);
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private ActivityDTO createActivity(String type, String description, LocalDateTime time) {
         return ActivityDTO.builder()
                 .type(type)
                 .description(description)
                 .timestamp(time)
                 .build();
     }
-
-    // =====================================================
-    // Map ContactUs → Response
-    // =====================================================
 
     private ContactUsResponse mapToResponse(ContactUs contact) {
         return ContactUsResponse.builder()
