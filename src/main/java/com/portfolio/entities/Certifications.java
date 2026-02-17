@@ -6,6 +6,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
@@ -16,17 +20,42 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@CompoundIndexes({
+        @CompoundIndex(
+                name = "idx_profile_updated",
+                def = "{ 'profileId': 1, 'updatedAt': -1 }"
+        ),
+        @CompoundIndex(
+                name = "idx_profile_status_order",
+                def = "{ 'profileId': 1, 'status': 1, 'order': 1 }"
+        ),
+        @CompoundIndex(
+                name = "idx_profile_order_unique",
+                def = "{ 'profileId': 1, 'order': 1 }",
+                unique = true
+        )
+})
 public class Certifications {
     @Id
     private String id;
+
+    @Indexed
     private String profileId;
+
+    @TextIndexed
     private String title;
+
+    @TextIndexed
     private String issuer;
     private String credentialId;
     private String credentialUrl;
     private LocalDate issueDate;
     private LocalDate expiryDate;
+
+    @Indexed
     private StatusEnum status;
+
+    @Indexed
     private String order;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
