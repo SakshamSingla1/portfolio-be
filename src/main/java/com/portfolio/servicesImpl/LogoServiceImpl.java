@@ -105,6 +105,8 @@ public class LogoServiceImpl implements LogoService {
                 .id(logo.getId())
                 .name(logo.getName())
                 .url(logo.getUrl())
+                .createdAt(logo.getCreatedAt())
+                .updatedAt(logo.getUpdatedAt())
                 .build();
     }
 }
