@@ -104,8 +104,8 @@ public class DashboardServiceImpl implements DashboardService {
         score += addScore(skills >= 5, 15, "Add at least 5 skills", missingSections);
         score += addScore(experience > 0, 20, "Add work experience", missingSections);
         score += addScore(education > 0, 15, "Add education", missingSections);
-        score += addScore(testimonials > 0, 10, "Add testimonials", missingSections);
-        score += addScore(certifications > 0, 10, "Add certifications", missingSections);
+        score += addScore(testimonials > 0, 15, "Add testimonials", missingSections);
+        score += addScore(certifications > 0, 15, "Add certifications", missingSections);
 
         return ProfileCompletionDTO.builder()
                 .percentage(Math.min(score, 100))
