@@ -1,7 +1,7 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.ExperienceRequest;
-import com.portfolio.dtos.ExperienceResponse;
+import com.portfolio.dtos.Experience.ExperienceRequest;
+import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

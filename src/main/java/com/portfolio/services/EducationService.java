@@ -1,7 +1,7 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.EducationRequest;
-import com.portfolio.dtos.EducationResponse;
+import com.portfolio.dtos.Education.EducationRequest;
+import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

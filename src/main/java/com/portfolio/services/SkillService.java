@@ -1,7 +1,7 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.SkillRequest;
-import com.portfolio.dtos.SkillResponse;
+import com.portfolio.dtos.Skill.SkillRequest;
+import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

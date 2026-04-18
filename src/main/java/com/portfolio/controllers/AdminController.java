@@ -1,6 +1,6 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.Authentication.*;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;

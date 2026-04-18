@@ -1,9 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -46,8 +45,6 @@ public class TestimonialServiceImpl implements TestimonialService {
                 .linkedInUrl(dto.getLinkedInUrl())
                 .status(dto.getStatus())
                 .order(dto.getOrder())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(testimonialRepository.save(testimonial));
     }

@@ -1,8 +1,8 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.ImageUploadResponse;
-import com.portfolio.dtos.ProfileRequest;
-import com.portfolio.dtos.ProfileResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.dtos.Profile.ProfileRequest;
+import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;

@@ -12,6 +12,7 @@ public class NavLinkRequestDTO {
     private String name;
     private String path;
     private String icon;
+    private String navGroup;
     private List<String> roles;
     private StatusEnum status;
 }
