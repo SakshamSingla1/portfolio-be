@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.WorkStatusEnum;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -24,7 +25,7 @@ import java.util.List;
                 def = "{ 'profileId': 1, 'updatedAt': -1 }"
         )
 })
-public class Project {
+public class Project extends Auditable {
     @Id
     private String id;
     @Indexed
@@ -38,7 +39,4 @@ public class Project {
     private LocalDate projectEndDate;
     private WorkStatusEnum workStatus;
     private List<String> skillIds;
-    @Indexed
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

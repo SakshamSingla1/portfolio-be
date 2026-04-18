@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import lombok.*;
@@ -28,7 +29,7 @@ import java.time.LocalDateTime;
         )
 })
 
-public class Skill {
+public class Skill extends Auditable {
 
     @Id
     private String id;
@@ -37,7 +38,4 @@ public class Skill {
     private SkillCategoryEnum category;
     @Indexed
     private String profileId;
-    @Indexed
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

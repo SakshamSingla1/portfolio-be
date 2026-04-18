@@ -1,9 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.ContactUsRequest;
-import com.portfolio.dtos.ContactUsResponse;
+import com.portfolio.dtos.ContactUs.ContactUsRequest;
+import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.entities.ContactUs;
-import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
@@ -12,7 +11,6 @@ import com.portfolio.repositories.ContactUsRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.NTService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

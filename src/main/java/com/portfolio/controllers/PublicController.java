@@ -1,8 +1,8 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.ContactUsRequest;
-import com.portfolio.dtos.ContactUsResponse;
-import com.portfolio.dtos.ProfileMasterResponse;
+import com.portfolio.dtos.ContactUs.ContactUsRequest;
+import com.portfolio.dtos.ContactUs.ContactUsResponse;
+import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;

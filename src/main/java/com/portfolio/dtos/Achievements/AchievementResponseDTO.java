@@ -1,15 +1,17 @@
 package com.portfolio.dtos.Achievements;
 
+import com.portfolio.dtos.AuditableResponse;
 import com.portfolio.enums.StatusEnum;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
-@Builder
-public class AchievementResponseDTO {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class AchievementResponseDTO extends AuditableResponse {
     private String id;
     private String profileId;
     private String title;
@@ -20,6 +22,4 @@ public class AchievementResponseDTO {
     private String proofPublicId;
     private String order;
     private StatusEnum status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

@@ -1,8 +1,7 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.ExperienceRequest;
-import com.portfolio.dtos.ExperienceResponse;
-import com.portfolio.enums.StatusEnum;
+import com.portfolio.dtos.Experience.ExperienceRequest;
+import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

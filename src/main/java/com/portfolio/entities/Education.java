@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.DegreeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,7 @@ import java.time.LocalDateTime;
                 def = "{ 'profileId': 1, 'updatedAt': -1 }"
         )
 })
-public class Education {
+public class Education extends Auditable {
 
     @Id
     private String id;
@@ -47,7 +48,4 @@ public class Education {
     @Indexed
     private String profileId;
 
-    @Indexed
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

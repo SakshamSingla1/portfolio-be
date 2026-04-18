@@ -1,10 +1,9 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.ExperienceRequest;
-import com.portfolio.dtos.ExperienceResponse;
+import com.portfolio.dtos.Experience.ExperienceRequest;
+import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Experience;
-import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ExperienceRepository;
@@ -48,8 +47,6 @@ public class ExperienceServiceImpl implements ExperienceService {
                 .employmentStatus(req.getEmploymentStatus())
                 .description(req.getDescription())
                 .skillIds(req.getSkillIds())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(experienceRepository.save(experience));
     }

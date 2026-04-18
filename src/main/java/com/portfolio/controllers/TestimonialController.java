@@ -2,7 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
