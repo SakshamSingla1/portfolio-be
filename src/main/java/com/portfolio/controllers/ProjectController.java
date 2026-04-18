@@ -1,19 +1,16 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.ImageUploadResponse;
-import com.portfolio.dtos.ProjectRequest;
-import com.portfolio.dtos.ProjectResponse;
-import com.portfolio.enums.StatusEnum;
+import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.dtos.Project.ProjectRequest;
+import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

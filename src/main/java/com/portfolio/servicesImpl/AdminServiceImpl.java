@@ -1,7 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
+import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
@@ -66,7 +67,6 @@ public class AdminServiceImpl implements AdminService {
                 .status(StatusEnum.ACTIVE)
                 .emailVerified(VerificationStatusEnum.PENDING)
                 .phoneVerified(VerificationStatusEnum.PENDING)
-                .createdAt(LocalDateTime.now())
                 .build();
         profileRepository.save(user);
 
@@ -260,14 +260,14 @@ public class AdminServiceImpl implements AdminService {
         if (user.getEmailVerified() != VerificationStatusEnum.VERIFIED || user.getPhoneVerified() != VerificationStatusEnum.VERIFIED)
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Account not verified");
 
-        String token = jwtUtil.generateAccessToken(user.getEmail());
+        String token = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
         ColorThemeResponseDTO defaultTheme;
         if (user.getThemeName() != null) {
             defaultTheme = colorThemeService.getThemeByName(user.getThemeName());
         } else {
             defaultTheme = colorThemeService.getDefaultTheme();
         }
-        List<NavLinkResponseDTO> navLinks = navLinkService.getNavLinks(user.getRole());
+        List<GroupedNavLinkResponseDTO> navLinks = navLinkService.getGroupedNavLinks(user.getRole());
 
         return LoginResponseDTO.builder()
                 .id(user.getId())

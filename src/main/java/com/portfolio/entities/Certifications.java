@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,7 +36,7 @@ import java.time.LocalDateTime;
                 unique = true
         )
 })
-public class Certifications {
+public class Certifications extends Auditable {
     @Id
     private String id;
 
@@ -57,6 +58,4 @@ public class Certifications {
 
     @Indexed
     private String order;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

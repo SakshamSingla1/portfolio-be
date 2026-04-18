@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,13 +16,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "color-themes")
-public class ColorTheme {
+public class ColorTheme extends Auditable {
     @Id
     private String id;
     private String themeName;
     private ColorPalette palette;
     private StatusEnum status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
 }

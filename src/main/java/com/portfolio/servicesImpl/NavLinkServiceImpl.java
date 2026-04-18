@@ -2,6 +2,7 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.NavLinks.NavLinkRequestDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.entities.NavLink;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.RoleEnum;
@@ -9,21 +10,21 @@ import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.NavLinkRepository;
 import com.portfolio.services.NavLinkService;
+import com.portfolio.utils.Helper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class NavLinkServiceImpl implements NavLinkService {
 
     private final NavLinkRepository navLinkRepository;
-
-    public NavLinkServiceImpl(NavLinkRepository navLinkRepository) {
-        this.navLinkRepository = navLinkRepository;
-    }
+    private final Helper helper;
 
     @Override
     public NavLinkResponseDTO createNavLink(NavLinkRequestDTO request) throws GenericException {
@@ -59,9 +60,8 @@ public class NavLinkServiceImpl implements NavLinkService {
                 .name(request.getName())
                 .path(request.getPath())
                 .icon(request.getIcon())
+                .navGroup(request.getNavGroup())
                 .status(request.getStatus() != null ? request.getStatus() : StatusEnum.ACTIVE)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         navLinkRepository.save(navLink);
@@ -113,9 +113,9 @@ public class NavLinkServiceImpl implements NavLinkService {
         existing.setIndex(request.getIndex());
         existing.setPath(request.getPath());
         existing.setIcon(request.getIcon());
+        existing.setNavGroup(request.getNavGroup());
         existing.setRoles(effectiveRoles);
         existing.setStatus(request.getStatus());
-        existing.setUpdatedAt(LocalDateTime.now());
 
         navLinkRepository.save(existing);
         return toResponseDTO(existing);
@@ -131,7 +131,6 @@ public class NavLinkServiceImpl implements NavLinkService {
                 ));
 
         navLink.setStatus(StatusEnum.INACTIVE);
-        navLink.setUpdatedAt(LocalDateTime.now());
         navLinkRepository.save(navLink);
     }
 
@@ -223,16 +222,45 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     private NavLinkResponseDTO toResponseDTO(NavLink navLink) {
-        return NavLinkResponseDTO.builder()
+        NavLinkResponseDTO responseDTO = NavLinkResponseDTO.builder()
                 .id(navLink.getId())
                 .roles(navLink.getRoles())
                 .index(navLink.getIndex())
                 .name(navLink.getName())
                 .path(navLink.getPath())
                 .icon(navLink.getIcon())
+                .navGroup(navLink.getNavGroup())
                 .status(navLink.getStatus())
-                .createdAt(navLink.getCreatedAt())
-                .updatedAt(navLink.getUpdatedAt())
                 .build();
+        helper.setAudit(navLink, responseDTO);
+        return responseDTO;
+    }
+
+    @Override
+    public List<GroupedNavLinkResponseDTO> getGroupedNavLinks(String role) {
+        RoleEnum.valueOf(role);
+
+        List<NavLink> navLinks = navLinkRepository.findByRolesContaining(role);
+        
+        // Group by navGroup, treating null as "default"
+        Map<String, List<NavLink>> groupedByNavGroup = navLinks.stream()
+                .collect(Collectors.groupingBy(
+                        navLink -> navLink.getNavGroup() != null ? navLink.getNavGroup() : "default"
+                ));
+
+        return groupedByNavGroup.entrySet().stream()
+                .map(entry -> GroupedNavLinkResponseDTO.builder()
+                        .groupName(entry.getKey())
+                        .links(entry.getValue().stream()
+                                .map(this::toResponseDTO)
+                                .collect(Collectors.toList()))
+                        .build())
+                .sorted((g1, g2) -> {
+                    // Sort "default" group first, then alphabetically
+                    if ("default".equals(g1.getGroupName())) return -1;
+                    if ("default".equals(g2.getGroupName())) return 1;
+                    return g1.getGroupName().compareTo(g2.getGroupName());
+                })
+                .collect(Collectors.toList());
     }
 }

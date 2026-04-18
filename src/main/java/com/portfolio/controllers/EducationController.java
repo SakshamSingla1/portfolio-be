@@ -1,9 +1,8 @@
 // File: EducationController.java
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.EducationRequest;
-import com.portfolio.dtos.EducationResponse;
-import com.portfolio.enums.StatusEnum;
+import com.portfolio.dtos.Education.EducationRequest;
+import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -15,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/education")

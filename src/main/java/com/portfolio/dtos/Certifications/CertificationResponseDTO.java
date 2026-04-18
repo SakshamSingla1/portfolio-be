@@ -1,15 +1,17 @@
 package com.portfolio.dtos.Certifications;
 
+import com.portfolio.dtos.AuditableResponse;
 import com.portfolio.enums.StatusEnum;
-import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Data
-@Builder
-public class CertificationResponseDTO {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class CertificationResponseDTO extends AuditableResponse {
     private String id;
     private String title;
     private String issuer;
@@ -19,6 +21,4 @@ public class CertificationResponseDTO {
     private String order;
     private LocalDate issueDate;
     private LocalDate expiryDate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

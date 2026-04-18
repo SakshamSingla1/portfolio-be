@@ -1,6 +1,6 @@
 package com.portfolio.dtos.DashboardDTOs;
 
-import com.portfolio.dtos.ContactUsResponse;
+import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import lombok.Builder;
 import lombok.Data;
 

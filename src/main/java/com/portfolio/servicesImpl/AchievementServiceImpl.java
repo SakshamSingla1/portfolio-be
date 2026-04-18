@@ -2,7 +2,7 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Achievements.AchievementRequestDTO;
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Achievements;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -11,6 +11,7 @@ import com.portfolio.repositories.AchievementRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.AchievementService;
 import com.portfolio.services.CloudinaryService;
+import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AchievementServiceImpl implements AchievementService {
     private final ProfileRepository profileRepository;
     private final CloudinaryService cloudinaryService;
     private final AchievementRepository achievementRepository;
+    private final Helper helper;
 
     @Override
     public AchievementResponseDTO createAchievement(AchievementRequestDTO dto) throws GenericException {
@@ -44,8 +46,6 @@ public class AchievementServiceImpl implements AchievementService {
                 .proofPublicId(dto.getProofPublicId())
                 .status(dto.getStatus())
                 .order(dto.getOrder())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(achievementRepository.save(achievement));
     }
@@ -65,7 +65,6 @@ public class AchievementServiceImpl implements AchievementService {
         existing.setProofPublicId(dto.getProofPublicId());
         existing.setStatus(dto.getStatus());
         existing.setOrder(dto.getOrder());
-        existing.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(achievementRepository.save(existing));
     }
 
@@ -131,7 +130,7 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     private AchievementResponseDTO mapToResponse(Achievements c) {
-        return AchievementResponseDTO.builder()
+        AchievementResponseDTO responseDTO = AchievementResponseDTO.builder()
                 .id(c.getId())
                 .title(c.getTitle())
                 .issuer(c.getIssuer())
@@ -141,8 +140,8 @@ public class AchievementServiceImpl implements AchievementService {
                 .proofPublicId(c.getProofPublicId())
                 .order(c.getOrder())
                 .status(c.getStatus())
-                .createdAt(c.getCreatedAt())
-                .updatedAt(c.getUpdatedAt())
                 .build();
+        helper.setAudit(c, responseDTO);
+        return responseDTO;
     }
 }

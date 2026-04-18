@@ -1,8 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.LogoRequest;
-import com.portfolio.dtos.LogoResponse;
-import com.portfolio.dtos.logo.LogoDropdown;
+import com.portfolio.dtos.Logos.LogoRequest;
+import com.portfolio.dtos.Logos.LogoResponse;
+import com.portfolio.dtos.Logos.LogoDropdown;
 import com.portfolio.entities.Logo;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
@@ -31,8 +31,6 @@ public class LogoServiceImpl implements LogoService {
         Logo logo = Logo.builder()
                 .name(request.getName())
                 .url(request.getUrl())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         Logo savedLogo = logoRepository.save(logo);

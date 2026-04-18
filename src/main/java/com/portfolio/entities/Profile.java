@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import lombok.AllArgsConstructor;
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @CompoundIndex(name = "profile_updated", def = "{ 'id': 1, 'updatedAt': -1 }")
-public class Profile {
+public class Profile extends Auditable {
     @Id
     private String id;
     private String fullName;
@@ -47,6 +48,4 @@ public class Profile {
     private String themeName;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

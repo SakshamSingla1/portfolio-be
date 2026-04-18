@@ -1,8 +1,8 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.ImageUploadResponse;
-import com.portfolio.dtos.ProjectRequest;
-import com.portfolio.dtos.ProjectResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.dtos.Project.ProjectRequest;
+import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.EmploymentStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,7 @@ import java.util.List;
                 def = "{ 'profileId': 1, 'updatedAt': -1 }"
         )
 })
-public class Experience {
+public class Experience extends Auditable {
     @Id
     private String id;
 
@@ -49,7 +50,4 @@ public class Experience {
     private String description;
     private List<String> skillIds;
 
-    @Indexed
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

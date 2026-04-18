@@ -1,7 +1,7 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.NTRequestDTO;
-import com.portfolio.dtos.NTResponseDTO;
+import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
+import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;

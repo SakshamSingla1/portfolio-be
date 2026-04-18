@@ -1,9 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.SkillRequest;
-import com.portfolio.dtos.SkillResponse;
+import com.portfolio.dtos.Skill.SkillRequest;
+import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.entities.Logo;
-import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +38,6 @@ public class SkillServiceImpl implements SkillService {
                 .level(request.getLevel())
                 .category(request.getCategory())
                 .profileId(request.getProfileId())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(skillRepository.save(skill));
     }
@@ -59,7 +55,6 @@ public class SkillServiceImpl implements SkillService {
         skill.setLevel(request.getLevel());
         skill.setCategory(request.getCategory());
         skill.setProfileId(request.getProfileId());
-        skill.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(skillRepository.save(skill));
     }
 
