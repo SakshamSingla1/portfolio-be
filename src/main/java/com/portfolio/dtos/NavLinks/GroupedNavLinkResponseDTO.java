@@ -12,6 +12,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupedNavLinkResponseDTO {
-    private String groupName;
-    private List<NavLinkResponseDTO> links;
+    private String navGroup;
+    private List<NavLinkResponseDTO> navlinks;
 }

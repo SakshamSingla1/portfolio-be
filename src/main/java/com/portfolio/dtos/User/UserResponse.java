@@ -1,25 +1,25 @@
-package com.portfolio.dtos.Authentication;
+package com.portfolio.dtos.User;
 
+import com.portfolio.dtos.AuditableResponse;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
-import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
-public class AuthResponseDTO {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class UserResponse extends AuditableResponse {
     private String id;
-    private String userName;
     private String fullName;
+    private String userName;
     private String email;
-    private String phone;
+    private String role;
     private String roleId;
     private String roleName;
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
-    private LocalDateTime createdAt;
-    private String message;
+    private String profileImageUrl;
 }

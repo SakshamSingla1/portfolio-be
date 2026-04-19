@@ -43,7 +43,7 @@ public class Profile extends Auditable {
     private String aboutMeImagePublicId;
     private String logoUrl;
     private String logoPublicId;
-    private String role;
+    private String roleId;
     private StatusEnum status;
     private String themeName;
     private VerificationStatusEnum emailVerified;

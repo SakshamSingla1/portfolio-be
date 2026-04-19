@@ -3,6 +3,7 @@ package com.portfolio.dtos.Authentication;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.Role.RolePermissionResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import lombok.Builder;
@@ -18,11 +19,12 @@ public class LoginResponseDTO {
     private String userName;
     private String phone;
     private String email;
-    private String role;
+    private String roleId;
+    private String roleName;
     private String token;
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
     private ColorThemeResponseDTO defaultTheme;
-    private List<GroupedNavLinkResponseDTO> navLinks;
+    private RolePermissionResponseDTO rolePermissions;
 }
