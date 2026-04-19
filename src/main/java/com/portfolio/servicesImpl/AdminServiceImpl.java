@@ -3,6 +3,7 @@ package com.portfolio.servicesImpl;
 import com.portfolio.dtos.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.Role.RolePermissionResponseDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -11,11 +12,9 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.OtpStoreRepository;
 import com.portfolio.repositories.PasswordResetTokenRepository;
 import com.portfolio.repositories.ProfileRepository;
+import com.portfolio.repositories.RoleRepository;
 import com.portfolio.security.JwtUtil;
-import com.portfolio.services.AdminService;
-import com.portfolio.services.ColorThemeService;
-import com.portfolio.services.NTService;
-import com.portfolio.services.NavLinkService;
+import com.portfolio.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +41,8 @@ public class AdminServiceImpl implements AdminService {
     private final Helper helper;
     private final NTService ntService;
     private final ColorThemeService colorThemeService;
-    private final NavLinkService navLinkService;
+    private final RoleService roleService;
+    private final RoleRepository roleRepository;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -61,7 +61,7 @@ public class AdminServiceImpl implements AdminService {
                 .userName(registerDTO.getUserName())
                 .email(registerDTO.getEmail())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
-                .role("ADMIN")
+                .roleId("69e4c480fd5a769716235d8b")
                 .phone(registerDTO.getPhone())
                 .status(StatusEnum.ACTIVE)
                 .emailVerified(VerificationStatusEnum.PENDING)
@@ -97,7 +97,7 @@ public class AdminServiceImpl implements AdminService {
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .role(user.getRole())
+                .roleId(user.getRoleId())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
@@ -267,7 +267,9 @@ public class AdminServiceImpl implements AdminService {
         } else {
             defaultTheme = colorThemeService.getDefaultTheme();
         }
-        List<NavLinkResponseDTO> navLinks = navLinkService.getNavLinks(user.getRole());
+        RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
+        Role role = roleRepository.findById(user.getRoleId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND,"Role not found"));
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -275,13 +277,14 @@ public class AdminServiceImpl implements AdminService {
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .role(user.getRole())
+                .roleId(role.getId())
+                .roleName(role.getName())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
                 .token("Bearer " + token)
                 .defaultTheme(defaultTheme)
-                .navLinks(navLinks)
+                .rolePermissions(rolePermissionResponse)
                 .build();
     }
 

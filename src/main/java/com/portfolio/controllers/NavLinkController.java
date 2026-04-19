@@ -67,13 +67,11 @@ public class NavLinkController {
         );
     }
 
-    @GetMapping("/role/{role}")
-    public ResponseEntity<ResponseModel<List<NavLinkResponseDTO>>> getNavLinks(
-            @PathVariable String role
-    ) {
+    @GetMapping
+    public ResponseEntity<ResponseModel<List<NavLinkResponseDTO>>> getNavLinks() {
 
         List<NavLinkResponseDTO> responseDTO =
-                navLinkService.getNavLinks(role);
+                navLinkService.getNavLinks();
 
         return ApiResponse.respond(
                 responseDTO,
@@ -82,10 +80,9 @@ public class NavLinkController {
         );
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<ResponseModel<Page<NavLinkResponseDTO>>> getAllNavLinks(
             Pageable pageable,
-            @RequestParam(required = false) String role,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir,
@@ -95,7 +92,6 @@ public class NavLinkController {
         Page<NavLinkResponseDTO> responseDTO =
                 navLinkService.getAllNavLinks(
                         pageable,
-                        role,
                         search,
                         status,
                         sortBy,
@@ -121,6 +117,19 @@ public class NavLinkController {
                 responseDTO,
                 "Nav Link fetched successfully",
                 "Failed to fetch nav link"
+        );
+    }
+
+    @GetMapping("/grouped")
+    public ResponseEntity<ResponseModel<List<GroupedNavLinkResponseDTO>>> getGroupedNavLinks() {
+
+        List<GroupedNavLinkResponseDTO> responseDTO =
+                navLinkService.getGroupedNavLinks();
+
+        return ApiResponse.respond(
+                responseDTO,
+                "Grouped Nav Links fetched successfully",
+                "Failed to fetch grouped nav links"
         );
     }
 }

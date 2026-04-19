@@ -28,33 +28,13 @@ public class NavLinkServiceImpl implements NavLinkService {
     @Override
     public NavLinkResponseDTO createNavLink(NavLinkRequestDTO request) throws GenericException {
 
-        if (request == null || request.getRoles() == null || request.getRoles().isEmpty()) {
+        if (request == null) {
             throw new GenericException(
                     ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
-                    "Request or roles cannot be null"
+                    "Request cannot be null"
             );
         }
-
-        for (String role : request.getRoles()) {
-            RoleEnum.valueOf(role);
-
-            if (navLinkRepository.existsByRolesContainingAndIndex(role, request.getIndex())) {
-                throw new GenericException(
-                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                        "NavLink already exists for role and index"
-                );
-            }
-
-            if (navLinkRepository.existsByRolesContainingAndPath(role, request.getPath())) {
-                throw new GenericException(
-                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                        "Path already exists for role"
-                );
-            }
-        }
-
-        NavLink navLink = NavLink.builder()
-                .roles(request.getRoles())
+                NavLink navLink = NavLink.builder()
                 .index(request.getIndex())
                 .name(request.getName())
                 .path(request.getPath())
@@ -78,42 +58,11 @@ public class NavLinkServiceImpl implements NavLinkService {
                         "Nav Link not found"
                 ));
 
-        List<String> effectiveRoles =
-                request.getRoles() != null ? request.getRoles() : existing.getRoles();
-
-        for (String role : effectiveRoles) {
-            RoleEnum.valueOf(role);
-
-            navLinkRepository
-                    .findByRolesContainingAndPath(role, request.getPath())
-                    .filter(conflict -> !conflict.getId().equals(existing.getId()))
-                    .ifPresent(conflict -> {
-                        throw new RuntimeException(
-                                new GenericException(
-                                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                                        "Path already exists for role"
-                                )
-                        );
-                    });
-
-            navLinkRepository
-                    .findByRolesContainingAndIndex(role, request.getIndex())
-                    .filter(conflict -> !conflict.getId().equals(existing.getId()))
-                    .ifPresent(conflict -> {
-                        throw new RuntimeException(
-                                new GenericException(
-                                        ExceptionCodeEnum.DUPLICATE_NAV_LINK,
-                                        "Index already exists for role"
-                                )
-                        );
-                    });
-        }
-
         existing.setName(request.getName());
         existing.setIndex(request.getIndex());
         existing.setPath(request.getPath());
         existing.setIcon(request.getIcon());
-        existing.setRoles(effectiveRoles);
+        existing.setNavGroup(request.getNavGroup());
         existing.setStatus(request.getStatus());
         existing.setUpdatedAt(LocalDateTime.now());
 
@@ -136,11 +85,9 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
-    public List<NavLinkResponseDTO> getNavLinks(String role) {
+    public List<NavLinkResponseDTO> getNavLinks() {
 
-        RoleEnum.valueOf(role);
-
-        return navLinkRepository.findByRolesContaining(role)
+        return navLinkRepository.findAll()
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -149,7 +96,6 @@ public class NavLinkServiceImpl implements NavLinkService {
     @Override
     public Page<NavLinkResponseDTO> getAllNavLinks(
             Pageable pageable,
-            String role,
             String search,
             StatusEnum status,
             String sortBy,
@@ -171,33 +117,16 @@ public class NavLinkServiceImpl implements NavLinkService {
 
         boolean hasSearch = search != null && !search.isBlank();
         boolean hasStatus = status != null;
-        boolean hasRole = role != null && !role.isBlank();
 
         Page<NavLink> navLinks;
 
-        if (hasSearch && hasStatus && hasRole) {
-            navLinks = navLinkRepository.searchByRoleAndStatus(
-                    search, status, role, sortedPageable
-            );
-        } else if (hasSearch && hasStatus) {
+        if (hasSearch && hasStatus) {
             navLinks = navLinkRepository.searchByStatus(
                     search, status, sortedPageable
-            );
-        } else if (hasSearch && hasRole) {
-            navLinks = navLinkRepository.searchByRole(
-                    search, role, sortedPageable
-            );
-        } else if (hasStatus && hasRole) {
-            navLinks = navLinkRepository.findByStatusAndRolesContaining(
-                    status, role, sortedPageable
             );
         } else if (hasStatus) {
             navLinks = navLinkRepository.findByStatus(
                     status, sortedPageable
-            );
-        } else if (hasRole) {
-            navLinks = navLinkRepository.findByRolesContaining(
-                    role, sortedPageable
             );
         } else if (hasSearch) {
             navLinks = navLinkRepository.search(
@@ -225,7 +154,6 @@ public class NavLinkServiceImpl implements NavLinkService {
     private NavLinkResponseDTO toResponseDTO(NavLink navLink) {
         return NavLinkResponseDTO.builder()
                 .id(navLink.getId())
-                .roles(navLink.getRoles())
                 .index(navLink.getIndex())
                 .name(navLink.getName())
                 .path(navLink.getPath())
@@ -234,5 +162,28 @@ public class NavLinkServiceImpl implements NavLinkService {
                 .createdAt(navLink.getCreatedAt())
                 .updatedAt(navLink.getUpdatedAt())
                 .build();
+        helper.setAudit(navLink, responseDTO);
+        return responseDTO;
+    }
+
+    @Override
+    public List<GroupedNavLinkResponseDTO> getGroupedNavLinks() {
+
+        List<NavLink> navLinks = navLinkRepository.findAll();
+        
+        // Group by navGroup, treating null as "default"
+        Map<String, List<NavLink>> groupedByNavGroup = navLinks.stream()
+                .collect(Collectors.groupingBy(
+                        navLink -> navLink.getNavGroup() != null ? navLink.getNavGroup() : "default"
+                ));
+
+        return groupedByNavGroup.entrySet().stream()
+                .map(entry -> GroupedNavLinkResponseDTO.builder()
+                        .navGroup(entry.getKey())
+                        .navlinks(entry.getValue().stream()
+                                .map(this::toResponseDTO)
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
     }
 }
