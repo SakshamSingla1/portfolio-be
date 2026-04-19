@@ -2,6 +2,7 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.NavLinks.NavLinkRequestDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;

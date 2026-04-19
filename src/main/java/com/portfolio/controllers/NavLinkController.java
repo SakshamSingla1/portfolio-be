@@ -2,6 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.NavLinks.NavLinkRequestDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
+import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;

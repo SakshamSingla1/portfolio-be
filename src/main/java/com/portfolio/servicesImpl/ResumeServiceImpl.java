@@ -1,13 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
-import com.portfolio.dtos.ProjectResponse;
 import com.portfolio.dtos.Resume.ResumeUploadResponseDTO;
-import com.portfolio.entities.NavLink;
-import com.portfolio.entities.Project;
 import com.portfolio.entities.Resume;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ResumeRepository;
@@ -23,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -47,7 +41,6 @@ public class ResumeServiceImpl implements ResumeService {
                 .fileUrl(uploadResult.get("secure_url").toString())
                 .publicId(uploadResult.get("public_id").toString())
                 .status(StatusEnum.ACTIVE)
-                .updatedAt(LocalDateTime.now())
                 .build();
         Resume saved = resumeRepository.save(resume);
         return mapToResponse(saved);

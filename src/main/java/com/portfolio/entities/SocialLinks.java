@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
@@ -26,7 +27,7 @@ import java.time.LocalDateTime;
         )
 })
 
-public class SocialLinks {
+public class SocialLinks extends Auditable {
     @Id
     private String id;
     @Indexed
@@ -37,7 +38,4 @@ public class SocialLinks {
     private String order;
     @Indexed
     private StatusEnum status;
-    @Indexed
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

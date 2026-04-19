@@ -1,6 +1,5 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeRequestDTO;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.enums.*;
@@ -13,8 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/color-themes")

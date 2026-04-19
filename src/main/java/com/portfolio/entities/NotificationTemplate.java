@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.NotificationChannelEnum;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "notification-templates")
-public class NotificationTemplate {
+public class NotificationTemplate extends Auditable {
     @Id
     private String id;
     private String name;
@@ -24,6 +25,4 @@ public class NotificationTemplate {
     private String body;
     private NotificationChannelEnum type;
     private StatusEnum status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

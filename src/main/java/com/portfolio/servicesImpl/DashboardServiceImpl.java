@@ -1,6 +1,6 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.ContactUsResponse;
+import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.ActivityDTO;
 import com.portfolio.dtos.DashboardDTOs.DashboardSummaryDTO;
 import com.portfolio.dtos.DashboardDTOs.ProfileCompletionDTO;

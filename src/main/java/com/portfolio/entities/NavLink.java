@@ -31,6 +31,4 @@ public class NavLink extends Auditable {
     private String navGroup;
     @Indexed
     private StatusEnum status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
