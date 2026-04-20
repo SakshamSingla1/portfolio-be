@@ -1,6 +1,5 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeRequestDTO;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.enums.*;

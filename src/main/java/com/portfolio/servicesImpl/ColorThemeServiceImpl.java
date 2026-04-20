@@ -45,9 +45,6 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                 .themeName(themeName)
                 .palette(mapPaletteDtoToEntity(dto.getPalette()))
                 .status(StatusEnum.ACTIVE)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .updatedBy("SUPER_ADMIN")
                 .build();
 
         repository.save(theme);
@@ -186,6 +183,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                 .status(theme.getStatus())
                 .createdAt(theme.getCreatedAt())
                 .updatedAt(theme.getUpdatedAt())
+                .createdBy(theme.getCreatedBy())
                 .updatedBy(theme.getUpdatedBy())
                 .build();
     }

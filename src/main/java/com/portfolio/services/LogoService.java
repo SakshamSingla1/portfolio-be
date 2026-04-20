@@ -1,8 +1,8 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.LogoRequest;
-import com.portfolio.dtos.LogoResponse;
-import com.portfolio.dtos.logo.LogoDropdown;
+import com.portfolio.dtos.Logos.LogoRequest;
+import com.portfolio.dtos.Logos.LogoResponse;
+import com.portfolio.dtos.Logos.LogoDropdown;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

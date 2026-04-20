@@ -1,8 +1,8 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.LogoRequest;
-import com.portfolio.dtos.LogoResponse;
-import com.portfolio.dtos.logo.LogoDropdown;
+import com.portfolio.dtos.Logos.LogoRequest;
+import com.portfolio.dtos.Logos.LogoResponse;
+import com.portfolio.dtos.Logos.LogoDropdown;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.LogoService;

@@ -1,11 +1,10 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.ProjectImages.ProjectImageRequest;
-import com.portfolio.dtos.ProjectRequest;
-import com.portfolio.dtos.ProjectResponse;
+import com.portfolio.dtos.Project.ProjectRequest;
+import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
-import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.entities.Project;
 import com.portfolio.entities.ProjectImages;
 import com.portfolio.entities.Skill;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -64,8 +62,6 @@ public class ProjectServiceImpl implements ProjectService {
                 )
                 .workStatus(req.getWorkStatus())
                 .skillIds(req.getSkillIds())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         Project savedProject = projectRepository.save(project);
         saveProjectImages(

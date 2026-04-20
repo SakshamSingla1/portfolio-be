@@ -2,7 +2,7 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,6 +1,7 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.Profile.ProfileMasterResponse;
+import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.PlatformEnum;

@@ -1,6 +1,6 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.Authentication.*;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +21,9 @@ public interface AdminService {
 
     String resetPassword(PasswordResetConfirmDTO dto) throws GenericException;
 
-    String changePassword(String authorizationHeader,ChangePasswordDTO dto) throws GenericException;
+    String changePassword(String authorizationHeader, ChangePasswordDTO dto) throws GenericException;
 
-    String requestEmailChange(String authorizationHeader,ChangeEmailRequestDTO dto) throws GenericException;
+    String requestEmailChange(String authorizationHeader, ChangeEmailRequestDTO dto) throws GenericException;
 
     @Transactional
     String verifyEmailChangeOtp(String authorizationHeader, VerifyEmailChangeDTO dto) throws GenericException;

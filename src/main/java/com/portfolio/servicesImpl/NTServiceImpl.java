@@ -1,6 +1,7 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
+import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
 import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -34,8 +35,6 @@ public class NTServiceImpl implements NTService {
                 .body(ntRequestDTO.getBody())
                 .type(ntRequestDTO.getType())
                 .status(StatusEnum.ACTIVE)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         ntRepository.save(template);
         return mapToResponseDTO(template);

@@ -2,7 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Achievements.AchievementRequestDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/achievements")

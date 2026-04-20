@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.SkillCategoryEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,13 +16,11 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Logo {
+public class Logo extends Auditable {
 
     @Id
     private String id;
     private String name;
     private String url;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
 
