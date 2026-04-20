@@ -1,6 +1,7 @@
 package com.portfolio.services;
 
-import com.portfolio.dtos.*;
+import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
+import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;

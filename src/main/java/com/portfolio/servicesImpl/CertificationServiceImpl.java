@@ -1,9 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Certifications.CertificationRequestDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
-import com.portfolio.dtos.ImageUploadResponse;
+import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Certifications;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -12,6 +11,7 @@ import com.portfolio.repositories.CertificationsRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.CertificationService;
 import com.portfolio.services.CloudinaryService;
+import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,7 @@ public class CertificationServiceImpl implements CertificationService {
     private final CertificationsRepository certificationsRepository;
     private final ProfileRepository profileRepository;
     private final CloudinaryService cloudinaryService;
+    private final Helper helper;
 
     @Override
     public CertificationResponseDTO createCertification(CertificationRequestDTO dto) throws GenericException {
@@ -45,8 +46,6 @@ public class CertificationServiceImpl implements CertificationService {
                 .expiryDate(dto.getExpiryDate())
                 .status(dto.getStatus())
                 .order(dto.getOrder())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
         return mapToResponse(certificationsRepository.save(certification));
     }
@@ -132,7 +131,7 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     private CertificationResponseDTO mapToResponse(Certifications c) {
-        return CertificationResponseDTO.builder()
+        CertificationResponseDTO responseDTO = CertificationResponseDTO.builder()
                 .id(c.getId())
                 .title(c.getTitle())
                 .issuer(c.getIssuer())
@@ -142,8 +141,8 @@ public class CertificationServiceImpl implements CertificationService {
                 .order(c.getOrder())
                 .issueDate(c.getIssueDate())
                 .expiryDate(c.getExpiryDate())
-                .createdAt(c.getCreatedAt())
-                .updatedAt(c.getUpdatedAt())
                 .build();
+        helper.setAudit(c, responseDTO);
+        return responseDTO;
     }
 }

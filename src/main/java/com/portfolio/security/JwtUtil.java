@@ -27,9 +27,10 @@ public class JwtUtil {
     }
 
     // ================= GENERATE =================
-    public String generateAccessToken(String email) {
+    public String generateAccessToken(String email, String userId) {
         return Jwts.builder()
                 .subject(email)
+                .claim("userId", userId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -39,6 +40,13 @@ public class JwtUtil {
     // ================= EXTRACT =================
     public String extractEmail(String token) {
         return getClaims(token).getSubject();
+    }
+
+    public String extractUserId(String token) {
+        Claims claims = getClaims(token);
+        Object userId = claims.get("userId");
+        if (userId == null) return null;
+        return userId.toString();
     }
 
     // ================= VALIDATE =================

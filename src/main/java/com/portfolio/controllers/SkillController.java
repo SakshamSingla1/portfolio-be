@@ -1,8 +1,7 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.SkillRequest;
-import com.portfolio.dtos.SkillResponse;
-import com.portfolio.enums.StatusEnum;
+import com.portfolio.dtos.Skill.SkillRequest;
+import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

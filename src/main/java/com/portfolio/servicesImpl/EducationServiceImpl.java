@@ -1,17 +1,13 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dtos.EducationRequest;
-import com.portfolio.dtos.EducationResponse;
+import com.portfolio.dtos.Education.EducationRequest;
+import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.entities.Education;
-import com.portfolio.entities.NotificationTemplate;
-import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.EducationRepository;
-import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.EducationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,8 +39,6 @@ public class EducationServiceImpl implements EducationService {
                 .description(request.getDescription())
                 .grade(request.getGrade())
                 .profileId(request.getProfileId())
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         return mapToResponse(educationRepository.save(education));

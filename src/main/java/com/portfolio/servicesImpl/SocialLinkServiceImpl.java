@@ -40,7 +40,6 @@ public class SocialLinkServiceImpl implements SocialLinkService {
             link.setStatus(StatusEnum.ACTIVE);
             link.setUrl(requestDTO.getUrl());
             link.setOrder(requestDTO.getOrder());
-            link.setUpdatedAt(LocalDateTime.now());
             SocialLinks saved = socialLinkRepository.save(link);
             return mapToResponse(saved);
         }
@@ -56,8 +55,6 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 .url(requestDTO.getUrl())
                 .order(requestDTO.getOrder())
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : StatusEnum.ACTIVE)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         SocialLinks saved = socialLinkRepository.save(socialLinks);

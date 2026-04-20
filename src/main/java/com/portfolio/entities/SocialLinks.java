@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -16,14 +20,22 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SocialLinks {
+@CompoundIndexes({
+        @CompoundIndex(
+                name = "idx_profile_status_order",
+                def = "{ 'profileId': 1, 'status': 1, 'order': 1 }"
+        )
+})
+
+public class SocialLinks extends Auditable {
     @Id
     private String id;
+    @Indexed
     private String profileId;
+    @Indexed
     private PlatformEnum platform;
     private String url;
     private String order;
+    @Indexed
     private StatusEnum status;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
