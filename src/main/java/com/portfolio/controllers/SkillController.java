@@ -1,7 +1,9 @@
 package com.portfolio.controllers;
 
+import com.cloudinary.Api;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
+import com.portfolio.dtos.Skill.SkillStat;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -80,5 +82,11 @@ public class SkillController {
         } catch (GenericException e) {
             return ApiResponse.failureResponse(null, e.getMessage());
         }
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<ResponseModel<SkillStat>> getStats() {
+        SkillStat statsResponse = skillService.getStats();
+        return ApiResponse.successResponse(statsResponse, "Stats Fetched Successfully");
     }
 }
