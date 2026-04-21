@@ -2,9 +2,11 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
+import com.portfolio.dtos.Skill.SkillStat;
 import com.portfolio.entities.Logo;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.LogoRepository;
 import com.portfolio.repositories.SkillRepository;
@@ -104,6 +106,16 @@ public class SkillServiceImpl implements SkillService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    @Override
+    public SkillStat getStats() {
+        return SkillStat.builder()
+                .expertSkillCount(skillRepository.countByLevel(SkillLevelEnum.Expert))
+                .advancedSkillCount(skillRepository.countByLevel(SkillLevelEnum.Advanced))
+                .intermediateSkillCount(skillRepository.countByLevel(SkillLevelEnum.Intermediate))
+                .beginnerSkillCount(skillRepository.countByLevel(SkillLevelEnum.Beginner))
+                .build();
     }
 
     private SkillResponse mapToResponse(Skill skill) {
