@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -46,6 +47,7 @@ public class LogoController {
     }
 
     @Operation(summary = "Create a logo", description = "Creates a new logo")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping
     public ResponseEntity<ResponseModel<LogoResponse>> createLogo(@RequestBody LogoRequest request) {
         try {
@@ -57,6 +59,7 @@ public class LogoController {
     }
 
     @Operation(summary = "Update a logo", description = "Updates an existing logo by ID")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<LogoResponse>> updateLogo(
             @PathVariable String id,
@@ -70,11 +73,13 @@ public class LogoController {
     }
 
     @Operation(summary = "Delete a logo", description = "Deletes a logo by ID")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> deleteLogo(@PathVariable String id) {
         try {
             logoService.delete(id);
-            return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully", "Failed to delete logo");
+            return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully",
+                    "Failed to delete logo");
         } catch (Exception e) {
             return ApiResponse.respond(null, "Logo deleted successfully", e.getMessage());
         }
