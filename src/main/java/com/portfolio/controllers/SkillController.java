@@ -1,5 +1,6 @@
 package com.portfolio.controllers;
 
+import com.cloudinary.Api;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
@@ -43,7 +44,7 @@ public class SkillController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SkillResponse>> update(
             @RequestHeader("Authorization") String auth,
-            @Parameter(description = "Skill ID") @PathVariable String id,
+            @Parameter(description = "Skill ID") @PathVariable String id, 
             @RequestBody SkillRequest req) {
         try {
             req.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -56,8 +57,7 @@ public class SkillController {
 
     @Operation(summary = "Get Skill by ID", description = "Retrieve details of a skill by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<SkillResponse>> findById(
-            @Parameter(description = "Skill ID") @PathVariable String id) {
+    public ResponseEntity<ResponseModel<SkillResponse>> findById(@Parameter(description = "Skill ID") @PathVariable String id) {
         try {
             SkillResponse response = skillService.getById(id);
             return ApiResponse.successResponse(response, "Skill fetched successfully");
@@ -73,7 +73,8 @@ public class SkillController {
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+            @RequestParam(required = false, defaultValue = "desc") String sortDir
+    ) throws GenericException {
         String profileId = helper.getProfileIdFromHeader(auth);
         Page<SkillResponse> response = skillService.getByProfile(profileId, pageable, search, sortDir, sortBy);
         return ApiResponse.successResponse(response, "Skills fetched successfully");

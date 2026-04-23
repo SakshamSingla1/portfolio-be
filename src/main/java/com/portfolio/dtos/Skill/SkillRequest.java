@@ -1,4 +1,3 @@
-// SkillRequest.java
 package com.portfolio.dtos.Skill;
 
 import com.portfolio.enums.SkillCategoryEnum;
@@ -10,8 +9,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillRequest {
+    private String profileId;
     private String logoId;
     private SkillLevelEnum level;
     private SkillCategoryEnum category;
-    private String profileId;
 }

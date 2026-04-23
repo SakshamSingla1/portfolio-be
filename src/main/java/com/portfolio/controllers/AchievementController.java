@@ -7,6 +7,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.AchievementService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,15 +25,23 @@ import java.util.stream.Collectors;
 public class AchievementController {
 
     private final AchievementService achievementService;
+    private final Helper helper;
 
     @PostMapping
-    public ResponseEntity<ResponseModel<AchievementResponseDTO>> createAchievement(@RequestBody AchievementRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<AchievementResponseDTO>> createAchievement(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody AchievementRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.createAchievement(dto);
         return ApiResponse.respond(response, "Achievement created successfully", "Failed to create Achievement");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(@PathVariable String id, @RequestBody AchievementRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id, 
+            @RequestBody AchievementRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.updateAchievement(id, dto);
         return ApiResponse.respond(response, "Achievement updated successfully", "Failed to update Achievement");
     }
@@ -44,13 +53,14 @@ public class AchievementController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAchievement(
-            @RequestParam(required = false) String profileId,
+    public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getMyAchievements(
+            @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
-    ) {
+    ) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Achievements fetched successfully", "Failed to fetch Achievements");
     }
@@ -62,11 +72,12 @@ public class AchievementController {
     }
 
     @Operation(summary = "Upload Image")
-    @PostMapping("/{profileId}/upload")
+    @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
-            @PathVariable String profileId,
+            @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(achievementService.uploadImage(profileId, file), "Image uploaded successfully", "Failed to upload Image");
     }
 }

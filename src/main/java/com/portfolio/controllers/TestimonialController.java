@@ -7,6 +7,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.TestimonialService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,15 +24,23 @@ import java.io.IOException;
 public class TestimonialController {
 
     private final TestimonialService testimonialService;
+    private final Helper helper;
 
     @PostMapping
-    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> createTestimonial(@RequestBody TestimonialRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> createTestimonial(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody TestimonialRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.createTestimonial(dto);
         return ApiResponse.respond(response, "Testimonial created successfully", "Failed to create Testimonial");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(@PathVariable String id, @RequestBody TestimonialRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id, 
+            @RequestBody TestimonialRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.updateTestimonial(id, dto);
         return ApiResponse.respond(response, "Testimonial updated successfully", "Failed to update Testimonial");
     }
@@ -43,13 +52,14 @@ public class TestimonialController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getTestimonial(
-            @RequestParam(required = false) String profileId,
+    public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getMyTestimonials(
+            @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
-    ) {
+    ) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         Page<TestimonialResponseDTO> page = testimonialService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
@@ -61,11 +71,12 @@ public class TestimonialController {
     }
 
     @Operation(summary = "Upload Image")
-    @PostMapping("/{profileId}/upload")
+    @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
-            @PathVariable String profileId,
+            @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(testimonialService.uploadImage(profileId, file), "Profile image uploaded successfully", "Failed to upload profile image");
     }
 }

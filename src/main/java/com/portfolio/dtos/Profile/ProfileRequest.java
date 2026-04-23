@@ -17,5 +17,4 @@ public class ProfileRequest {
     private String aboutMeImagePublicId;
     private String logoUrl;
     private String logoPublicId;
-    private String themeName;
 }
