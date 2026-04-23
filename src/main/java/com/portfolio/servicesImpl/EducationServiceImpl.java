@@ -38,7 +38,6 @@ public class EducationServiceImpl implements EducationService {
                 .endYear(request.getEndYear())
                 .description(request.getDescription())
                 .grade(request.getGrade())
-                .profileId(request.getProfileId())
                 .build();
 
         return mapToResponse(educationRepository.save(education));
