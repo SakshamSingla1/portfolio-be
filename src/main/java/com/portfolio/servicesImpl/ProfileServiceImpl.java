@@ -56,14 +56,15 @@ public class ProfileServiceImpl implements ProfileService {
         profileRepository.findByEmail(req.getEmail())
                 .ifPresent(owner -> {
                     if (!owner.getId().equals(id)) {
-                        throw new RuntimeException(new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use")
-                        );
+                        throw new RuntimeException(
+                                new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use"));
                     }
                 });
         profileRepository.findByPhone(req.getPhone())
                 .ifPresent(owner -> {
                     if (!owner.getId().equals(id)) {
-                        throw new RuntimeException(new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Phone already in use"));
+                        throw new RuntimeException(
+                                new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Phone already in use"));
                     }
                 });
         existing.setFullName(req.getFullName());
@@ -93,7 +94,6 @@ public class ProfileServiceImpl implements ProfileService {
             existing.setLogoUrl(req.getLogoUrl());
             existing.setLogoPublicId(req.getLogoPublicId());
         }
-        existing.setThemeName(req.getThemeName());
         existing.setUpdatedAt(LocalDateTime.now());
         Profile updated = profileRepository.save(existing);
         return mapToResponse(updated);
@@ -102,37 +102,36 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ImageUploadResponse uploadProfileImage(
             String profileId,
-            MultipartFile file
-    ) throws IOException, GenericException {
+            MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         Map uploadResult = cloudinaryService.uploadProfileImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
+                uploadResult.get("public_id").toString());
     }
 
     @Override
     public ImageUploadResponse uploadAboutMeImage(
             String profileId,
-            MultipartFile file
-    ) throws IOException, GenericException {
+            MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         Map uploadResult = cloudinaryService.uploadProfileImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
+                uploadResult.get("public_id").toString());
     }
 
     @Override
     public ImageUploadResponse uploadLogoImage(
             String profileId,
-            MultipartFile file
-    ) throws IOException, GenericException {
+            MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         Map uploadResult = cloudinaryService.uploadLogoImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
+                uploadResult.get("public_id").toString());
     }
 
-    // -------------------- MAPPER --------------------
     private ProfileResponse mapToResponse(Profile profile) {
         return ProfileResponse.builder()
                 .id(profile.getId())
@@ -151,7 +150,6 @@ public class ProfileServiceImpl implements ProfileService {
                 .aboutMeImagePublicId(profile.getAboutMeImagePublicId())
                 .logoUrl(profile.getLogoUrl())
                 .logoPublicId(profile.getLogoPublicId())
-                .themeName(profile.getThemeName())
                 .emailVerified(profile.getEmailVerified())
                 .phoneVerified(profile.getPhoneVerified())
                 .build();
@@ -164,20 +162,17 @@ public class ProfileServiceImpl implements ProfileService {
             StatusEnum status,
             String role,
             String sortBy,
-            String sortDir
-    ) {
+            String sortDir) {
         Sort sort = Sort.by(
                 "desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC
                         : Sort.Direction.ASC,
-                (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy
-        );
+                (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy);
 
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
-                sort
-        );
+                sort);
 
         boolean hasSearch = search != null && !search.isBlank();
         boolean hasStatus = status != null;
@@ -187,16 +182,13 @@ public class ProfileServiceImpl implements ProfileService {
 
         if (hasSearch && hasStatus && hasRole) {
             profiles = profileRepository.searchByRoleAndStatus(
-                    search, status, role, sortedPageable
-            );
+                    search, status, role, sortedPageable);
         } else if (hasSearch && hasStatus) {
             profiles = profileRepository.searchByStatus(
-                    search, status, sortedPageable
-            );
+                    search, status, sortedPageable);
         } else if (hasSearch && hasRole) {
             profiles = profileRepository.searchByRole(
-                    search, role, sortedPageable
-            );
+                    search, role, sortedPageable);
         } else if (hasStatus && hasRole) {
             profiles = profileRepository.findByStatus(status, sortedPageable);
             profiles = new PageImpl<>(
@@ -204,8 +196,7 @@ public class ProfileServiceImpl implements ProfileService {
                             .filter(profile -> role.equals(profile.getRoleId()))
                             .collect(Collectors.toList()),
                     pageable,
-                    profiles.getTotalElements()
-            );
+                    profiles.getTotalElements());
         } else if (hasStatus) {
             profiles = profileRepository.findByStatus(status, sortedPageable);
         } else if (hasRole) {
@@ -230,10 +221,10 @@ public class ProfileServiceImpl implements ProfileService {
     public UserResponse updateUserStatus(String id, StatusUpdateRequest request) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        
+
         profile.setStatus(request.getStatus());
         profileRepository.save(profile);
-        
+
         return mapToUserResponse(profile);
     }
 
@@ -241,10 +232,10 @@ public class ProfileServiceImpl implements ProfileService {
     public UserResponse updateUserRole(String id, RoleUpdateRequest request) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        
+
         profile.setRoleId(request.getRole());
         profileRepository.save(profile);
-        
+
         return mapToUserResponse(profile);
     }
 
@@ -263,14 +254,14 @@ public class ProfileServiceImpl implements ProfileService {
         } else {
             profile.setPhoneVerified(VerificationStatusEnum.VERIFIED);
         }
-        
+
         profile.setUpdatedAt(LocalDateTime.now());
         profileRepository.save(profile);
-        
+
         return mapToUserResponse(profile);
     }
 
-    private UserResponse mapToUserResponse(Profile profile){
+    private UserResponse mapToUserResponse(Profile profile) {
         UserResponse user = UserResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())

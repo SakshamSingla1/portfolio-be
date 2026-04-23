@@ -7,7 +7,6 @@ import java.util.List;
 
 @Data
 public class ExperienceRequest {
-    private String profileId;
     private String companyName;
     private String jobTitle;
     private String location;
@@ -16,4 +15,5 @@ public class ExperienceRequest {
     private EmploymentStatusEnum employmentStatus;
     private String description;
     private List<String> skillIds;
+    private String profileId;
 }

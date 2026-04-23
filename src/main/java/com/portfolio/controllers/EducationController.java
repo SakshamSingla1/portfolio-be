@@ -7,9 +7,10 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.EducationService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +19,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/education")
 @Tag(name = "Education", description = "Endpoints for managing education records")
+@RequiredArgsConstructor
 public class EducationController {
 
-    @Autowired
-    private EducationService educationService;
+    private final EducationService educationService;
+    private final Helper helper;
 
     @Operation(summary = "Create education", description = "Creates a new education record.")
     @PostMapping
-    public ResponseEntity<ResponseModel<EducationResponse>> create(@RequestBody EducationRequest request) throws GenericException {
+    public ResponseEntity<ResponseModel<EducationResponse>> create(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody EducationRequest request) throws GenericException {
+        request.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(
                 educationService.createEducation(request),
                 "Education created successfully",
@@ -36,9 +41,11 @@ public class EducationController {
     @Operation(summary = "Update education by ID", description = "Updates education details by ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> update(
+            @RequestHeader("Authorization") String auth,
             @PathVariable String id,
             @RequestBody EducationRequest request
     ) throws GenericException {
+        request.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(
                 educationService.updateEducation(id, request),
                 "Education updated successfully",
@@ -46,12 +53,13 @@ public class EducationController {
         );
     }
 
-    @Operation(summary = "Get education by ID", description = "Fetches education record for a given ID and profile ID.")
-    @GetMapping("/{id}/{profileId}")
-    public ResponseEntity<ResponseModel<EducationResponse>> getById(
-            @PathVariable String id,
-            @PathVariable String profileId
+    @Operation(summary = "Get My education by ID", description = "Fetches education record for the logged-in user.")
+    @GetMapping("/{id}/me")
+    public ResponseEntity<ResponseModel<EducationResponse>> getMyEducationById(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id
     ) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 educationService.findById(id, profileId),
                 "Education fetched successfully",
@@ -59,27 +67,29 @@ public class EducationController {
         );
     }
 
-    @Operation(summary = "Get education by profile", description = "Fetches paginated education records for a profile with optional search.")
-    @GetMapping("/profile/{profileId}")
-    public ResponseEntity<ResponseModel<Page<EducationResponse>>> getByProfile(
-            @PathVariable String profileId,
+    @Operation(summary = "Get My education", description = "Fetches paginated education records for the logged-in profile.")
+    @GetMapping
+    public ResponseEntity<ResponseModel<Page<EducationResponse>>> getMyEducation(
+            @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
-                educationService.getByProfile(profileId, search,sortDir,sortBy,pageable),
+                educationService.getByProfile(profileId, search, sortDir, sortBy, pageable),
                 "Educations fetched successfully",
                 "Failed to fetch educations"
         );
     }
 
-    @Operation(summary = "Delete education", description = "Delete education record by ID and profile ID.")
-    @DeleteMapping("/{id}/{profileId}")
-    public ResponseEntity<ResponseModel<String>> delete(
-            @PathVariable String id,
-            @PathVariable String profileId
+    @Operation(summary = "Delete My education", description = "Delete education record by ID for the logged-in user.")
+    @DeleteMapping("/{id}/me")
+    public ResponseEntity<ResponseModel<String>> deleteMyEducation(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id
     ) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 educationService.delete(id, profileId),
                 "Education deleted successfully",

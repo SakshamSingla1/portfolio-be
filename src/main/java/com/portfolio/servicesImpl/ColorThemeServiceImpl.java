@@ -69,11 +69,11 @@ public class ColorThemeServiceImpl implements ColorThemeService {
     }
 
     @Override
-    public ColorThemeResponseDTO getThemeByName(String themeName) throws GenericException {
-        ColorTheme theme = repository.findByThemeName(themeName)
+    public ColorThemeResponseDTO getThemeById(String themeId) throws GenericException {
+        ColorTheme theme = repository.findById(themeId)
                 .orElseThrow(() ->
                         new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
-                                "Theme not found for theme " + themeName));
+                                "Theme not found for id " + themeId));
         return mapToResponse(theme);
     }
 

@@ -6,6 +6,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.ResumeService;
+import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,32 +23,36 @@ import java.util.List;
 public class ResumeController {
 
     private final ResumeService resumeService;
+    private final Helper helper;
 
-    @PostMapping("/upload/{profileId}")
-    public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> uploadResume(
-            @PathVariable String profileId,
-            @RequestParam MultipartFile file) throws IOException {
+    @PostMapping("/upload/me")
+    public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> uploadMyResume(
+            @RequestHeader("Authorization") String auth,
+            @RequestParam MultipartFile file) throws IOException, GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         ResumeUploadResponseDTO resumeUploadResponseDTO = resumeService.uploadResume(profileId, file);
-        return ApiResponse.respond(resumeUploadResponseDTO, "Resume uploaded successfully","Failed to upload resume");
+        return ApiResponse.respond(resumeUploadResponseDTO, "Resume uploaded successfully", "Failed to upload resume");
     }
 
-    @GetMapping("/{profileId}")
-    public ResponseEntity<ResponseModel<Page<ResumeUploadResponseDTO>>>  getResumes(
-            @PathVariable String profileId,
+    @GetMapping
+    public ResponseEntity<ResponseModel<Page<ResumeUploadResponseDTO>>> getMyResumes(
+            @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
-        Page<ResumeUploadResponseDTO> resumeDtos = resumeService.getByProfile(profileId,status,pageable, search,sortDir,sortBy);
-        return ApiResponse.respond(resumeDtos, "Resumes fetched successfully","failed to fetch resumes");
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
+        Page<ResumeUploadResponseDTO> resumeDtos = resumeService.getByProfile(profileId, status, pageable, search, sortDir, sortBy);
+        return ApiResponse.respond(resumeDtos, "Resumes fetched successfully", "failed to fetch resumes");
     }
 
-    @PutMapping("/activate")
-    public ResponseEntity<ResponseModel<String>> activateResume(
-            @RequestParam String profileId,
+    @PutMapping("/activate/me")
+    public ResponseEntity<ResponseModel<String>> activateMyResume(
+            @RequestHeader("Authorization") String auth,
             @RequestParam String resumeId) throws GenericException {
-        resumeService.activateResume(profileId,resumeId);
+        String profileId = helper.getProfileIdFromHeader(auth);
+        resumeService.activateResume(profileId, resumeId);
         return ApiResponse.successResponse(null, "Resume activated successfully");
     }
 

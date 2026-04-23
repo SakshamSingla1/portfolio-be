@@ -7,6 +7,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.CertificationService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,15 +24,23 @@ import java.io.IOException;
 public class CertificationController {
 
     private final CertificationService certificationService;
+    private final Helper helper;
 
     @PostMapping
-    public ResponseEntity<ResponseModel<CertificationResponseDTO>> createCertification(@RequestBody CertificationRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<CertificationResponseDTO>> createCertification(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody CertificationRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.createCertification(dto);
         return ApiResponse.respond(response, "Certification created successfully", "Failed to create certification");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(@PathVariable String id, @RequestBody CertificationRequestDTO dto) throws GenericException {
+    public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id, 
+            @RequestBody CertificationRequestDTO dto) throws GenericException {
+        dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.updateCertification(id, dto);
         return ApiResponse.respond(response, "Certification updated successfully", "Failed to update certification");
     }
@@ -43,13 +52,14 @@ public class CertificationController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getCertifications(
-            @RequestParam(required = false) String profileId,
+    public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getMyCertifications(
+            @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
-    ) {
+    ) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
@@ -61,11 +71,12 @@ public class CertificationController {
     }
 
     @Operation(summary = "Upload Credential Image")
-    @PostMapping("/{profileId}/upload")
+    @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadCredentialImage(
-            @PathVariable String profileId,
+            @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(certificationService.uploadCredentialImage(profileId, file), "Profile image uploaded successfully", "Failed to upload profile image");
     }
 }

@@ -7,6 +7,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.ProjectService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,11 +26,15 @@ import java.io.IOException;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final Helper helper;
 
     @Operation(summary = "Create a Project", description = "Create a new project for a profile")
     @PostMapping
-    public ResponseEntity<ResponseModel<ProjectResponse>> createProject(@RequestBody ProjectRequest request) {
+    public ResponseEntity<ResponseModel<ProjectResponse>> createProject(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody ProjectRequest request) {
         try {
+            request.setProfileId(helper.getProfileIdFromHeader(auth));
             ProjectResponse response = projectService.create(request);
             return ApiResponse.successResponse(response, "Project created successfully");
         } catch (GenericException e) {
@@ -50,8 +55,12 @@ public class ProjectController {
 
     @Operation(summary = "Update Project", description = "Update project details by ID")
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(@PathVariable String id, @RequestBody ProjectRequest request) {
+    public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable String id, 
+            @RequestBody ProjectRequest request) {
         try {
+            request.setProfileId(helper.getProfileIdFromHeader(auth));
             ProjectResponse response = projectService.update(id, request);
             return ApiResponse.successResponse(response, "Project updated successfully");
         } catch (GenericException e) {
@@ -70,24 +79,26 @@ public class ProjectController {
         }
     }
 
-    @Operation(summary = "Get Projects by Profile", description = "Fetch all projects of a profile with pagination and optional search")
-    @GetMapping("/profile/{profileId}")
-    public ResponseEntity<ResponseModel<Page<ProjectResponse>>> getProjectsByProfile(
-            @PathVariable String profileId,
+    @Operation(summary = "Get My Projects", description = "Fetch all projects of the logged-in profile")
+    @GetMapping
+    public ResponseEntity<ResponseModel<Page<ProjectResponse>>> getMyProjects(
+            @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
-        Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search,sortDir,sortBy);
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
+        Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search, sortDir, sortBy);
         return ApiResponse.successResponse(projects, "Projects fetched successfully");
     }
 
     @Operation(summary = "Upload a project image")
-    @PostMapping("/{profileId}/images")
+    @PostMapping("/images/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProjectImage(
-            @PathVariable String profileId,
+            @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 projectService.uploadProjectImage(profileId, file),
                 "Project image uploaded successfully",
