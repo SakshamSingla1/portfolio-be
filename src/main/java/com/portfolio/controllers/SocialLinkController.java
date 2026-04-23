@@ -9,6 +9,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.SocialLinkService;
+import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,17 +24,23 @@ import java.util.List;
 public class SocialLinkController {
 
     private final SocialLinkService socialLinkService;
+    private final Helper helper;
 
     @PostMapping
-    public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> createLink(@RequestBody SocialLinkRequestDTO requestDTO) throws GenericException {
+    public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> createLink(
+            @RequestHeader("Authorization") String auth,
+            @RequestBody SocialLinkRequestDTO requestDTO) throws GenericException {
+        requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.createLink(requestDTO);
         return ApiResponse.respond(responseDTO,"Social Link created successfully","Failed to create social link");
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> updateLink(
+            @RequestHeader("Authorization") String auth,
             @PathVariable String id,
             @RequestBody SocialLinkRequestDTO requestDTO ) throws GenericException {
+        requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.updateLink(id,requestDTO);
         return ApiResponse.respond(responseDTO,"Social Link updated successfully","Failed to update social link");
     }
@@ -45,13 +52,14 @@ public class SocialLinkController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>>  getAllSocialLinks(
-            @RequestParam(required = false) String profileId,
+    public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>> getMySocialLinks(
+            @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) {
+            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+        String profileId = helper.getProfileIdFromHeader(auth);
         Page<SocialLinkResponseDTO> responseDTOS = socialLinkService.getByProfile(profileId,status,pageable, search,sortDir,sortBy);
         return ApiResponse.respond(responseDTOS, "Social Links fetched successfully","failed to fetch social links");
     }

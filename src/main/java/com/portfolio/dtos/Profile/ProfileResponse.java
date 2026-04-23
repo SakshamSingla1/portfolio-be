@@ -33,8 +33,6 @@ public class ProfileResponse extends AuditableResponse {
     private String logoUrl;
     private String logoPublicId;
 
-    private String themeName;
-
     private String roleId;
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;

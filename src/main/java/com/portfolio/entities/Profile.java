@@ -12,8 +12,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
-
 @Document(collection = "profiles")
 @Data
 @Builder
@@ -45,7 +43,6 @@ public class Profile extends Auditable {
     private String logoPublicId;
     private String roleId;
     private StatusEnum status;
-    private String themeName;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
 }

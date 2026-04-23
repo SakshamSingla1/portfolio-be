@@ -12,7 +12,9 @@ import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.OtpStoreRepository;
 import com.portfolio.repositories.PasswordResetTokenRepository;
+import com.portfolio.repositories.ColorThemeRepository;
 import com.portfolio.repositories.ProfileRepository;
+import com.portfolio.repositories.ProfileThemeMappingRepository;
 import com.portfolio.repositories.RoleRepository;
 import com.portfolio.security.JwtUtil;
 import com.portfolio.services.*;
@@ -44,6 +46,8 @@ public class AdminServiceImpl implements AdminService {
     private final ColorThemeService colorThemeService;
     private final RoleService roleService;
     private final RoleRepository roleRepository;
+    private final ProfileThemeMappingRepository profileThemeMappingRepository;
+    private final ColorThemeRepository colorThemeRepository;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -245,28 +249,49 @@ public class AdminServiceImpl implements AdminService {
 
         Profile user;
 
-        if (StringUtils.hasText(dto.getEmail())) {
-            user = profileRepository.findByEmail(dto.getEmail().trim())
+        if (StringUtils.hasText(dto.getPhone()) && StringUtils.hasText(dto.getOtp())) {
+            user = profileRepository.findByPhone(dto.getPhone().trim())
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
-        } else if (StringUtils.hasText(dto.getUsername())) {
-            user = profileRepository.findByUserName(dto.getUsername().trim())
-                    .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+
+            OtpStore otpStore = otpRepository.findByProfileId(user.getId())
+                    .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "OTP not found"));
+
+            if (otpStore.getExpiryDate().isBefore(LocalDateTime.now())) {
+                throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "OTP expired");
+            }
+
+            if (!passwordEncoder.matches(dto.getOtp(), otpStore.getOtp())) {
+                throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid OTP");
+            }
+            otpRepository.deleteByProfileId(user.getId());
         } else {
-            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Email or username is required");
+            if (StringUtils.hasText(dto.getEmail())) {
+                user = profileRepository.findByEmail(dto.getEmail().trim())
+                        .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+            } else if (StringUtils.hasText(dto.getUsername())) {
+                user = profileRepository.findByUserName(dto.getUsername().trim())
+                        .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+            } else {
+                throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Email or username is required");
+            }
+            if (!passwordEncoder.matches(dto.getPassword(), user.getPassword()))
+                throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
         }
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword()))
-            throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
 
         if (user.getEmailVerified() != VerificationStatusEnum.VERIFIED || user.getPhoneVerified() != VerificationStatusEnum.VERIFIED)
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Account not verified");
 
         String token = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
-        ColorThemeResponseDTO defaultTheme;
-        if (user.getThemeName() != null) {
-            defaultTheme = colorThemeService.getThemeByName(user.getThemeName());
-        } else {
-            defaultTheme = colorThemeService.getDefaultTheme();
-        }
+        ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
+                .map(mapping -> {
+                    try {
+                        return colorThemeService.getThemeById(mapping.getThemeId());
+                    } catch (GenericException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .orElse(colorThemeService.getDefaultTheme());
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
         Role role = roleRepository.findById(user.getRoleId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND,"Role not found"));

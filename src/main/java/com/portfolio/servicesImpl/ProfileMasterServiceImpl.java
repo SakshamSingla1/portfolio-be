@@ -2,6 +2,7 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.ProfileResponse;
+import com.portfolio.dtos.ProfileTheme.ProfileThemeResponse;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.PlatformEnum;
@@ -26,18 +27,21 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final SocialLinkService socialLinkService;
     private final SocialLinkRepository socialLinkRepository;
     private final ColorThemeService colorThemeService;
+    private final ProfileThemeService profileThemeService;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
             throws GenericException {
         String domain = normalizeDomain(host);
         SocialLinks socialLink = socialLinkRepository.findByPlatformAndUrl(PlatformEnum.PORTFOLIO, domain)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND,"Social Link not found"));
+                .orElseThrow(
+                        () -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social Link not found"));
         String profileId = socialLink.getProfileId();
         ProfileResponse profileResponse = profileService.get(profileId);
+        ProfileThemeResponse theme = profileThemeService.getThemeByProfileId(profileId);
         return ProfileMasterResponse.builder()
                 .profile(profileResponse)
-                .colorTheme(colorThemeService.getThemeByName(profileResponse.getThemeName()))
+                .colorTheme(colorThemeService.getThemeById(theme.getThemeId()))
                 .projects(projectService.getByProfile(profileId))
                 .experiences(experienceService.getByProfile(profileId))
                 .educations(educationService.getByProfile(profileId))
