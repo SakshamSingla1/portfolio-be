@@ -59,9 +59,9 @@ public class ExperienceController {
         return ApiResponse.respond(response, "Experience deleted successfully", "Failed to delete experience");
     }
 
-    @Operation(summary = "Get My experiences", description = "Fetches paginated list of experiences for the logged-in profile.")
+    @Operation(summary = "Get experiences", description = "Fetches paginated list of experiences for the logged-in profile.")
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getMyExperiences(
+    public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,

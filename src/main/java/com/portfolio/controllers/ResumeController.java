@@ -25,8 +25,8 @@ public class ResumeController {
     private final ResumeService resumeService;
     private final Helper helper;
 
-    @PostMapping("/upload/me")
-    public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> uploadMyResume(
+    @PostMapping("/upload")
+    public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> upload(
             @RequestHeader("Authorization") String auth,
             @RequestParam MultipartFile file) throws IOException, GenericException {
         String profileId = helper.getProfileIdFromHeader(auth);
@@ -35,7 +35,7 @@ public class ResumeController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<ResumeUploadResponseDTO>>> getMyResumes(
+    public ResponseEntity<ResponseModel<Page<ResumeUploadResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,
@@ -47,8 +47,8 @@ public class ResumeController {
         return ApiResponse.respond(resumeDtos, "Resumes fetched successfully", "failed to fetch resumes");
     }
 
-    @PutMapping("/activate/me")
-    public ResponseEntity<ResponseModel<String>> activateMyResume(
+    @PutMapping("/activate")
+    public ResponseEntity<ResponseModel<String>> activate(
             @RequestHeader("Authorization") String auth,
             @RequestParam String resumeId) throws GenericException {
         String profileId = helper.getProfileIdFromHeader(auth);

@@ -79,9 +79,9 @@ public class ProjectController {
         }
     }
 
-    @Operation(summary = "Get My Projects", description = "Fetch all projects of the logged-in profile")
+    @Operation(summary = "Get Projects", description = "Fetch all projects of the logged-in profile")
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<ProjectResponse>>> getMyProjects(
+    public ResponseEntity<ResponseModel<Page<ProjectResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,

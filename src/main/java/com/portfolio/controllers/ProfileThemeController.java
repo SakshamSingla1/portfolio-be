@@ -22,7 +22,7 @@ public class ProfileThemeController {
     private final Helper helper;
 
     @GetMapping
-    public ResponseEntity<ResponseModel<ProfileThemeResponse>> getMyTheme(@RequestHeader("Authorization") String auth)
+    public ResponseEntity<ResponseModel<ProfileThemeResponse>> getTheme(@RequestHeader("Authorization") String auth)
             throws GenericException {
         String profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.getThemeByProfileId(profileId);
@@ -30,7 +30,7 @@ public class ProfileThemeController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseModel<ProfileThemeResponse>> setThemeForMe(
+    public ResponseEntity<ResponseModel<ProfileThemeResponse>> setTheme(
             @RequestHeader("Authorization") String auth,
             @RequestBody ProfileThemeRequest request) throws GenericException {
         String profileId = helper.getProfileIdFromHeader(auth);

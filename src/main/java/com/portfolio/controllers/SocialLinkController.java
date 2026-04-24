@@ -52,7 +52,7 @@ public class SocialLinkController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>> getMySocialLinks(
+    public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,

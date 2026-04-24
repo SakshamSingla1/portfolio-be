@@ -52,7 +52,7 @@ public class TestimonialController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getMyTestimonials(
+    public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,

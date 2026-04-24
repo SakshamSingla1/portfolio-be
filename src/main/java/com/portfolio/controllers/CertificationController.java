@@ -52,7 +52,7 @@ public class CertificationController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getMyCertifications(
+    public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,

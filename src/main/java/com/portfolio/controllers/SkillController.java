@@ -66,9 +66,9 @@ public class SkillController {
         }
     }
 
-    @Operation(summary = "Get My Skills", description = "Fetch all skills of the logged-in profile")
+    @Operation(summary = "Get Skills", description = "Fetch all skills of the logged-in profile")
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<SkillResponse>>> getMySkills(
+    public ResponseEntity<ResponseModel<Page<SkillResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
