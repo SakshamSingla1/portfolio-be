@@ -38,6 +38,7 @@ public class EducationServiceImpl implements EducationService {
                 .endYear(request.getEndYear())
                 .description(request.getDescription())
                 .grade(request.getGrade())
+                .profileId(request.getProfileId())
                 .build();
 
         return mapToResponse(educationRepository.save(education));
@@ -51,6 +52,7 @@ public class EducationServiceImpl implements EducationService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
         }
         education.setInstitution(request.getInstitution());
+        education.setDegree(request.getDegree());
         education.setLocation(request.getLocation());
         education.setFieldOfStudy(request.getFieldOfStudy());
         education.setStartYear(request.getStartYear());

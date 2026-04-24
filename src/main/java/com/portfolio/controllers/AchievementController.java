@@ -53,7 +53,7 @@ public class AchievementController {
     }
 
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getMyAchievements(
+    public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,

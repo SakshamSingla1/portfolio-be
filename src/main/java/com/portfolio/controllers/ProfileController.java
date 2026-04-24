@@ -33,9 +33,9 @@ public class ProfileController {
         private final ProfileService profileService;
         private final Helper helper;
 
-        @Operation(summary = "Get My Profile")
-        @GetMapping("/me")
-        public ResponseEntity<ResponseModel<ProfileResponse>> getMe(
+        @Operation(summary = "Get profile")
+        @GetMapping
+        public ResponseEntity<ResponseModel<ProfileResponse>> getProfile(
                         @RequestHeader("Authorization") String auth) throws GenericException {
                 String profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.get(profileId), "Profile fetched successfully",
@@ -50,9 +50,9 @@ public class ProfileController {
                                 "Failed to fetch profile");
         }
 
-        @Operation(summary = "Update My profile")
-        @PutMapping("/me")
-        public ResponseEntity<ResponseModel<ProfileResponse>> updateMe(
+        @Operation(summary = "Update profile")
+        @PutMapping
+        public ResponseEntity<ResponseModel<ProfileResponse>> updateProfile(
                         @RequestHeader("Authorization") String auth,
                         @RequestBody ProfileRequest req) throws GenericException, IOException {
                 String profileId = helper.getProfileIdFromHeader(auth);
@@ -60,9 +60,9 @@ public class ProfileController {
                                 "Failed to update profile");
         }
 
-        @Operation(summary = "Upload My profile image")
-        @PutMapping("/me/upload/profile-image")
-        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadMyProfileImage(
+        @Operation(summary = "Upload profile image")
+        @PutMapping("/upload/profile-image")
+        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProfileImage(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 String profileId = helper.getProfileIdFromHeader(auth);
@@ -70,9 +70,9 @@ public class ProfileController {
                                 "Profile image uploaded successfully", "Failed to upload profile image");
         }
 
-        @Operation(summary = "Upload My About Me image")
-        @PutMapping("/me/upload/about-me-image")
-        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadMyAboutMeImage(
+        @Operation(summary = "Upload About image")
+        @PutMapping("/upload/about-image")
+        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadAboutImage(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 String profileId = helper.getProfileIdFromHeader(auth);
@@ -80,9 +80,9 @@ public class ProfileController {
                                 "About Me image uploaded successfully", "Failed to upload about me image");
         }
 
-        @Operation(summary = "Upload My logo")
-        @PutMapping("/me/upload/logo")
-        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadMyLogo(
+        @Operation(summary = "Upload logo")
+        @PutMapping("/upload/logo")
+        public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadLogo(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 String profileId = helper.getProfileIdFromHeader(auth);
@@ -91,7 +91,7 @@ public class ProfileController {
         }
 
         @Operation(summary = "Get all profiles with pagination")
-        @GetMapping
+        @GetMapping("/all")
         public ResponseEntity<ResponseModel<Page<UserResponse>>> getAllProfiles(
                         Pageable pageable,
                         @RequestParam(required = false) String search,

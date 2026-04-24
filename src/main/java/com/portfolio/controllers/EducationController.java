@@ -53,9 +53,9 @@ public class EducationController {
         );
     }
 
-    @Operation(summary = "Get My education by ID", description = "Fetches education record for the logged-in user.")
-    @GetMapping("/{id}/me")
-    public ResponseEntity<ResponseModel<EducationResponse>> getMyEducationById(
+    @Operation(summary = "Get education by ID", description = "Fetches education record for the logged-in user.")
+    @GetMapping("/{id}")
+    public ResponseEntity<ResponseModel<EducationResponse>> getById(
             @RequestHeader("Authorization") String auth,
             @PathVariable String id
     ) throws GenericException {
@@ -67,9 +67,9 @@ public class EducationController {
         );
     }
 
-    @Operation(summary = "Get My education", description = "Fetches paginated education records for the logged-in profile.")
+    @Operation(summary = "Get education", description = "Fetches paginated education records for the logged-in profile.")
     @GetMapping
-    public ResponseEntity<ResponseModel<Page<EducationResponse>>> getMyEducation(
+    public ResponseEntity<ResponseModel<Page<EducationResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
@@ -83,9 +83,9 @@ public class EducationController {
         );
     }
 
-    @Operation(summary = "Delete My education", description = "Delete education record by ID for the logged-in user.")
-    @DeleteMapping("/{id}/me")
-    public ResponseEntity<ResponseModel<String>> deleteMyEducation(
+    @Operation(summary = "Delete education", description = "Delete education record by ID for the logged-in user.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseModel<String>> delete(
             @RequestHeader("Authorization") String auth,
             @PathVariable String id
     ) throws GenericException {
