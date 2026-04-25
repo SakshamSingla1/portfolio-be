@@ -1,6 +1,7 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Skill;
+import com.portfolio.enums.SkillLevelEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -51,4 +52,6 @@ public interface SkillRepository extends MongoRepository<Skill, String> {
     long countByProfileId(String profileId);
 
     Optional<Skill> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
+
+    Long countByLevel(SkillLevelEnum levelEnum);
 }
