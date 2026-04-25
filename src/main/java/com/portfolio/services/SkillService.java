@@ -2,6 +2,7 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
+import com.portfolio.dtos.Skill.SkillStat;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,6 @@ public interface SkillService {
     Page<SkillResponse> getByProfile(String profileId, Pageable pageable, String search, String sortDir, String sortBy);
 
     List<SkillResponse> getByProfile(String profileId);
+
+    SkillStat getStats();
 }
