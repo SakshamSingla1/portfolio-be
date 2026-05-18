@@ -277,10 +277,6 @@ public class AdminServiceImpl implements AdminService {
             if (!passwordEncoder.matches(dto.getPassword(), user.getPassword()))
                 throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
         }
-
-        if (user.getEmailVerified() != VerificationStatusEnum.VERIFIED || user.getPhoneVerified() != VerificationStatusEnum.VERIFIED)
-            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Account not verified");
-
         String token = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
         ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
                 .map(mapping -> {
