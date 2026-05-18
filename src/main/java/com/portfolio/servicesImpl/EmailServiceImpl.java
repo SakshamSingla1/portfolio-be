@@ -1,44 +1,41 @@
 package com.portfolio.servicesImpl;
 
 import com.portfolio.services.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private final Resend resend;
 
-    @Value("${spring.mail.username}")
+    @Value("${resend.from-email:onboarding@resend.dev}")
     private String fromEmail;
 
     @Override
     public void sendEmail(String to, String subject, String htmlContent) {
-
         try {
-            MimeMessage message = mailSender.createMimeMessage();
+            CreateEmailOptions createEmailOptions = CreateEmailOptions.builder()
+                    .from(fromEmail)
+                    .to(to)
+                    .subject(subject)
+                    .html(htmlContent)
+                    .build();
 
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true = HTML email
-
-            mailSender.send(message);
-
-        } catch (MessagingException e) {
-            throw new RuntimeException(
-                    "Failed to send email via SMTP: " + e.getMessage(),
-                    e
-            );
+            CreateEmailResponse response = resend.emails().send(createEmailOptions);
+            log.info("Email sent successfully via Resend. ID: {}", response.getId());
+        } catch (Exception e) {
+            log.error("Failed to send email via Resend to {}: {}", to, e.getMessage(), e);
+            throw new RuntimeException("Failed to send email via Resend: " + e.getMessage(), e);
         }
     }
 }
+
+

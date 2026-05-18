@@ -29,182 +29,179 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ColorThemeServiceImpl implements ColorThemeService {
 
-    private final ColorThemeRepository repository;
+        private final ColorThemeRepository repository;
 
-    @Override
-    public ColorThemeResponseDTO createTheme(ColorThemeRequestDTO dto) throws GenericException {
+        @Override
+        public ColorThemeResponseDTO createTheme(ColorThemeRequestDTO dto) throws GenericException {
 
-        String themeName = dto.getThemeName();
+                String themeName = dto.getThemeName();
 
-        if (repository.findByThemeName(themeName).isPresent()) {
-            throw new GenericException(ExceptionCodeEnum.COLOR_THEME_ALREADY_EXISTS,
-                    "Theme already exists for themeName '" + themeName + "'");
+                if (repository.findByThemeName(themeName).isPresent()) {
+                        throw new GenericException(ExceptionCodeEnum.COLOR_THEME_ALREADY_EXISTS,
+                                        "Theme already exists for themeName '" + themeName + "'");
+                }
+
+                ColorTheme theme = ColorTheme.builder()
+                                .themeName(themeName)
+                                .palette(mapPaletteDtoToEntity(dto.getPalette()))
+                                .status(StatusEnum.ACTIVE)
+                                .build();
+
+                repository.save(theme);
+
+                return mapToResponse(theme);
         }
 
-        ColorTheme theme = ColorTheme.builder()
-                .themeName(themeName)
-                .palette(mapPaletteDtoToEntity(dto.getPalette()))
-                .status(StatusEnum.ACTIVE)
-                .build();
+        @Override
+        public ColorThemeResponseDTO updateTheme(String id, ColorThemeRequestDTO dto) throws GenericException {
 
-        repository.save(theme);
+                ColorTheme theme = repository.findById(id)
+                                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
+                                                "Theme not found"));
 
-        return mapToResponse(theme);
-    }
-
-    @Override
-    public ColorThemeResponseDTO updateTheme(String id, ColorThemeRequestDTO dto) throws GenericException {
-
-        ColorTheme theme = repository.findById(id)
-                .orElseThrow(() ->
-                        new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "Theme not found"));
-
-        theme.setThemeName(dto.getThemeName());
-        theme.setPalette(mapPaletteDtoToEntity(dto.getPalette()));
-        theme.setStatus(dto.getStatus());
-        theme.setUpdatedAt(LocalDateTime.now());
-        theme.setUpdatedBy("SUPER_ADMIN");
-        repository.save(theme);
-        return mapToResponse(theme);
-    }
-
-    @Override
-    public ColorThemeResponseDTO getThemeById(String themeId) throws GenericException {
-        ColorTheme theme = repository.findById(themeId)
-                .orElseThrow(() ->
-                        new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
-                                "Theme not found for id " + themeId));
-        return mapToResponse(theme);
-    }
-
-    @Override
-    public Page<ColorThemeResponseDTO> getAllThemes(
-            String search,
-            String sortBy,
-            String sortDir,
-            StatusEnum status,
-            Pageable pageable
-    ) {
-
-        Sort sort = Sort.by(
-                "desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt"
-        );
-
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasStatus = status != null;
-
-        Page<ColorTheme> colorThemes;
-
-        if (hasStatus) {
-            colorThemes = repository.findByStatus(
-                    status, sortedPageable
-            );
-        } else if (hasSearch) {
-            colorThemes = repository.searchByThemeName(
-                    search, sortedPageable
-            );
-        } else if(hasSearch && hasStatus ) {
-            colorThemes = repository.searchByThemeNameAndStatus(search,status,sortedPageable);
-        }else {
-            colorThemes = repository.findAll(sortedPageable);
+                theme.setThemeName(dto.getThemeName());
+                theme.setPalette(mapPaletteDtoToEntity(dto.getPalette()));
+                theme.setStatus(dto.getStatus());
+                theme.setUpdatedAt(LocalDateTime.now());
+                theme.setUpdatedBy("SUPER_ADMIN");
+                repository.save(theme);
+                return mapToResponse(theme);
         }
 
-        return colorThemes.map(this::mapToResponse);
-    }
+        @Override
+        public ColorThemeResponseDTO getThemeById(String themeId) throws GenericException {
+                ColorTheme theme = repository.findById(themeId)
+                                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
+                                                "Theme not found for id " + themeId));
+                return mapToResponse(theme);
+        }
 
-    @Override
-    public ColorThemeResponseDTO getDefaultTheme() throws GenericException {
-        return repository.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
-                .map(this::mapToResponse)
-                .orElseThrow(() ->
-                        new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "No active default theme found"));
-    }
+        @Override
+        public Page<ColorThemeResponseDTO> getAllThemes(
+                        String search,
+                        String sortBy,
+                        String sortDir,
+                        StatusEnum status,
+                        Pageable pageable) {
 
-    @Override
-    public String deleteTheme(String id) throws GenericException {
-        ColorTheme theme = repository.findById(id)
-                .orElseThrow(() ->
-                        new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "Theme not found"));
-        repository.delete(theme);
-        return "Theme deleted successfully";
-    }
+                Sort sort = Sort.by(
+                                "desc".equalsIgnoreCase(sortDir)
+                                                ? Sort.Direction.DESC
+                                                : Sort.Direction.ASC,
+                                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
 
-    private ColorPalette mapPaletteDtoToEntity(ColorPaletteDTO dto) {
-        if (dto == null) return null;
+                Pageable sortedPageable = PageRequest.of(
+                                pageable.getPageNumber(),
+                                pageable.getPageSize(),
+                                sort);
 
-        ColorPalette palette = new ColorPalette();
-        List<ColorGroup> groups = dto.getColorGroups() == null ? List.of() :
-                dto.getColorGroups().stream().map(this::mapGroupDtoToEntity).collect(Collectors.toList());
-        palette.setColorGroups(groups);
-        return palette;
-    }
+                boolean hasSearch = search != null && !search.isBlank();
+                boolean hasStatus = status != null;
 
-    private ColorGroup mapGroupDtoToEntity(ColorGroupDTO dto) {
-        if (dto == null) return null;
-        ColorGroup group = new ColorGroup();
-        group.setGroupName(dto.getGroupName());
-        List<ColorShade> levels = dto.getColorShades() == null ? List.of() :
-                dto.getColorShades().stream().map(this::mapLevelDtoToEntity).collect(Collectors.toList());
-        group.setColorShades(levels);
-        return group;
-    }
+                Page<ColorTheme> colorThemes;
 
-    private ColorShade mapLevelDtoToEntity(ColorShadeDTO dto) {
-        if (dto == null) return null;
-        ColorShade level = new ColorShade();
-        level.setColorName(dto.getColorName());
-        level.setColorCode(dto.getColorCode());
-        return level;
-    }
+                if (hasStatus) {
+                        colorThemes = repository.findByStatus(
+                                        status, sortedPageable);
+                } else if (hasSearch) {
+                        colorThemes = repository.searchByThemeName(
+                                        search, sortedPageable);
+                } else if (hasSearch && hasStatus) {
+                        colorThemes = repository.searchByThemeNameAndStatus(search, status, sortedPageable);
+                } else {
+                        colorThemes = repository.findAll(sortedPageable);
+                }
 
-    private ColorThemeResponseDTO mapToResponse(ColorTheme theme) {
-        ColorPaletteDTO paletteDTO = new ColorPaletteDTO();
-        paletteDTO.setColorGroups(
-                theme.getPalette() == null ? List.of() :
-                        theme.getPalette().getColorGroups()
-                                .stream()
-                                .map(this::mapGroupEntityToDto)
-                                .collect(Collectors.toList())
-        );
+                return colorThemes.map(this::mapToResponse);
+        }
 
-        return ColorThemeResponseDTO.builder()
-                .id(theme.getId())
-                .themeName(theme.getThemeName())
-                .palette(paletteDTO)
-                .status(theme.getStatus())
-                .createdAt(theme.getCreatedAt())
-                .updatedAt(theme.getUpdatedAt())
-                .createdBy(theme.getCreatedBy())
-                .updatedBy(theme.getUpdatedBy())
-                .build();
-    }
+        @Override
+        public ColorThemeResponseDTO getDefaultTheme() throws GenericException {
+                return repository.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
+                                .map(this::mapToResponse)
+                                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
+                                                "No active default theme found"));
+        }
 
-    private ColorGroupDTO mapGroupEntityToDto(ColorGroup group) {
-        ColorGroupDTO dto = new ColorGroupDTO();
-        dto.setGroupName(group.getGroupName());
-        dto.setColorShades(
-                group.getColorShades() == null ? List.of() :
-                        group.getColorShades()
-                                .stream()
-                                .map(this::mapLevelEntityToDto)
-                                .collect(Collectors.toList())
-        );
-        return dto;
-    }
+        @Override
+        public String deleteTheme(String id) throws GenericException {
+                ColorTheme theme = repository.findById(id)
+                                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
+                                                "Theme not found"));
+                repository.delete(theme);
+                return "Theme deleted successfully";
+        }
 
-    private ColorShadeDTO mapLevelEntityToDto(ColorShade level) {
-        ColorShadeDTO dto = new ColorShadeDTO();
-        dto.setColorName(level.getColorName());
-        dto.setColorCode(level.getColorCode());
-        return dto;
-    }
+        private ColorPalette mapPaletteDtoToEntity(ColorPaletteDTO dto) {
+                if (dto == null)
+                        return null;
+
+                ColorPalette palette = new ColorPalette();
+                List<ColorGroup> groups = dto.getColorGroups() == null ? List.of()
+                                : dto.getColorGroups().stream().map(this::mapGroupDtoToEntity)
+                                                .collect(Collectors.toList());
+                palette.setColorGroups(groups);
+                return palette;
+        }
+
+        private ColorGroup mapGroupDtoToEntity(ColorGroupDTO dto) {
+                if (dto == null)
+                        return null;
+                ColorGroup group = new ColorGroup();
+                group.setGroupName(dto.getGroupName());
+                List<ColorShade> levels = dto.getColorShades() == null ? List.of()
+                                : dto.getColorShades().stream().map(this::mapLevelDtoToEntity)
+                                                .collect(Collectors.toList());
+                group.setColorShades(levels);
+                return group;
+        }
+
+        private ColorShade mapLevelDtoToEntity(ColorShadeDTO dto) {
+                if (dto == null)
+                        return null;
+                ColorShade level = new ColorShade();
+                level.setColorName(dto.getColorName());
+                level.setColorCode(dto.getColorCode());
+                return level;
+        }
+
+        private ColorThemeResponseDTO mapToResponse(ColorTheme theme) {
+                ColorPaletteDTO paletteDTO = new ColorPaletteDTO();
+                paletteDTO.setColorGroups(
+                                theme.getPalette() == null ? List.of()
+                                                : theme.getPalette().getColorGroups()
+                                                                .stream()
+                                                                .map(this::mapGroupEntityToDto)
+                                                                .collect(Collectors.toList()));
+
+                return ColorThemeResponseDTO.builder()
+                                .id(theme.getId())
+                                .themeName(theme.getThemeName())
+                                .palette(paletteDTO)
+                                .status(theme.getStatus())
+                                .createdAt(theme.getCreatedAt())
+                                .updatedAt(theme.getUpdatedAt())
+                                .createdBy(theme.getCreatedBy())
+                                .updatedBy(theme.getUpdatedBy())
+                                .build();
+        }
+
+        private ColorGroupDTO mapGroupEntityToDto(ColorGroup group) {
+                ColorGroupDTO dto = new ColorGroupDTO();
+                dto.setGroupName(group.getGroupName());
+                dto.setColorShades(
+                                group.getColorShades() == null ? List.of()
+                                                : group.getColorShades()
+                                                                .stream()
+                                                                .map(this::mapLevelEntityToDto)
+                                                                .collect(Collectors.toList()));
+                return dto;
+        }
+
+        private ColorShadeDTO mapLevelEntityToDto(ColorShade level) {
+                ColorShadeDTO dto = new ColorShadeDTO();
+                dto.setColorName(level.getColorName());
+                dto.setColorCode(level.getColorCode());
+                return dto;
+        }
 }
