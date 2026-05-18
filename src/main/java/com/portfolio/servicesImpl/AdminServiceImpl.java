@@ -5,8 +5,10 @@ import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
+import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -48,6 +50,7 @@ public class AdminServiceImpl implements AdminService {
     private final RoleRepository roleRepository;
     private final ProfileThemeMappingRepository profileThemeMappingRepository;
     private final ColorThemeRepository colorThemeRepository;
+    private final SocialLinkService socialLinkService;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -73,6 +76,16 @@ public class AdminServiceImpl implements AdminService {
                 .phoneVerified(VerificationStatusEnum.PENDING)
                 .build();
         profileRepository.save(user);
+
+        socialLinkService.createLink(
+                SocialLinkRequestDTO.builder()
+                        .profileId(user.getId())
+                        .platform(PlatformEnum.PORTFOLIO)
+                        .url(user.getUserName() + ".portfoliosBuilder.com")
+                        .status(StatusEnum.ACTIVE)
+                        .order("1")
+                        .build()
+        );
 
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
@@ -277,6 +290,14 @@ public class AdminServiceImpl implements AdminService {
             if (!passwordEncoder.matches(dto.getPassword(), user.getPassword()))
                 throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
         }
+
+        if (user.getEmailVerified() != VerificationStatusEnum.VERIFIED) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Email is not verified. Please verify your email first.");
+        }
+        if (user.getPhoneVerified() != VerificationStatusEnum.VERIFIED) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Phone number is not verified. Please verify your phone number first.");
+        }
+
         String token = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
         ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
                 .map(mapping -> {
