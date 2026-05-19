@@ -35,8 +35,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
-    @Value("${app.frontend.url}")
-    private String frontendUrl;
+    @Value("${app.url}")
+    private String url;
 
     private final ProfileRepository profileRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -220,7 +220,7 @@ public class AdminServiceImpl implements AdminService {
         );
         ntService.sendNotification(
                 "FORGOT-PASSWORD-TOKEN",
-                Map.of("name", user.getFullName(), "resetLink", frontendUrl + "?token=" + token),
+                Map.of("name", user.getFullName(), "resetLink", url + "?token=" + token),
                 user.getEmail()
         );
         return "Password reset link sent";
