@@ -99,7 +99,7 @@ public class SecurityConfig {
         publicApi.setAllowCredentials(false);
 
         CorsConfiguration adminApi = new CorsConfiguration();
-        adminApi.setAllowedOrigins(
+        adminApi.setAllowedOriginPatterns(
                 Arrays.stream(allowedOrigins.split(","))
                         .map(String::trim)
                         .toList());
