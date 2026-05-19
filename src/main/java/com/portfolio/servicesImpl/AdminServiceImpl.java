@@ -2,19 +2,14 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
-import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
-import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
-import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.OtpStoreRepository;
 import com.portfolio.repositories.PasswordResetTokenRepository;
-import com.portfolio.repositories.ColorThemeRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.repositories.ProfileThemeMappingRepository;
 import com.portfolio.repositories.RoleRepository;
@@ -49,8 +44,6 @@ public class AdminServiceImpl implements AdminService {
     private final RoleService roleService;
     private final RoleRepository roleRepository;
     private final ProfileThemeMappingRepository profileThemeMappingRepository;
-    private final ColorThemeRepository colorThemeRepository;
-    private final SocialLinkService socialLinkService;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -76,16 +69,6 @@ public class AdminServiceImpl implements AdminService {
                 .phoneVerified(VerificationStatusEnum.PENDING)
                 .build();
         profileRepository.save(user);
-
-        socialLinkService.createLink(
-                SocialLinkRequestDTO.builder()
-                        .profileId(user.getId())
-                        .platform(PlatformEnum.PORTFOLIO)
-                        .url(user.getUserName() + ".portfoliosBuilder.com")
-                        .status(StatusEnum.ACTIVE)
-                        .order("1")
-                        .build()
-        );
 
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
