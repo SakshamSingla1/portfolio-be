@@ -40,7 +40,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
 
     @Value("${app.frontend.url:http://localhost:3000}")
-    private String allowedOrigins;
+    private List<String> allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -100,8 +100,10 @@ public class SecurityConfig {
 
         CorsConfiguration adminApi = new CorsConfiguration();
         adminApi.setAllowedOriginPatterns(
-                Arrays.stream(allowedOrigins.split(","))
+                allowedOrigins.stream()
                         .map(String::trim)
+                        .map(origin -> origin.replace("\"", "").replace("'", ""))
+                        .filter(origin -> !origin.isBlank())
                         .toList());
         adminApi.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
