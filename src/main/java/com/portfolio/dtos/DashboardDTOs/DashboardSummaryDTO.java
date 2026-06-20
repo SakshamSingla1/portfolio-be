@@ -9,6 +9,8 @@ import java.util.List;
 @Data
 @Builder
 public class DashboardSummaryDTO {
+    private ProfileSummaryDTO profileSummary;
+    private ViewStatsDTO viewStats;
     private StatsDTO stats;
     private ProfileCompletionDTO profileCompletion;
     private List<ContactUsResponse> recentMessages;

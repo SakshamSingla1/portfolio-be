@@ -85,6 +85,8 @@ public interface SocialLinkRepository extends MongoRepository<SocialLinks,String
             Pageable pageable
     );
 
+    long countByProfileId(String profileId);
+
     List<SocialLinks> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
 
     Optional<SocialLinks> findPortfolioUrlByPlatformAndStatus(

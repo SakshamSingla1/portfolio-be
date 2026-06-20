@@ -15,4 +15,5 @@ public class StatsDTO {
     private long totalCertification;
     private long totalMessages;
     private long unreadMessages;
+    private long totalSocialLinks;
 }

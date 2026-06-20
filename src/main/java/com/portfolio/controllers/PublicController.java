@@ -2,10 +2,12 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
+import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
 import com.portfolio.servicesImpl.ContactUsService;
@@ -24,6 +26,7 @@ public class PublicController {
     private final ContactUsService contactUsService;
     private final ProfileMasterService profileMasterService;
     private final ResumePublicService resumePublicService;
+    private final PortfolioViewService portfolioViewService;
 
     @GetMapping("/resume/view/{username}")
     public void viewResume(
@@ -54,5 +57,12 @@ public class PublicController {
     public ResponseEntity<ResponseModel<ContactUsResponse>> create(@RequestBody ContactUsRequest request) throws GenericException {
         ContactUsResponse response = contactUsService.create(request);
         return ApiResponse.respond(response, ApiResponse.SUCCESS, ApiResponse.FAILED);
+    }
+
+    @Operation(summary = "Track portfolio view", description = "Records a page view from the public portfolio site.")
+    @PostMapping("/track-view")
+    public ResponseEntity<Void> trackView(@RequestBody PortfolioViewRequest request) {
+        portfolioViewService.trackView(request);
+        return ResponseEntity.ok().build();
     }
 }

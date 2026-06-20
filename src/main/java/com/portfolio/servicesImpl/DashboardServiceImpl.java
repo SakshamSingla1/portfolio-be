@@ -4,11 +4,14 @@ import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.ActivityDTO;
 import com.portfolio.dtos.DashboardDTOs.DashboardSummaryDTO;
 import com.portfolio.dtos.DashboardDTOs.ProfileCompletionDTO;
+import com.portfolio.dtos.DashboardDTOs.ProfileSummaryDTO;
 import com.portfolio.dtos.DashboardDTOs.StatsDTO;
+import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.repositories.*;
 import com.portfolio.services.DashboardService;
+import com.portfolio.services.PortfolioViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,23 +30,25 @@ public class DashboardServiceImpl implements DashboardService {
     private final TestimonialRepository testimonialRepository;
     private final CertificationsRepository certificationsRepository;
     private final ContactUsRepository contactUsRepository;
+    private final SocialLinkRepository socialLinkRepository;
+    private final ProfileRepository profileRepository;
+    private final PortfolioViewService portfolioViewService;
 
     @Override
     public DashboardSummaryDTO getDashboardSummary(String profileId) {
 
-        // ✅ FAST COUNTS (indexed queries, no async overhead)
-        long totalSkills = skillRepository.countByProfileId(profileId);
-        long totalEducation = educationRepository.countByProfileId(profileId);
-        long totalExperience = experienceRepository.countByProfileId(profileId);
-        long totalProjects = projectRepository.countByProfileId(profileId);
-        long totalAchievements = achievementRepository.countByProfileId(profileId);
-        long totalTestimonials = testimonialRepository.countByProfileId(profileId);
+        Profile profile = profileRepository.findById(profileId).orElse(null);
+
+        long totalSkills        = skillRepository.countByProfileId(profileId);
+        long totalEducation     = educationRepository.countByProfileId(profileId);
+        long totalExperience    = experienceRepository.countByProfileId(profileId);
+        long totalProjects      = projectRepository.countByProfileId(profileId);
+        long totalAchievements  = achievementRepository.countByProfileId(profileId);
+        long totalTestimonials  = testimonialRepository.countByProfileId(profileId);
         long totalCertification = certificationsRepository.countByProfileId(profileId);
-        long totalMessages = contactUsRepository.countByProfileId(profileId);
-        long unreadMessages = contactUsRepository.countByStatusAndProfileId(
-                ContactUsStatusEnum.UNREAD,
-                profileId
-        );
+        long totalMessages      = contactUsRepository.countByProfileId(profileId);
+        long unreadMessages     = contactUsRepository.countByStatusAndProfileId(ContactUsStatusEnum.UNREAD, profileId);
+        long totalSocialLinks   = socialLinkRepository.countByProfileId(profileId);
 
         StatsDTO stats = StatsDTO.builder()
                 .totalSkills(totalSkills)
@@ -55,30 +60,35 @@ public class DashboardServiceImpl implements DashboardService {
                 .totalCertification(totalCertification)
                 .totalMessages(totalMessages)
                 .unreadMessages(unreadMessages)
+                .totalSocialLinks(totalSocialLinks)
                 .build();
 
-        ProfileCompletionDTO profileCompletion =
-                calculateProfileCompletion(
-                        totalProjects,
-                        totalSkills,
-                        totalExperience,
-                        totalTestimonials,
-                        totalEducation,
-                        totalCertification
-                );
+        ProfileSummaryDTO profileSummary = buildProfileSummary(profile);
+        ViewStatsDTO viewStats = portfolioViewService.getViewStats(profileId);
 
-        // ✅ Uses indexed compound index (profileId + createdAt)
-        List<ContactUsResponse> recentMessages =
-                contactUsRepository
-                        .findTop5ByProfileIdOrderByCreatedAtDesc(profileId)
-                        .stream()
-                        .map(this::mapToResponse)
-                        .toList();
+        ProfileCompletionDTO profileCompletion = calculateProfileCompletion(
+                profile,
+                totalProjects,
+                totalSkills,
+                totalExperience,
+                totalTestimonials,
+                totalEducation,
+                totalCertification,
+                totalAchievements,
+                totalSocialLinks
+        );
 
-        // ✅ Optimized activity building (still readable, indexed)
+        List<ContactUsResponse> recentMessages = contactUsRepository
+                .findTop5ByProfileIdOrderByCreatedAtDesc(profileId)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+
         List<ActivityDTO> recentActivities = buildLatestActivities(profileId);
 
         return DashboardSummaryDTO.builder()
+                .profileSummary(profileSummary)
+                .viewStats(viewStats)
                 .stats(stats)
                 .profileCompletion(profileCompletion)
                 .recentMessages(recentMessages)
@@ -86,26 +96,47 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
+    // ---------------- PROFILE SUMMARY ----------------
+
+    private ProfileSummaryDTO buildProfileSummary(Profile profile) {
+        if (profile == null) return ProfileSummaryDTO.builder().build();
+        return ProfileSummaryDTO.builder()
+                .fullName(safe(profile.getFullName()))
+                .title(safe(profile.getTitle()))
+                .location(safe(profile.getLocation()))
+                .profileImageUrl(safe(profile.getProfileImageUrl()))
+                .build();
+    }
+
     // ---------------- PROFILE COMPLETION ----------------
 
     private ProfileCompletionDTO calculateProfileCompletion(
+            Profile profile,
             long projects,
             long skills,
             long experience,
             long testimonials,
             long education,
-            long certifications
+            long certifications,
+            long achievements,
+            long socialLinks
     ) {
-
         int score = 0;
         List<String> missingSections = new ArrayList<>();
 
-        score += addScore(projects > 0, 20, "Add at least one project", missingSections);
-        score += addScore(skills >= 5, 15, "Add at least 5 skills", missingSections);
-        score += addScore(experience > 0, 20, "Add work experience", missingSections);
-        score += addScore(education > 0, 15, "Add education", missingSections);
-        score += addScore(testimonials > 0, 15, "Add testimonials", missingSections);
-        score += addScore(certifications > 0, 15, "Add certifications", missingSections);
+        boolean hasProfileBasics = profile != null
+                && profile.getTitle() != null && !profile.getTitle().isBlank()
+                && profile.getLocation() != null && !profile.getLocation().isBlank();
+
+        score += addScore(hasProfileBasics,      10, "Complete your profile (title & location)", missingSections);
+        score += addScore(projects > 0,          15, "Add at least one project",                 missingSections);
+        score += addScore(skills >= 5,           15, "Add at least 5 skills",                   missingSections);
+        score += addScore(experience > 0,        15, "Add work experience",                      missingSections);
+        score += addScore(education > 0,         10, "Add education",                            missingSections);
+        score += addScore(testimonials > 0,      10, "Add testimonials",                         missingSections);
+        score += addScore(certifications > 0,    10, "Add certifications",                       missingSections);
+        score += addScore(achievements > 0,       5, "Add achievements",                         missingSections);
+        score += addScore(socialLinks > 0,       10, "Add social links",                         missingSections);
 
         return ProfileCompletionDTO.builder()
                 .percentage(Math.min(score, 100))
@@ -126,128 +157,78 @@ public class DashboardServiceImpl implements DashboardService {
         List<ActivityDTO> activities = new ArrayList<>();
 
         skillRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(skill ->
-                        activities.add(
-                                createActivity(
-                                        "SKILL",
-                                        buildAction("Skill",
-                                                skill.getCreatedAt(),
-                                                skill.getUpdatedAt(),
-                                                safe(skill.getLogo() != null ? skill.getLogo().getName() : null)
-                                        ),
-                                        skill.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(skill -> activities.add(createActivity(
+                        "SKILL",
+                        buildAction("Skill", skill.getCreatedAt(), skill.getUpdatedAt(),
+                                skill.getLogo() != null ? skill.getLogo().getName() : null),
+                        skill.getUpdatedAt(),
+                        skill.getId()
+                )));
 
         educationRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(edu ->
-                        activities.add(
-                                createActivity(
-                                        "EDUCATION",
-                                        buildAction(
-                                                "Education",
-                                                edu.getCreatedAt(),
-                                                edu.getUpdatedAt(),
-                                                edu.getDegree() + " at " + edu.getInstitution()
-                                        ),
-                                        edu.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(edu -> activities.add(createActivity(
+                        "EDUCATION",
+                        buildAction("Education", edu.getCreatedAt(), edu.getUpdatedAt(),
+                                edu.getDegree() + " at " + edu.getInstitution()),
+                        edu.getUpdatedAt(),
+                        edu.getId()
+                )));
 
         experienceRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(exp ->
-                        activities.add(
-                                createActivity(
-                                        "EXPERIENCE",
-                                        buildAction(
-                                                "Experience",
-                                                exp.getCreatedAt(),
-                                                exp.getUpdatedAt(),
-                                                exp.getJobTitle() + " at " + exp.getCompanyName()
-                                        ),
-                                        exp.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(exp -> activities.add(createActivity(
+                        "EXPERIENCE",
+                        buildAction("Experience", exp.getCreatedAt(), exp.getUpdatedAt(),
+                                exp.getJobTitle() + " at " + exp.getCompanyName()),
+                        exp.getUpdatedAt(),
+                        exp.getId()
+                )));
 
         projectRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(project ->
-                        activities.add(
-                                createActivity(
-                                        "PROJECT",
-                                        buildAction(
-                                                "Project",
-                                                project.getCreatedAt(),
-                                                project.getUpdatedAt(),
-                                                project.getProjectName()
-                                        ),
-                                        project.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(project -> activities.add(createActivity(
+                        "PROJECT",
+                        buildAction("Project", project.getCreatedAt(), project.getUpdatedAt(),
+                                project.getProjectName()),
+                        project.getUpdatedAt(),
+                        project.getId()
+                )));
 
         achievementRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(achievement ->
-                        activities.add(
-                                createActivity(
-                                        "ACHIEVEMENT",
-                                        buildAction(
-                                                "Achievement",
-                                                achievement.getCreatedAt(),
-                                                achievement.getUpdatedAt(),
-                                                achievement.getTitle()
-                                        ),
-                                        achievement.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(achievement -> activities.add(createActivity(
+                        "ACHIEVEMENT",
+                        buildAction("Achievement", achievement.getCreatedAt(), achievement.getUpdatedAt(),
+                                achievement.getTitle()),
+                        achievement.getUpdatedAt(),
+                        achievement.getId()
+                )));
 
         certificationsRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(cert ->
-                        activities.add(
-                                createActivity(
-                                        "CERTIFICATION",
-                                        buildAction(
-                                                "Certification",
-                                                cert.getCreatedAt(),
-                                                cert.getUpdatedAt(),
-                                                cert.getTitle()
-                                        ),
-                                        cert.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(cert -> activities.add(createActivity(
+                        "CERTIFICATION",
+                        buildAction("Certification", cert.getCreatedAt(), cert.getUpdatedAt(),
+                                cert.getTitle()),
+                        cert.getUpdatedAt(),
+                        cert.getId()
+                )));
 
         testimonialRepository.findTop1ByProfileIdOrderByUpdatedAtDesc(profileId)
-                .ifPresent(testimonial ->
-                        activities.add(
-                                createActivity(
-                                        "TESTIMONIAL",
-                                        "Testimonial received from " + safe(testimonial.getName()),
-                                        testimonial.getUpdatedAt()
-                                )
-                        )
-                );
+                .ifPresent(testimonial -> activities.add(createActivity(
+                        "TESTIMONIAL",
+                        "Testimonial received from " + safe(testimonial.getName()),
+                        testimonial.getUpdatedAt(),
+                        testimonial.getId()
+                )));
 
         contactUsRepository.findTop1ByProfileIdOrderByCreatedAtDesc(profileId)
-                .ifPresent(message ->
-                        activities.add(
-                                createActivity(
-                                        "MESSAGE",
-                                        "New message from " + safe(message.getName()),
-                                        message.getCreatedAt()
-                                )
-                        )
-                );
+                .ifPresent(message -> activities.add(createActivity(
+                        "MESSAGE",
+                        "New message from " + safe(message.getName()),
+                        message.getCreatedAt(),
+                        message.getId()
+                )));
 
-        activities.sort(
-                Comparator.comparing(
-                        ActivityDTO::getTimestamp,
-                        Comparator.nullsLast(Comparator.naturalOrder())
-                ).reversed()
-        );
+        activities.sort(Comparator
+                .comparing(ActivityDTO::getTimestamp, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed());
 
         return activities.stream().limit(10).toList();
     }
@@ -266,11 +247,12 @@ public class DashboardServiceImpl implements DashboardService {
         return value == null ? "" : value;
     }
 
-    private ActivityDTO createActivity(String type, String description, LocalDateTime time) {
+    private ActivityDTO createActivity(String type, String description, LocalDateTime time, String entityId) {
         return ActivityDTO.builder()
                 .type(type)
                 .description(description)
                 .timestamp(time)
+                .entityId(entityId)
                 .build();
     }
 

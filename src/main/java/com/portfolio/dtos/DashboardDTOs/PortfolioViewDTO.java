@@ -7,9 +7,9 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class ActivityDTO {
-    private String type;
-    private String description;
+public class PortfolioViewDTO {
+    private String device;
+    private String referrer;
     private LocalDateTime timestamp;
-    private String entityId;
+    private String sessionId;   // first 8 chars — used as a display fingerprint
 }
