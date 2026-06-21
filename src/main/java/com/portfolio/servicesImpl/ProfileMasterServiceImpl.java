@@ -1,16 +1,21 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dtos.GitHub.GitHubStatsDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.dtos.ProfileTheme.ProfileThemeResponse;
+import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.PlatformEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.SocialLinkRepository;
 import com.portfolio.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final SocialLinkRepository socialLinkRepository;
     private final ColorThemeService colorThemeService;
     private final ProfileThemeService profileThemeService;
+    private final GitHubService gitHubService;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
@@ -39,6 +45,15 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
         String profileId = socialLink.getProfileId();
         ProfileResponse profileResponse = profileService.get(profileId);
         ProfileThemeResponse theme = profileThemeService.getThemeByProfileId(profileId);
+        List<SocialLinkResponseDTO> socialLinks = socialLinkService.getByProfile(profileId);
+
+        GitHubStatsDTO githubStats = socialLinks.stream()
+                .filter(l -> PlatformEnum.GITHUB.equals(l.getPlatform())
+                        && StatusEnum.ACTIVE.equals(l.getStatus()))
+                .findFirst()
+                .map(l -> gitHubService.fetchStats(l.getUrl()))
+                .orElse(null);
+
         return ProfileMasterResponse.builder()
                 .profile(profileResponse)
                 .colorTheme(colorThemeService.getThemeById(theme.getThemeId()))
@@ -49,7 +64,8 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .achievements(achievementService.getByProfile(profileId))
                 .testimonials(testimonialService.getByProfile(profileId))
                 .certifications(certificationService.getByProfile(profileId))
-                .socialLinks(socialLinkService.getByProfile(profileId))
+                .socialLinks(socialLinks)
+                .githubStats(githubStats)
                 .build();
     }
 
