@@ -17,7 +17,8 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     private final Cloudinary cloudinary;
 
     @Override
-    public Map uploadFile(MultipartFile file) throws IOException {
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadFile(MultipartFile file) throws IOException {
         return cloudinary.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
@@ -29,45 +30,59 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         );
     }
 
-        @Override
-        public Map uploadProfileImage(MultipartFile file) throws IOException {
-            validateImage(file);
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadProfileImage(MultipartFile file) throws IOException {
+        validateImage(file);
+        return cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", "portfolio/profile",
+                        "resource_type", "image",
+                        "secure", true
+                )
+        );
+    }
 
-            return cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "folder", "portfolio/profile",
-                            "resource_type", "image",
-                            "secure", true
-                    )
-            );
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadLogoImage(MultipartFile file) throws IOException {
+        validateImage(file);
+        return cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", "portfolio/logo",
+                        "resource_type", "image",
+                        "secure", true
+                )
+        );
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadImage(MultipartFile file, String folder) throws IOException {
+        validateImage(file);
+        return cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", folder,
+                        "resource_type", "image",
+                        "secure", true
+                )
+        );
+    }
+
+    @Override
+    public void deleteFile(String publicId) throws IOException {
+        cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+    }
+
+    private void validateImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
         }
-
-        @Override
-        public Map uploadLogoImage(MultipartFile file) throws IOException {
-            validateImage(file);
-
-            return cloudinary.uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                            "folder", "portfolio/logo",
-                            "resource_type", "image",
-                            "secure", true
-                    )
-            );
-        }
-
-        @Override
-        public void deleteFile(String publicId) throws IOException {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-        }
-
-        private void validateImage(MultipartFile file) {
-            if (file == null || file.isEmpty()) {
-                throw new IllegalArgumentException("File is required");
-            }
-            if (!file.getContentType().startsWith("image/")) {
-                throw new IllegalArgumentException("Only image files are allowed");
-            }
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
         }
     }
+}

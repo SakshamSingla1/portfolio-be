@@ -65,4 +65,5 @@ public class PublicController {
         portfolioViewService.trackView(request);
         return ResponseEntity.ok().build();
     }
+
 }
