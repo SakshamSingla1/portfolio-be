@@ -1,22 +1,22 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.ProfileThemeMapping;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProfileThemeMappingRepository extends MongoRepository<ProfileThemeMapping, String> {
+public interface ProfileThemeMappingRepository extends JpaRepository<ProfileThemeMapping, Long> {
 
-    Optional<ProfileThemeMapping> findByProfileId(String profileId);
+    Optional<ProfileThemeMapping> findByProfileId(Long profileId);
 
-    boolean existsByProfileId(String profileId);
+    boolean existsByProfileId(Long profileId);
 
-    void deleteByProfileId(String profileId);
+    void deleteByProfileId(Long profileId);
 
-    List<ProfileThemeMapping> findAllByThemeId(String themeId);
+    List<ProfileThemeMapping> findAllByThemeId(Long themeId);
 
-    long countByThemeId(String themeId);
+    long countByThemeId(Long themeId);
 }

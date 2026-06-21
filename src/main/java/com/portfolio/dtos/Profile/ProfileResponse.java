@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 public class ProfileResponse extends AuditableResponse {
 
-    private String id;
+    private Long id;
     private String fullName;
     private String userName;
     private String title;
@@ -33,7 +33,7 @@ public class ProfileResponse extends AuditableResponse {
     private String logoUrl;
     private String logoPublicId;
 
-    private String roleId;
+    private Long roleId;
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;

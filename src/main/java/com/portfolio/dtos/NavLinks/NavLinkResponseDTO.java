@@ -11,7 +11,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class NavLinkResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String index;
     private String name;
     private String path;

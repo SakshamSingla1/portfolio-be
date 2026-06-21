@@ -1,27 +1,30 @@
 package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+@EqualsAndHashCode(callSuper = false)
+
+@Entity
+@Table(name = "profile_theme_mapping")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "profile_theme_mapping")
 public class ProfileThemeMapping extends Auditable {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Indexed(unique = true)
-    private String profileId;
+    @Column(unique = true, name = "profile_id")
+    private Long profileId;
 
-    @Indexed
-    private String themeId;
+    @Column(name = "theme_id")
+    private Long themeId;
 }

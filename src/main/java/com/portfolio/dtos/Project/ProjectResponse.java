@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 public class ProjectResponse {
 
-    private String id;
+    private Long id;
     private String projectName;
     private String projectDescription;
     private List<String> githubRepositories;

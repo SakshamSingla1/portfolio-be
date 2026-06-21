@@ -4,60 +4,41 @@ import com.portfolio.entities.ContactUs;
 import com.portfolio.enums.ContactUsStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
-import org.springframework.data.mongodb.repository.Update;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ContactUsRepository extends MongoRepository<ContactUs, String> {
+public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
 
-    @Query("""
-    {
-      $and: [
-        {
-          $or: [
-            { "name":  { "$regex": ?1, "$options": "i" } },
-            { "email": { "$regex": ?1, "$options": "i" } }
-          ]
-        },
-        { "profileId": ?0 }
-      ]
-    }
-    """)
+    @Query("SELECT c FROM ContactUs c WHERE c.profileId = :profileId AND (LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<ContactUs> findByProfileIdWithSearch(
-            String profileId,
-            String search,
+            @Param("profileId") Long profileId,
+            @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("""
-    {
-      $or: [
-        { "name":  { "$regex": ?0, "$options": "i" } },
-        { "email": { "$regex": ?0, "$options": "i" } }
-      ]
-    }
-    """)
-    Page<ContactUs> findBySearch(String search, Pageable pageable);
+    @Query("SELECT c FROM ContactUs c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<ContactUs> findBySearch(@Param("search") String search, Pageable pageable);
 
-    Page<ContactUs> findAll(Pageable pageable);
+    Page<ContactUs> findByProfileId(Long profileId, Pageable pageable);
 
-    Page<ContactUs> findByProfileId(String profileId, Pageable pageable);
+    @Modifying
+    @Transactional
+    @Query("UPDATE ContactUs c SET c.status = :status WHERE c.id = :id")
+    void updateStatusById(@Param("id") Long id, @Param("status") ContactUsStatusEnum status);
 
-    @Query("{ '_id': ?0 }")
-    @Update("{ '$set': { 'status': ?1 } }")
-    void updateStatusById(String id, ContactUsStatusEnum status);
+    List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(Long profileId);
 
-    List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(String profileId);
+    long countByProfileId(Long profileId);
 
-    long countByProfileId(String profileId);
+    long countByStatusAndProfileId(ContactUsStatusEnum status, Long profileId);
 
-    long countByStatusAndProfileId(ContactUsStatusEnum contactUsStatusEnum,String profileId);
-
-    Optional<ContactUs> findTop1ByProfileIdOrderByCreatedAtDesc(String profileId);
+    Optional<ContactUs> findTop1ByProfileIdOrderByCreatedAtDesc(Long profileId);
 }

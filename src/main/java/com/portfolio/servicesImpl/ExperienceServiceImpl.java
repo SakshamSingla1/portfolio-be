@@ -52,7 +52,7 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public ExperienceResponse update(String id, ExperienceRequest req) throws GenericException {
+    public ExperienceResponse update(Long id, ExperienceRequest req) throws GenericException {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
         LocalDate startDate = parseDate(req.getStartDate());
@@ -72,20 +72,20 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public ExperienceResponse getById(String id) throws GenericException {
+    public ExperienceResponse getById(Long id) throws GenericException {
         Experience experience = experienceRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
         return mapToResponse(experience);
     }
 
     @Override
-    public String delete(String id) {
+    public String delete(Long id) {
         experienceRepository.deleteById(id);
         return "Experience deleted successfully";
     }
 
     @Override
-    public Page<ExperienceResponse> getByProfile(String profileId, String search, String sortDir, String sortBy,Pageable pageable) {
+    public Page<ExperienceResponse> getByProfile(Long profileId, String search, String sortDir, String sortBy,Pageable pageable) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -111,7 +111,7 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public List<ExperienceResponse> getByProfile(String profileId) {
+    public List<ExperienceResponse> getByProfile(Long profileId) {
         return experienceRepository.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
@@ -136,10 +136,14 @@ public class ExperienceServiceImpl implements ExperienceService {
 
     private ExperienceResponse mapToResponse(Experience exp) {
 
+        List<Long> skillIdLongs = exp.getSkillIds() == null ? List.of() : exp.getSkillIds().stream()
+                .map(Long::valueOf)
+                .toList();
+
         List<SkillDropdown> skills =
-                exp.getSkillIds() == null
+                skillIdLongs.isEmpty()
                         ? List.of()
-                        : skillRepository.findAllById(exp.getSkillIds())
+                        : skillRepository.findAllById(skillIdLongs)
                         .stream()
                         .map(skill -> new SkillDropdown(
                                 skill.getId(),

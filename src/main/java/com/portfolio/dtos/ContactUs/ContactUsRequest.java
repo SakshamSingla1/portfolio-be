@@ -8,5 +8,5 @@ public class ContactUsRequest {
     private String email;
     private String message;
     private String phone;
-    private String profileId;
+    private Long profileId;
 }

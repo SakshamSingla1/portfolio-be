@@ -13,10 +13,10 @@ import java.util.List;
 
 public interface CertificationService {
     CertificationResponseDTO createCertification(CertificationRequestDTO certificationRequestDTO) throws GenericException;
-    CertificationResponseDTO updateCertification(String id, CertificationRequestDTO certificationDTO) throws GenericException;
-    CertificationResponseDTO getCertificationById(String id) throws GenericException;
-    Page<CertificationResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable);
-    Void deleteById(String id) throws GenericException;
-    ImageUploadResponse uploadCredentialImage(String id,MultipartFile file) throws GenericException, IOException;
-    List<CertificationResponseDTO> getByProfile(String profileId);
+    CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO certificationDTO) throws GenericException;
+    CertificationResponseDTO getCertificationById(Long id) throws GenericException;
+    Page<CertificationResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Void deleteById(Long id) throws GenericException;
+    ImageUploadResponse uploadCredentialImage(Long id,MultipartFile file) throws GenericException, IOException;
+    List<CertificationResponseDTO> getByProfile(Long profileId);
 }

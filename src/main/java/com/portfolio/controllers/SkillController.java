@@ -44,7 +44,7 @@ public class SkillController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SkillResponse>> update(
             @RequestHeader("Authorization") String auth,
-            @Parameter(description = "Skill ID") @PathVariable String id, 
+            @Parameter(description = "Skill ID") @PathVariable Long id, 
             @RequestBody SkillRequest req) {
         try {
             req.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -57,7 +57,7 @@ public class SkillController {
 
     @Operation(summary = "Get Skill by ID", description = "Retrieve details of a skill by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<SkillResponse>> findById(@Parameter(description = "Skill ID") @PathVariable String id) {
+    public ResponseEntity<ResponseModel<SkillResponse>> findById(@Parameter(description = "Skill ID") @PathVariable Long id) {
         try {
             SkillResponse response = skillService.getById(id);
             return ApiResponse.successResponse(response, "Skill fetched successfully");
@@ -75,14 +75,14 @@ public class SkillController {
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<SkillResponse> response = skillService.getByProfile(profileId, pageable, search, sortDir, sortBy);
         return ApiResponse.successResponse(response, "Skills fetched successfully");
     }
 
     @Operation(summary = "Delete Skill", description = "Delete a skill by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@Parameter(description = "Skill ID") @PathVariable String id) {
+    public ResponseEntity<ResponseModel<String>> delete(@Parameter(description = "Skill ID") @PathVariable Long id) {
         try {
             skillService.delete(id);
             return ApiResponse.successResponse("Skill deleted successfully");

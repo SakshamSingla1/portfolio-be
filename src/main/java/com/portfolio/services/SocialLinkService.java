@@ -12,9 +12,9 @@ import java.util.List;
 
 public interface SocialLinkService {
     SocialLinkResponseDTO createLink(SocialLinkRequestDTO requestDTO) throws GenericException;
-    SocialLinkResponseDTO updateLink(String id,SocialLinkRequestDTO requestDTO) throws GenericException;
-    List<SocialLinkResponseDTO> getByProfile(String profileId);
-    Page<SocialLinkResponseDTO> getByProfile(String profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy);
-    SocialLinkResponseDTO get(String id) throws GenericException;
-    void delete(String id) throws GenericException;
+    SocialLinkResponseDTO updateLink(Long id,SocialLinkRequestDTO requestDTO) throws GenericException;
+    List<SocialLinkResponseDTO> getByProfile(Long profileId);
+    Page<SocialLinkResponseDTO> getByProfile(Long profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy);
+    SocialLinkResponseDTO get(Long id) throws GenericException;
+    void delete(Long id) throws GenericException;
 }

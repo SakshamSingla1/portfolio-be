@@ -15,5 +15,5 @@ public class CertificationRequestDTO {
     private String order;
     private LocalDate issueDate;
     private LocalDate expiryDate;
-    private String profileId;
+    private Long profileId;
 }

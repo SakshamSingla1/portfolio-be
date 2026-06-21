@@ -12,7 +12,7 @@ import java.util.List;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class RolePermissionResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String name;
     private String description;
     private RoleStatusEnum status;

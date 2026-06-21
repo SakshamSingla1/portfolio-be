@@ -11,9 +11,9 @@ public interface ColorThemeService {
 
     ColorThemeResponseDTO createTheme(ColorThemeRequestDTO dto) throws GenericException;
 
-    ColorThemeResponseDTO updateTheme(String id, ColorThemeRequestDTO dto) throws GenericException;
+    ColorThemeResponseDTO updateTheme(Long id, ColorThemeRequestDTO dto) throws GenericException;
 
-    ColorThemeResponseDTO getThemeById(String themeId) throws GenericException;
+    ColorThemeResponseDTO getThemeById(Long themeId) throws GenericException;
 
     Page<ColorThemeResponseDTO> getAllThemes(
             String search,
@@ -24,5 +24,5 @@ public interface ColorThemeService {
 
     ColorThemeResponseDTO getDefaultTheme() throws GenericException;
 
-    String deleteTheme(String id) throws GenericException;
+    String deleteTheme(Long id) throws GenericException;
 }

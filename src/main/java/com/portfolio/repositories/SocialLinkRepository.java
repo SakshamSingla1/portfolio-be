@@ -5,92 +5,53 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SocialLinkRepository extends MongoRepository<SocialLinks,String> {
+public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
 
-    Optional<SocialLinks> findByPlatformAndUrl(PlatformEnum platform,String url);
+    Optional<SocialLinks> findByPlatformAndUrl(PlatformEnum platform, String url);
 
-    Optional<SocialLinks> findByProfileIdAndPlatformAndStatus(String profileId,PlatformEnum platform,StatusEnum status);
+    Optional<SocialLinks> findByProfileIdAndPlatformAndStatus(Long profileId, PlatformEnum platform, StatusEnum status);
 
-    boolean existsByProfileIdAndPlatformAndStatusNot(String profileId,PlatformEnum platform,StatusEnum status);
-
-    Page<SocialLinks> findAll(Pageable pageable);
+    boolean existsByProfileIdAndPlatformAndStatusNot(Long profileId, PlatformEnum platform, StatusEnum status);
 
     Page<SocialLinks> findByStatus(StatusEnum status, Pageable pageable);
 
-    Page<SocialLinks> findByProfileId(String profileId, Pageable pageable);
+    Page<SocialLinks> findByProfileId(Long profileId, Pageable pageable);
 
-    Page<SocialLinks> findByStatusAndProfileId(StatusEnum status, String profileId, Pageable pageable);
+    Page<SocialLinks> findByStatusAndProfileId(StatusEnum status, Long profileId, Pageable pageable);
 
-    @Query("""
-            {
-              $or: [
-                { "platform": { $regex: ?0, $options: "i" } },
-              ]
-            }
-            """)
-    Page<SocialLinks> search(String search, Pageable pageable);
+    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<SocialLinks> search(@Param("search") String search, Pageable pageable);
 
-    @Query("""
-            {
-              $and: [
-                {
-                  $or: [
-                    { "platform": { $regex: ?0, $options: "i" } },
-                  ]
-                },
-                { "status": ?1 }
-              ]
-            }
-            """)
-    Page<SocialLinks> searchByStatus(String search, StatusEnum status, Pageable pageable);
+    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.status = :status")
+    Page<SocialLinks> searchByStatus(@Param("search") String search, @Param("status") StatusEnum status, Pageable pageable);
 
-    @Query("""
-            {
-              $and: [
-                {
-                  $or: [
-                    { "platform": { $regex: ?0, $options: "i" } },
-                  ]
-                },
-                { "profileId": ?1 }
-              ]
-            }
-            """)
-    Page<SocialLinks> searchByProfileId(String search, String profileId, Pageable pageable);
+    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.profileId = :profileId")
+    Page<SocialLinks> searchByProfileId(@Param("search") String search, @Param("profileId") Long profileId, Pageable pageable);
 
-    @Query("""
-            {
-              $and: [
-                {
-                  $or: [
-                    { "platform": { $regex: ?0, $options: "i" } },
-                  ]
-                },
-                { "status": ?1 },
-                { "profileId": ?2 }
-              ]
-            }
-            """)
+    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.status = :status AND s.profileId = :profileId")
     Page<SocialLinks> searchByProfileIdAndStatus(
-            String search,
-            StatusEnum status,
-            String profileId,
+            @Param("search") String search,
+            @Param("status") StatusEnum status,
+            @Param("profileId") Long profileId,
             Pageable pageable
     );
 
-    long countByProfileId(String profileId);
+    long countByProfileId(Long profileId);
 
-    List<SocialLinks> findByProfileIdAndStatusOrderByOrderAsc(String profileId, StatusEnum statusEnum);
+    List<SocialLinks> findByProfileIdAndStatusOrderByOrderAsc(Long profileId, StatusEnum statusEnum);
 
+    @Query("SELECT s FROM SocialLinks s WHERE s.platform = :platform AND s.status = :status")
     Optional<SocialLinks> findPortfolioUrlByPlatformAndStatus(
-            PlatformEnum platform,
-            StatusEnum status
+            @Param("platform") PlatformEnum platform,
+            @Param("status") StatusEnum status
     );
 }

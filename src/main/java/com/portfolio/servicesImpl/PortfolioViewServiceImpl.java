@@ -27,7 +27,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
     @Override
     public void trackView(PortfolioViewRequest request) {
-        if (request.getProfileId() == null || request.getProfileId().isBlank()) return;
+        if (request.getProfileId() == null) return;
 
         PortfolioView view = PortfolioView.builder()
                 .profileId(request.getProfileId())
@@ -41,7 +41,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
     }
 
     @Override
-    public ViewStatsDTO getViewStats(String profileId) {
+    public ViewStatsDTO getViewStats(Long profileId) {
         LocalDateTime now        = LocalDateTime.now();
         LocalDateTime startDay   = now.toLocalDate().atStartOfDay();
         LocalDateTime startWeek  = now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();

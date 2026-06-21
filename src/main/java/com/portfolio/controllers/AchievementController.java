@@ -39,7 +39,7 @@ public class AchievementController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id, 
+            @PathVariable Long id, 
             @RequestBody AchievementRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.updateAchievement(id, dto);
@@ -47,7 +47,7 @@ public class AchievementController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<AchievementResponseDTO>> getAchievementById(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<AchievementResponseDTO>> getAchievementById(@PathVariable Long id) throws GenericException {
         AchievementResponseDTO response = achievementService.getAchievementById(id);
         return ApiResponse.respond(response, "Achievement fetched successfully", "Failed to fetch Achievement");
     }
@@ -60,13 +60,13 @@ public class AchievementController {
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Achievements fetched successfully", "Failed to fetch Achievements");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> deleteAchievement(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<Void>> deleteAchievement(@PathVariable Long id) throws GenericException {
         achievementService.deleteById(id);
         return ApiResponse.respond(null, "Achievement deleted successfully", "Failed to delete Achievement");
     }
@@ -77,7 +77,7 @@ public class AchievementController {
             @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(achievementService.uploadImage(profileId, file), "Image uploaded successfully", "Failed to upload Image");
     }
 }

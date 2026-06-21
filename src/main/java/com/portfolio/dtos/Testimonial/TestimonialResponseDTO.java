@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class TestimonialResponseDTO {
-    private String id;
+    private Long id;
     private String name;
     private String role;
     private String company;
     private String message;
     private String imageUrl;
-    private String imageId;
+    private Long imageId;
     private String linkedInUrl;
     private String order;
     private StatusEnum status;

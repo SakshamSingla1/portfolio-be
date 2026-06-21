@@ -1,20 +1,20 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.PortfolioView;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface PortfolioViewRepository extends MongoRepository<PortfolioView, String> {
+public interface PortfolioViewRepository extends JpaRepository<PortfolioView, Long> {
 
-    long countByProfileId(String profileId);
+    long countByProfileId(Long profileId);
 
-    long countByProfileIdAndTimestampBetween(String profileId, LocalDateTime start, LocalDateTime end);
+    long countByProfileIdAndTimestampBetween(Long profileId, LocalDateTime start, LocalDateTime end);
 
-    List<PortfolioView> findByProfileIdAndTimestampAfter(String profileId, LocalDateTime after);
+    List<PortfolioView> findByProfileIdAndTimestampAfter(Long profileId, LocalDateTime after);
 
-    List<PortfolioView> findTop30ByProfileIdOrderByTimestampDesc(String profileId);
+    List<PortfolioView> findTop30ByProfileIdOrderByTimestampDesc(Long profileId);
 }

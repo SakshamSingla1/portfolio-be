@@ -10,13 +10,13 @@ import lombok.Data;
 @EqualsAndHashCode(callSuper = true)
 public class ProfileThemeResponse extends AuditableResponse {
 
-    private String id;
+    private Long id;
 
-    private String profileId;
+    private Long profileId;
 
     private String username;
 
-    private String themeId;
+    private Long themeId;
 
     private String themeName;
 }

@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class FileAssetDTO {
-    private String id;
+    private Long id;
     private String location;
     private String path;
-    private String resourceId;
+    private Long resourceId;
     private ResourceTypeEnum resourceType;
     private String mimeType;
     private String metaData;

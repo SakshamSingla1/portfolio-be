@@ -51,7 +51,7 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     @Override
-    public CertificationResponseDTO updateCertification(String id, CertificationRequestDTO dto) throws GenericException {
+    public CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO dto) throws GenericException {
         Certifications existing = certificationsRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found"));
         if (dto.getOrder() != null && certificationsRepository.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
@@ -70,14 +70,14 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     @Override
-    public CertificationResponseDTO getCertificationById(String id) throws GenericException {
+    public CertificationResponseDTO getCertificationById(Long id) throws GenericException {
         Certifications certification = certificationsRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found"));
         return mapToResponse(certification);
     }
 
     @Override
-    public Page<CertificationResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable) {
+    public Page<CertificationResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC
@@ -103,7 +103,7 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     @Override
-    public Void deleteById(String id) throws GenericException {
+    public Void deleteById(Long id) throws GenericException {
         if (!certificationsRepository.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found");
         }
@@ -113,7 +113,7 @@ public class CertificationServiceImpl implements CertificationService {
 
     @Override
     public ImageUploadResponse uploadCredentialImage(
-            String profileId,
+            Long profileId,
             MultipartFile file
     ) throws GenericException, IOException {
         profileRepository.findById(profileId)
@@ -122,7 +122,7 @@ public class CertificationServiceImpl implements CertificationService {
         return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
     }
 
-    public List<CertificationResponseDTO> getByProfile(String profileId) {
+    public List<CertificationResponseDTO> getByProfile(Long profileId) {
         return certificationsRepository
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()

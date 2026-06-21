@@ -1,22 +1,29 @@
 package com.portfolio.entities;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "project-images")
+@Entity
+@Table(name = "project_images")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ProjectImages {
+
     @Id
-    private String id;
-    private String projectId;
-    private String profileId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "project_id")
+    private Long projectId;
+
+    @Column(name = "profile_id")
+    private Long profileId;
+
     private String url;
     private String publicId;
 }

@@ -1,53 +1,47 @@
 package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
+import com.portfolio.converters.StringListConverter;
 import com.portfolio.enums.EmploymentStatusEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
-@Document(collection = "experiences")
+@Entity
+@Table(name = "experiences")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@CompoundIndexes({
-        @CompoundIndex(
-                name = "idx_profile_updated",
-                def = "{ 'profileId': 1, 'updatedAt': -1 }"
-        )
-})
 public class Experience extends Auditable {
+
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Indexed
-    private String profileId;
+    @Column(name = "profile_id")
+    private Long profileId;
 
-    @TextIndexed
     private String companyName;
-
-    @TextIndexed
     private String jobTitle;
-
-    @TextIndexed
     private String location;
     private LocalDate startDate;
     private LocalDate endDate;
-    private EmploymentStatusEnum employmentStatus;
-    private String description;
-    private List<String> skillIds;
 
+    @Enumerated(EnumType.STRING)
+    private EmploymentStatusEnum employmentStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Convert(converter = StringListConverter.class)
+    @Column(columnDefinition = "TEXT", name = "skill_ids")
+    private List<String> skillIds;
 }

@@ -37,7 +37,7 @@ public class ProfileController {
         @GetMapping
         public ResponseEntity<ResponseModel<ProfileResponse>> getProfile(
                         @RequestHeader("Authorization") String auth) throws GenericException {
-                String profileId = helper.getProfileIdFromHeader(auth);
+                Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.get(profileId), "Profile fetched successfully",
                                 "Failed to fetch profile");
         }
@@ -45,7 +45,7 @@ public class ProfileController {
         @Operation(summary = "Get profile by ID")
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<ProfileResponse>> get(
-                        @PathVariable String id) throws GenericException {
+                        @PathVariable Long id) throws GenericException {
                 return ApiResponse.respond(profileService.get(id), "Profile fetched successfully",
                                 "Failed to fetch profile");
         }
@@ -55,7 +55,7 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<ProfileResponse>> updateProfile(
                         @RequestHeader("Authorization") String auth,
                         @RequestBody ProfileRequest req) throws GenericException, IOException {
-                String profileId = helper.getProfileIdFromHeader(auth);
+                Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.update(profileId, req), "Profile updated successfully",
                                 "Failed to update profile");
         }
@@ -65,7 +65,7 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProfileImage(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
-                String profileId = helper.getProfileIdFromHeader(auth);
+                Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadProfileImage(profileId, file),
                                 "Profile image uploaded successfully", "Failed to upload profile image");
         }
@@ -75,7 +75,7 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadAboutImage(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
-                String profileId = helper.getProfileIdFromHeader(auth);
+                Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadAboutMeImage(profileId, file),
                                 "About Me image uploaded successfully", "Failed to upload about me image");
         }
@@ -85,7 +85,7 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadLogo(
                         @RequestHeader("Authorization") String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
-                String profileId = helper.getProfileIdFromHeader(auth);
+                Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadLogoImage(profileId, file),
                                 "Logo uploaded successfully", "Failed to upload logo");
         }
@@ -129,7 +129,7 @@ public class ProfileController {
         @Operation(summary = "Get user by ID (Admin)")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @GetMapping("/users/{id}")
-        public ResponseEntity<ResponseModel<UserResponse>> getUserById(@PathVariable String id)
+        public ResponseEntity<ResponseModel<UserResponse>> getUserById(@PathVariable Long id)
                         throws GenericException {
                 UserResponse user = profileService.getUserById(id);
                 return ApiResponse.respond(
@@ -142,7 +142,7 @@ public class ProfileController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/users/{id}/status")
         public ResponseEntity<ResponseModel<UserResponse>> updateUserStatus(
-                        @PathVariable String id,
+                        @PathVariable Long id,
                         @RequestBody StatusUpdateRequest request) throws GenericException {
                 UserResponse user = profileService.updateUserStatus(id, request);
                 return ApiResponse.respond(
@@ -155,7 +155,7 @@ public class ProfileController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/users/{id}/role")
         public ResponseEntity<ResponseModel<UserResponse>> updateUserRole(
-                        @PathVariable String id,
+                        @PathVariable Long id,
                         @RequestBody RoleUpdateRequest request) throws GenericException {
                 UserResponse user = profileService.updateUserRole(id, request);
                 return ApiResponse.respond(
@@ -167,7 +167,7 @@ public class ProfileController {
         @Operation(summary = "Toggle user verification (Admin)")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/users/{id}/verify")
-        public ResponseEntity<ResponseModel<UserResponse>> toggleUserVerification(@PathVariable String id)
+        public ResponseEntity<ResponseModel<UserResponse>> toggleUserVerification(@PathVariable Long id)
                         throws GenericException {
                 UserResponse user = profileService.toggleUserVerification(id);
                 return ApiResponse.respond(

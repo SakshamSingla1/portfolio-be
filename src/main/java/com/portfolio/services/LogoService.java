@@ -9,8 +9,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface LogoService {
     LogoResponse create(LogoRequest request) throws GenericException;
-    LogoResponse update(String id,LogoRequest request) throws GenericException;
-    LogoResponse getById(String id) throws GenericException;
+    LogoResponse update(Long id,LogoRequest request) throws GenericException;
+    LogoResponse getById(Long id) throws GenericException;
     Page<LogoDropdown> getAllLogosByPage(Pageable pageable, String search, String sortDir, String sortBy);
-    void delete(String id) throws GenericException;
+    void delete(Long id) throws GenericException;
 }

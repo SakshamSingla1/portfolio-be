@@ -49,7 +49,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
-    public NavLinkResponseDTO updateNavLink(String id, NavLinkRequestDTO request)
+    public NavLinkResponseDTO updateNavLink(Long id, NavLinkRequestDTO request)
             throws GenericException {
 
         NavLink existing = navLinkRepository.findById(id)
@@ -70,7 +70,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
-    public void deleteNavLink(String id) throws GenericException {
+    public void deleteNavLink(Long id) throws GenericException {
 
         NavLink navLink = navLinkRepository.findById(id)
                 .orElseThrow(() -> new GenericException(
@@ -138,7 +138,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
-    public NavLinkResponseDTO getNavLink(String id) throws GenericException {
+    public NavLinkResponseDTO getNavLink(Long id) throws GenericException {
 
         NavLink navLink = navLinkRepository.findById(id)
                 .orElseThrow(() -> new GenericException(

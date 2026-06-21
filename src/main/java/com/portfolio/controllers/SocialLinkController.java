@@ -38,7 +38,7 @@ public class SocialLinkController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> updateLink(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody SocialLinkRequestDTO requestDTO ) throws GenericException {
         requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.updateLink(id,requestDTO);
@@ -46,7 +46,7 @@ public class SocialLinkController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> get(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> get(@PathVariable Long id) throws GenericException {
         SocialLinkResponseDTO responseDTO = socialLinkService.get(id);
         return ApiResponse.respond(responseDTO,"Social Link fetched successfully","Failed to fetch social link");
     }
@@ -59,14 +59,14 @@ public class SocialLinkController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<SocialLinkResponseDTO> responseDTOS = socialLinkService.getByProfile(profileId,status,pageable, search,sortDir,sortBy);
         return ApiResponse.respond(responseDTOS, "Social Links fetched successfully","failed to fetch social links");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> deleteSocialLink(
-            @PathVariable String id
+            @PathVariable Long id
     ) throws GenericException {
         socialLinkService.delete(id);
         return ApiResponse.successResponse(null, "Social Link deleted successfully");

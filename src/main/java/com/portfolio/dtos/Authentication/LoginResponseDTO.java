@@ -14,12 +14,12 @@ import java.util.List;
 @Data
 @Builder
 public class LoginResponseDTO {
-    private String id;
+    private Long id;
     private String fullName;
     private String userName;
     private String phone;
     private String email;
-    private String roleId;
+    private Long roleId;
     private String roleName;
     private String token;
     private StatusEnum status;

@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @SuperBuilder
 public class ModulePermissionDTO {
-    private String navLinkId;
+    private Long navLinkId;
     private String name;
     private String path;
     private String navGroup;

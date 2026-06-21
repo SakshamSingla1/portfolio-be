@@ -15,5 +15,5 @@ public class ExperienceRequest {
     private EmploymentStatusEnum employmentStatus;
     private String description;
     private List<String> skillIds;
-    private String profileId;
+    private Long profileId;
 }

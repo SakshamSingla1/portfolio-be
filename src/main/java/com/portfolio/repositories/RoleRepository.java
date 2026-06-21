@@ -4,15 +4,16 @@ import com.portfolio.entities.Role;
 import com.portfolio.enums.RoleStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RoleRepository extends MongoRepository<Role, String> {
+public interface RoleRepository extends JpaRepository<Role, Long> {
 
     Optional<Role> findByName(String name);
 
@@ -20,24 +21,24 @@ public interface RoleRepository extends MongoRepository<Role, String> {
 
     Page<Role> findByStatus(RoleStatusEnum status, Pageable pageable);
 
-    @Query("{ 'name': { $regex: ?0, $options: 'i' } }")
-    Page<Role> searchByName(String name, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Page<Role> searchByName(@Param("name") String name, Pageable pageable);
 
-    @Query("{ 'status': { $ne: 'DELETED' } }")
+    @Query("SELECT r FROM Role r WHERE r.status != com.portfolio.enums.RoleStatusEnum.DELETED")
     Page<Role> findAllActive(Pageable pageable);
 
-    @Query("{ $and: [ { 'status': { $ne: 'DELETED' } }, { 'name': { $regex: ?0, $options: 'i' } } ] }")
-    Page<Role> searchActiveByName(String name, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE r.status != com.portfolio.enums.RoleStatusEnum.DELETED AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Page<Role> searchActiveByName(@Param("name") String name, Pageable pageable);
 
-    @Query("{ $and: [ { 'status': { $ne: 'DELETED' } }, { 'status': ?0 } ] }")
-    Page<Role> findByStatus(String status, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE r.status != com.portfolio.enums.RoleStatusEnum.DELETED AND r.status = :#{T(com.portfolio.enums.RoleStatusEnum).valueOf(#status)}")
+    Page<Role> findByStatus(@Param("status") String status, Pageable pageable);
 
-    @Query("{ $and: [ { 'status': { $ne: 'DELETED' } }, { 'name': { $regex: ?0, $options: 'i' } }, { 'status': ?1 } ] }")
-    Page<Role> searchByNameAndStatus(String name, String status, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE r.status != com.portfolio.enums.RoleStatusEnum.DELETED AND LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%')) AND r.status = :#{T(com.portfolio.enums.RoleStatusEnum).valueOf(#status)}")
+    Page<Role> searchByNameAndStatus(@Param("name") String name, @Param("status") String status, Pageable pageable);
 
-    @Query("{ $and: [ { 'status': { $ne: 'DELETED' } }, { '_id': { $in: ?0 } } ] }")
-    Page<Role> findByIdIn(List<String> roleIds, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE r.status != com.portfolio.enums.RoleStatusEnum.DELETED AND r.id IN :roleIds")
+    Page<Role> findByIdIn(@Param("roleIds") List<Long> roleIds, Pageable pageable);
 
-    @Query("{ 'name': { $regex: ?0, $options: 'i' } }")
-    Page<Role> findByName(String name, Pageable pageable);
+    @Query("SELECT r FROM Role r WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Page<Role> findByName(@Param("name") String name, Pageable pageable);
 }

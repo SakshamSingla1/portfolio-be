@@ -9,8 +9,8 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SkillRequest {
-    private String profileId;
-    private String logoId;
+    private Long profileId;
+    private Long logoId;
     private SkillLevelEnum level;
     private SkillCategoryEnum category;
 }

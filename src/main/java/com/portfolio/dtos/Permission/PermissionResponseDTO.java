@@ -9,6 +9,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class PermissionResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String name;
 }

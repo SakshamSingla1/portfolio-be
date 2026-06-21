@@ -1,37 +1,56 @@
 package com.portfolio.entities;
 
+import com.portfolio.converters.StringListConverter;
 import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.StatusEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Document(collection = "seo-meta")
+@Entity
+@Table(name = "seo_meta")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class SeoMeta {
+
     @Id
-    private String id;
-    private String profileId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "profile_id")
+    private Long profileId;
+
+    @Enumerated(EnumType.STRING)
     private PageKeyEnum pageKey;
+
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Convert(converter = StringListConverter.class)
+    @Column(columnDefinition = "TEXT")
     private List<String> keywords;
+
     private String ogTitle;
+
+    @Column(columnDefinition = "TEXT")
     private String ogDescription;
+
     private String ogImageUrl;
     private String canonicalUrl;
     private Boolean indexable;
     private Boolean followLinks;
-    private StatusEnum status;
-    private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    private StatusEnum status;
+
+    private LocalDateTime updatedAt;
 }

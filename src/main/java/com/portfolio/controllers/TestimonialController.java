@@ -38,7 +38,7 @@ public class TestimonialController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id, 
+            @PathVariable Long id, 
             @RequestBody TestimonialRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.updateTestimonial(id, dto);
@@ -46,7 +46,7 @@ public class TestimonialController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> getTestimonialById(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<TestimonialResponseDTO>> getTestimonialById(@PathVariable Long id) throws GenericException {
         TestimonialResponseDTO response = testimonialService.getTestimonialById(id);
         return ApiResponse.respond(response, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
@@ -59,13 +59,13 @@ public class TestimonialController {
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<TestimonialResponseDTO> page = testimonialService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> deleteTestimonial(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<Void>> deleteTestimonial(@PathVariable Long id) throws GenericException {
         testimonialService.deleteById(id);
         return ApiResponse.respond(null, "Testimonial deleted successfully", "Failed to delete Testimonial");
     }
@@ -76,7 +76,7 @@ public class TestimonialController {
             @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(testimonialService.uploadImage(profileId, file), "Profile image uploaded successfully", "Failed to upload profile image");
     }
 }

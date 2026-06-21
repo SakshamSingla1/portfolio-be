@@ -40,7 +40,7 @@ public class NavLinkController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> updateNavLink(
-                        @PathVariable String id,
+                        @PathVariable Long id,
                         @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
 
                 NavLinkResponseDTO responseDTO = navLinkService.updateNavLink(id, navLinkRequestDTO);
@@ -54,7 +54,7 @@ public class NavLinkController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @DeleteMapping("/{id}")
         public ResponseEntity<ResponseModel<String>> deleteNavLink(
-                        @PathVariable String id) throws GenericException {
+                        @PathVariable Long id) throws GenericException {
 
                 navLinkService.deleteNavLink(id);
 
@@ -98,7 +98,7 @@ public class NavLinkController {
 
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> getNavLink(
-                        @PathVariable String id) throws GenericException {
+                        @PathVariable Long id) throws GenericException {
 
                 NavLinkResponseDTO responseDTO = navLinkService.getNavLink(id);
 

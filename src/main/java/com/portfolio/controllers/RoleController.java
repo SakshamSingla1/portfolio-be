@@ -32,14 +32,14 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ResponseModel<RoleListResponseDTO>> updateRole(@PathVariable String id,
+    public ResponseEntity<ResponseModel<RoleListResponseDTO>> updateRole(@PathVariable Long id,
             @RequestBody RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
         RoleListResponseDTO responseDTO = roleService.upsertRole(id, roleRequestBodyDTO);
         return ApiResponse.respond(responseDTO, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<RolePermissionResponseDTO>> getRolePermissionsByRoleId(@PathVariable String id)
+    public ResponseEntity<ResponseModel<RolePermissionResponseDTO>> getRolePermissionsByRoleId(@PathVariable Long id)
             throws GenericException, JsonProcessingException {
         return ApiResponse.respond(roleService.getRolePermissionsByRoleId(id),
                 ApiResponse.SUCCESS, ApiResponse.FAILED);
@@ -60,7 +60,7 @@ public class RoleController {
 
     @GetMapping("/user/{usedId}")
     public ResponseEntity<ResponseModel<RolePermissionResponseDTO>> getRolePermissionsByUserId(
-            @PathVariable String usedId) throws GenericException, JsonProcessingException {
+            @PathVariable Long usedId) throws GenericException, JsonProcessingException {
         return ApiResponse.respond(roleService.getRolePermissionsByRoleId(usedId),
                 ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
@@ -73,7 +73,7 @@ public class RoleController {
     }
 
     @GetMapping("/id/{id}")
-    public ResponseEntity<ResponseModel<RoleListResponseDTO>> getRoleById(@PathVariable String id)
+    public ResponseEntity<ResponseModel<RoleListResponseDTO>> getRoleById(@PathVariable Long id)
             throws GenericException {
         return ApiResponse.respond(roleService.getRoleById(id),
                 ApiResponse.SUCCESS, ApiResponse.FAILED);

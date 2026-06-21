@@ -38,7 +38,7 @@ public class ExperienceController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ExperienceResponse>> update(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody ExperienceRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
         ExperienceResponse response = experienceService.update(id, req);
@@ -47,14 +47,14 @@ public class ExperienceController {
 
     @Operation(summary = "Get experience by ID", description = "Fetches a specific experience record by ID.")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<ExperienceResponse>> getById(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<ExperienceResponse>> getById(@PathVariable Long id) throws GenericException {
         ExperienceResponse response = experienceService.getById(id);
         return ApiResponse.respond(response, "Experience fetched successfully", "Failed to fetch experience");
     }
 
     @Operation(summary = "Delete experience", description = "Deletes a work experience record by ID.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Long id) throws GenericException {
         String response = experienceService.delete(id);
         return ApiResponse.respond(response, "Experience deleted successfully", "Failed to delete experience");
     }
@@ -67,7 +67,7 @@ public class ExperienceController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<ExperienceResponse> response = experienceService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(response, "Experiences fetched successfully", "Failed to fetch experiences");
     }

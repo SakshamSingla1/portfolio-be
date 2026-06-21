@@ -45,7 +45,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public SkillResponse update(String id, SkillRequest request) throws GenericException {
+    public SkillResponse update(Long id, SkillRequest request) throws GenericException {
         Skill skill = skillRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
         Logo logo = logoRepository.findById(request.getLogoId())
@@ -61,21 +61,21 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public SkillResponse getById(String id) throws GenericException {
+    public SkillResponse getById(Long id) throws GenericException {
         Skill skill = skillRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
         return mapToResponse(skill);
     }
 
     @Override
-    public void delete(String id) throws GenericException {
+    public void delete(Long id) throws GenericException {
         Skill skill = skillRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
         skillRepository.delete(skill);
     }
 
     @Override
-    public Page<SkillResponse> getByProfile(String profileId, Pageable pageable, String search, String sortDir, String sortBy) {
+    public Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -101,7 +101,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public List<SkillResponse> getByProfile(String profileId){
+    public List<SkillResponse> getByProfile(Long profileId){
         return skillRepository.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)

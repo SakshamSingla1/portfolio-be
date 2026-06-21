@@ -53,7 +53,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
-        public ColorThemeResponseDTO updateTheme(String id, ColorThemeRequestDTO dto) throws GenericException {
+        public ColorThemeResponseDTO updateTheme(Long id, ColorThemeRequestDTO dto) throws GenericException {
 
                 ColorTheme theme = repository.findById(id)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
@@ -69,7 +69,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
-        public ColorThemeResponseDTO getThemeById(String themeId) throws GenericException {
+        public ColorThemeResponseDTO getThemeById(Long themeId) throws GenericException {
                 ColorTheme theme = repository.findById(themeId)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "Theme not found for id " + themeId));
@@ -124,7 +124,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
-        public String deleteTheme(String id) throws GenericException {
+        public String deleteTheme(Long id) throws GenericException {
                 ColorTheme theme = repository.findById(id)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "Theme not found"));

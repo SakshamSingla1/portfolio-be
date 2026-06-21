@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class SkillResponse {
-    private String id;
-    private String logoId;
+    private Long id;
+    private Long logoId;
     private String logoName;
     private String logoUrl;
     private SkillCategoryEnum category;

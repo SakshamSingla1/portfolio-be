@@ -73,7 +73,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse update(String id, ProjectRequest req) throws GenericException {
+    public ProjectResponse update(Long id, ProjectRequest req) throws GenericException {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
         project.setProjectName(req.getProjectName());
@@ -100,7 +100,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ImageUploadResponse uploadProjectImage(String profileId, MultipartFile file) throws IOException, GenericException {
+    public ImageUploadResponse uploadProjectImage(Long profileId, MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         Map uploadResult = cloudinaryService.uploadProfileImage(file);
@@ -108,14 +108,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getById(String id) throws GenericException {
+    public ProjectResponse getById(Long id) throws GenericException {
         return projectRepository.findById(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
     }
 
     @Override
-    public String delete(String id) throws GenericException {
+    public String delete(Long id) throws GenericException {
         if (!projectRepository.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found");
         }
@@ -125,7 +125,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Page<ProjectResponse> getByProfile(String profileId, Pageable pageable, String search, String sortDir, String sortBy) {
+    public Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -151,14 +151,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public List<ProjectResponse> getByProfile(String profileId) {
+    public List<ProjectResponse> getByProfile(Long profileId) {
         return projectRepository.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    private void saveProjectImages(String projectId, String profileId, List<ProjectImageRequest> images) {
+    private void saveProjectImages(Long projectId, Long profileId, List<ProjectImageRequest> images) {
         if (images == null || images.isEmpty()) return;
         List<ProjectImages> projectImages = images.stream()
                 .map(img -> ProjectImages.builder()
@@ -173,7 +173,10 @@ public class ProjectServiceImpl implements ProjectService {
 
     private ProjectResponse mapToResponse(Project project) {
         List<ProjectImages> images = projectImageRepository.findByProjectId(project.getId());
-        List<Skill> skills = project.getSkillIds() == null ? List.of() : skillRepository.findAllById(project.getSkillIds());
+        List<Long> skillIdLongs = project.getSkillIds() == null ? List.of() : project.getSkillIds().stream()
+                .map(Long::valueOf)
+                .toList();
+        List<Skill> skills = skillIdLongs.isEmpty() ? List.of() : skillRepository.findAllById(skillIdLongs);
         return ProjectResponse.builder()
                 .id(project.getId())
                 .projectName(project.getProjectName())

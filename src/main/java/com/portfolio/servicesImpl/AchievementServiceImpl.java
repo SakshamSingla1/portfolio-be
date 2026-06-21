@@ -51,7 +51,7 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
-    public AchievementResponseDTO updateAchievement(String id, AchievementRequestDTO dto) throws GenericException {
+    public AchievementResponseDTO updateAchievement(Long id, AchievementRequestDTO dto) throws GenericException {
         Achievements existing = achievementRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found"));
         if (dto.getOrder() != null && achievementRepository.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
@@ -69,14 +69,14 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
-    public AchievementResponseDTO getAchievementById(String id) throws GenericException {
+    public AchievementResponseDTO getAchievementById(Long id) throws GenericException {
         Achievements achievement = achievementRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found"));
         return mapToResponse(achievement);
     }
 
     @Override
-    public Page<AchievementResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable) {
+    public Page<AchievementResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC
@@ -102,7 +102,7 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
-    public Void deleteById(String id) throws GenericException {
+    public Void deleteById(Long id) throws GenericException {
         if (!achievementRepository.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found");
         }
@@ -112,7 +112,7 @@ public class AchievementServiceImpl implements AchievementService {
 
     @Override
     public ImageUploadResponse uploadImage(
-            String profileId,
+            Long profileId,
             MultipartFile file
     ) throws GenericException, IOException {
         profileRepository.findById(profileId)
@@ -121,7 +121,7 @@ public class AchievementServiceImpl implements AchievementService {
         return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
     }
 
-    public List<AchievementResponseDTO> getByProfile(String profileId) {
+    public List<AchievementResponseDTO> getByProfile(Long profileId) {
         return achievementRepository
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()

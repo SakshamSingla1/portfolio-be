@@ -12,8 +12,8 @@ import java.time.LocalDate;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class AchievementResponseDTO extends AuditableResponse {
-    private String id;
-    private String profileId;
+    private Long id;
+    private Long profileId;
     private String title;
     private String description;
     private String issuer;

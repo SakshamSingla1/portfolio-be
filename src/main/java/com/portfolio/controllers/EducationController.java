@@ -42,7 +42,7 @@ public class EducationController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> update(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody EducationRequest request
     ) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -57,9 +57,9 @@ public class EducationController {
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> getById(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id
+            @PathVariable Long id
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 educationService.findById(id, profileId),
                 "Education fetched successfully",
@@ -75,7 +75,7 @@ public class EducationController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 educationService.getByProfile(profileId, search, sortDir, sortBy, pageable),
                 "Educations fetched successfully",
@@ -87,9 +87,9 @@ public class EducationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> delete(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id
+            @PathVariable Long id
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 educationService.delete(id, profileId),
                 "Education deleted successfully",

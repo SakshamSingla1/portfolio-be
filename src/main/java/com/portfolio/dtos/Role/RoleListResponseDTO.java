@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class RoleListResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String name;
     private String description;
     private RoleStatusEnum status;

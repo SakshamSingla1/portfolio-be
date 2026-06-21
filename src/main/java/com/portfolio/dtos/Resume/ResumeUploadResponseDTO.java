@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ResumeUploadResponseDTO {
-    private String id;
+    private Long id;
     private String fileName;
     private String fileUrl;
     private String publicId;

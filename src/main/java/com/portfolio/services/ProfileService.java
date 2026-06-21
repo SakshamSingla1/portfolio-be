@@ -15,11 +15,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 public interface ProfileService {
-    ProfileResponse get(String id) throws GenericException;
-    ProfileResponse update(String id, ProfileRequest request) throws GenericException, IOException;
-    ImageUploadResponse uploadProfileImage(String profileId, MultipartFile file) throws IOException, GenericException;
-    ImageUploadResponse uploadAboutMeImage(String profileId, MultipartFile file) throws IOException, GenericException;
-    ImageUploadResponse uploadLogoImage(String profileId, MultipartFile file) throws IOException, GenericException;
+    ProfileResponse get(Long id) throws GenericException;
+    ProfileResponse update(Long id, ProfileRequest request) throws GenericException, IOException;
+    ImageUploadResponse uploadProfileImage(Long profileId, MultipartFile file) throws IOException, GenericException;
+    ImageUploadResponse uploadAboutMeImage(Long profileId, MultipartFile file) throws IOException, GenericException;
+    ImageUploadResponse uploadLogoImage(Long profileId, MultipartFile file) throws IOException, GenericException;
     
     Page<UserResponse> getAllProfiles(
             Pageable pageable,
@@ -30,11 +30,11 @@ public interface ProfileService {
             String sortDir
     );
 
-    UserResponse getUserById(String id) throws GenericException;
+    UserResponse getUserById(Long id) throws GenericException;
     
-    UserResponse updateUserStatus(String id, StatusUpdateRequest request) throws GenericException;
+    UserResponse updateUserStatus(Long id, StatusUpdateRequest request) throws GenericException;
     
-    UserResponse updateUserRole(String id, RoleUpdateRequest request) throws GenericException;
+    UserResponse updateUserRole(Long id, RoleUpdateRequest request) throws GenericException;
     
-    UserResponse toggleUserVerification(String id) throws GenericException;
+    UserResponse toggleUserVerification(Long id) throws GenericException;
 }

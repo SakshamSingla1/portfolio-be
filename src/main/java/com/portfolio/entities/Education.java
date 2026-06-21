@@ -2,50 +2,41 @@ package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.DegreeEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+@EqualsAndHashCode(callSuper = false)
 
-@Document(collection = "educations")
+@Entity
+@Table(name = "educations")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@CompoundIndexes({
-        @CompoundIndex(
-                name = "idx_profile_updated",
-                def = "{ 'profileId': 1, 'updatedAt': -1 }"
-        )
-})
 public class Education extends Auditable {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @TextIndexed
     private String institution;
+
+    @Enumerated(EnumType.STRING)
     private DegreeEnum degree;
 
-    @TextIndexed
     private String fieldOfStudy;
-
-    @TextIndexed
     private String location;
     private Integer startYear;
     private Integer endYear;
     private String grade;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Indexed
-    private String profileId;
-
+    @Column(name = "profile_id")
+    private Long profileId;
 }

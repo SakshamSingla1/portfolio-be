@@ -1,21 +1,29 @@
 package com.portfolio.entities;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+@Entity
+@Table(name = "role_permissions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "role_permissions")
 public class RolePermission {
+
     @Id
-    private String id;
-    private String roleId;
-    private String navLinkId;
-    private String permissionId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "role_id")
+    private Long roleId;
+
+    @Column(name = "nav_link_id")
+    private Long navLinkId;
+
+    @Column(name = "permission_id")
+    private Long permissionId;
 }

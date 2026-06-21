@@ -1,17 +1,17 @@
 package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
-import com.portfolio.enums.SkillCategoryEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+@EqualsAndHashCode(callSuper = false)
 
-@Document(collection = "logos")
+@Entity
+@Table(name = "logos")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,8 +19,9 @@ import java.time.LocalDateTime;
 public class Logo extends Auditable {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String name;
     private String url;
 }
-

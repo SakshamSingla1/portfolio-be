@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PortfolioViewRequest {
-    private String profileId;
+    private Long profileId;
     private String sessionId;
     private String device;    // DESKTOP | MOBILE | TABLET
     private String referrer;

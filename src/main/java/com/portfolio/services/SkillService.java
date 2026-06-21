@@ -13,15 +13,15 @@ public interface SkillService {
 
     SkillResponse create(SkillRequest request) throws GenericException;
 
-    SkillResponse update(String id, SkillRequest request) throws GenericException;
+    SkillResponse update(Long id, SkillRequest request) throws GenericException;
 
-    SkillResponse getById(String id) throws GenericException;
+    SkillResponse getById(Long id) throws GenericException;
 
-    void delete(String id) throws GenericException;
+    void delete(Long id) throws GenericException;
 
-    Page<SkillResponse> getByProfile(String profileId, Pageable pageable, String search, String sortDir, String sortBy);
+    Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy);
 
-    List<SkillResponse> getByProfile(String profileId);
+    List<SkillResponse> getByProfile(Long profileId);
 
     SkillStat getStats();
 }

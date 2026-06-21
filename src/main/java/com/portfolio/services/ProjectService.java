@@ -15,15 +15,15 @@ public interface ProjectService {
 
     ProjectResponse create(ProjectRequest request) throws GenericException;
 
-    ProjectResponse update(String id, ProjectRequest request) throws GenericException;
+    ProjectResponse update(Long id, ProjectRequest request) throws GenericException;
 
-    ProjectResponse getById(String id) throws GenericException;
+    ProjectResponse getById(Long id) throws GenericException;
 
-    ImageUploadResponse uploadProjectImage(String profileId, MultipartFile file) throws IOException, GenericException;
+    ImageUploadResponse uploadProjectImage(Long profileId, MultipartFile file) throws IOException, GenericException;
 
-    String delete(String id) throws GenericException;
+    String delete(Long id) throws GenericException;
 
-    Page<ProjectResponse> getByProfile(String profileId, Pageable pageable, String search, String sortDir, String sortBy);
+    Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy);
 
-    List<ProjectResponse> getByProfile(String profileId);
+    List<ProjectResponse> getByProfile(Long profileId);
 }

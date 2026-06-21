@@ -1,13 +1,15 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.OtpStore;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
+
 import java.util.Optional;
 
 @Repository
-public interface OtpStoreRepository extends MongoRepository<OtpStore, String> {
-    void deleteByProfileId(String email);
-    Optional<OtpStore> findByProfileId(String email);
+public interface OtpStoreRepository extends JpaRepository<OtpStore, Long> {
+
+    void deleteByProfileId(Long profileId);
+
+    Optional<OtpStore> findByProfileId(Long profileId);
 }
