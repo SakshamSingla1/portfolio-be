@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class EducationResponse {
-    private String id;
+    private Long id;
     private String institution;
     private DegreeEnum degree;
     private String fieldOfStudy;

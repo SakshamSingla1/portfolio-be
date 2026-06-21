@@ -45,7 +45,7 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public EducationResponse updateEducation(String id, EducationRequest request) throws GenericException {
+    public EducationResponse updateEducation(Long id, EducationRequest request) throws GenericException {
         Education education = educationRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
         if (!education.getProfileId().equals(request.getProfileId())) {
@@ -64,7 +64,7 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public EducationResponse findById(String id, String profileId) throws GenericException {
+    public EducationResponse findById(Long id, Long profileId) throws GenericException {
         Education education = educationRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
         if (!education.getProfileId().equals(profileId)) {
@@ -75,7 +75,7 @@ public class EducationServiceImpl implements EducationService {
 
     @Transactional
     @Override
-    public String delete(String id, String profileId) throws GenericException {
+    public String delete(Long id, Long profileId) throws GenericException {
         Education education = educationRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
         if (!education.getProfileId().equals(profileId)) {
@@ -86,7 +86,7 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public Page<EducationResponse> getByProfile(String profileId, String search, String sortDir, String sortBy ,Pageable pageable) {
+    public Page<EducationResponse> getByProfile(Long profileId, String search, String sortDir, String sortBy ,Pageable pageable) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -112,7 +112,7 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public List<EducationResponse> getByProfile(String profileId) {
+    public List<EducationResponse> getByProfile(Long profileId) {
         return educationRepository.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)

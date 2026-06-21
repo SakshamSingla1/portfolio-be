@@ -66,7 +66,7 @@ public class ContactUsService {
         return value == null ? "" : value;
     }
 
-    public Page<ContactUsResponse> getContactUsByProfileId(String profileId, Pageable pageable, String search,String sortBy, String sortDir) throws GenericException {
+    public Page<ContactUsResponse> getContactUsByProfileId(Long profileId, Pageable pageable, String search,String sortBy, String sortDir) throws GenericException {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -91,7 +91,7 @@ public class ContactUsService {
     }
 
     @Transactional
-    public void updateStatus(String id, ContactUsStatusEnum status)
+    public void updateStatus(Long id, ContactUsStatusEnum status)
             throws GenericException {
 
         if (!contactUsRepository.existsById(id)) {

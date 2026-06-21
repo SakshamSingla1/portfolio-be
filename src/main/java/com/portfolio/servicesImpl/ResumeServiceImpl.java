@@ -28,7 +28,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final CloudinaryService cloudinaryService;
 
     @Override
-    public ResumeUploadResponseDTO uploadResume(String profileId, MultipartFile file) throws IOException {
+    public ResumeUploadResponseDTO uploadResume(Long profileId, MultipartFile file) throws IOException {
         Map uploadResult = cloudinaryService.uploadFile(file);
         resumeRepository.findByProfileIdAndStatus(profileId, StatusEnum.ACTIVE)
                 .ifPresent(existing -> {
@@ -47,7 +47,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public Page<ResumeUploadResponseDTO> getByProfile(String profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy){
+    public Page<ResumeUploadResponseDTO> getByProfile(Long profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy){
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -81,7 +81,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public void activateResume(String profileId, String resumeId) throws GenericException {
+    public void activateResume(Long profileId, Long resumeId) throws GenericException {
         resumeRepository.findByProfileIdAndStatus(profileId, StatusEnum.ACTIVE)
                 .ifPresent(existing -> {
                     existing.setStatus(StatusEnum.INACTIVE);
@@ -95,7 +95,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public void deleteResume(String resumeId) throws GenericException {
+    public void deleteResume(Long resumeId) throws GenericException {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.RESUME_NOT_FOUND,

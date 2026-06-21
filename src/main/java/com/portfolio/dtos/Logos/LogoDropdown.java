@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class LogoDropdown {
-    private String id;
+    private Long id;
     private String name;
     private String url;
     private LocalDateTime createdAt;

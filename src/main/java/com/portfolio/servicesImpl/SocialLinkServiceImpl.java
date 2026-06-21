@@ -62,7 +62,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public SocialLinkResponseDTO updateLink(String id, SocialLinkRequestDTO requestDTO) throws GenericException {
+    public SocialLinkResponseDTO updateLink(Long id, SocialLinkRequestDTO requestDTO) throws GenericException {
         SocialLinks socialLinks = socialLinkRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND,"Social link not found"));
         socialLinks.setUrl(requestDTO.getUrl());
@@ -74,7 +74,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public List<SocialLinkResponseDTO> getByProfile(String profileId) {
+    public List<SocialLinkResponseDTO> getByProfile(Long profileId) {
         return socialLinkRepository
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()
@@ -83,7 +83,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public Page<SocialLinkResponseDTO> getByProfile(String profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy) {
+    public Page<SocialLinkResponseDTO> getByProfile(Long profileId, StatusEnum status, Pageable pageable, String search, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -117,7 +117,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public SocialLinkResponseDTO get(String id) throws GenericException {
+    public SocialLinkResponseDTO get(Long id) throws GenericException {
         SocialLinks socialLinks = socialLinkRepository
                 .findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social link not found"));
@@ -125,7 +125,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     @Override
-    public void delete(String id) throws GenericException {
+    public void delete(Long id) throws GenericException {
         SocialLinks socialLinks = socialLinkRepository
                 .findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social link not found"));

@@ -12,9 +12,9 @@ import java.util.List;
 public interface PermissionService {
     List<Permission> getAllPermissions();
     PermissionResponseDTO createPermission(PermissionRequestDTO request) throws GenericException;
-    PermissionResponseDTO updatePermission(String id, PermissionRequestDTO request) throws GenericException;
-    void deletePermission(String id) throws GenericException;
-    PermissionResponseDTO getPermissionById(String id) throws GenericException;
+    PermissionResponseDTO updatePermission(Long id, PermissionRequestDTO request) throws GenericException;
+    void deletePermission(Long id) throws GenericException;
+    PermissionResponseDTO getPermissionById(Long id) throws GenericException;
     Page<PermissionResponseDTO> getAllPermissionsPaginated(Pageable pageable, String search, String permissionIds) throws GenericException;
 
     Page<PermissionResponseDTO> getAllPermissionsByLogin(

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class ContactUsResponse {
-    private String id;
+    private Long id;
     private String name;
     private String email;
     private String message;

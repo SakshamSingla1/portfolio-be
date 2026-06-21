@@ -7,8 +7,8 @@ import com.portfolio.exceptions.GenericException;
 import java.util.List;
 
 public interface ProfileThemeService {
-    ProfileThemeResponse getThemeByProfileId(String profileId) throws GenericException;
-    ProfileThemeResponse setThemeForProfile(String profileId, ProfileThemeRequest request) throws GenericException;
-    List<ProfileThemeResponse> getProfilesByThemeId(String themeId) throws GenericException;
-    long countProfilesByThemeId(String themeId);
+    ProfileThemeResponse getThemeByProfileId(Long profileId) throws GenericException;
+    ProfileThemeResponse setThemeForProfile(Long profileId, ProfileThemeRequest request) throws GenericException;
+    List<ProfileThemeResponse> getProfilesByThemeId(Long themeId) throws GenericException;
+    long countProfilesByThemeId(Long themeId);
 }

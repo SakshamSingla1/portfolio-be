@@ -3,54 +3,34 @@ package com.portfolio.repositories;
 import com.portfolio.entities.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProjectRepository extends MongoRepository<Project, String> {
+public interface ProjectRepository extends JpaRepository<Project, Long> {
 
-    boolean existsByProjectNameAndProfileId(String projectName, String profileId);
+    boolean existsByProjectNameAndProfileId(String projectName, Long profileId);
 
-    List<Project> findByProfileId(String profileId);
+    List<Project> findByProfileId(Long profileId);
 
-    @Query("""
-    {
-      $and: [
-        {
-          $or: [
-            { "projectName": { "$regex": ?1, "$options": "i" } },
-            { "projectDescription": { "$regex": ?1, "$options": "i" } }
-          ]
-        },
-        { "profileId": ?0 }
-      ]
-    }
-    """)
+    @Query("SELECT p FROM Project p WHERE p.profileId = :profileId AND (LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Project> findByProfileIdWithSearch(
-            String profileId,
-            String search,
+            @Param("profileId") Long profileId,
+            @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("""
-    {
-      $or: [
-        { "projectName": { "$regex": ?0, "$options": "i" } },
-        { "projectDescription": { "$regex": ?0, "$options": "i" } }
-      ]
-    }
-    """)
-    Page<Project> findBySearch(String search, Pageable pageable);
+    @Query("SELECT p FROM Project p WHERE LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Project> findBySearch(@Param("search") String search, Pageable pageable);
 
-    Page<Project> findAll(Pageable pageable);
+    Page<Project> findByProfileId(Long profileId, Pageable pageable);
 
-    Page<Project> findByProfileId(String profileId, Pageable pageable);
+    long countByProfileId(Long profileId);
 
-    long countByProfileId(String profileId);
-
-    Optional<Project> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
+    Optional<Project> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
 }

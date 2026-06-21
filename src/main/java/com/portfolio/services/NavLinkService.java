@@ -12,8 +12,8 @@ import java.util.List;
 
 public interface NavLinkService {
     NavLinkResponseDTO createNavLink(NavLinkRequestDTO request) throws GenericException;
-    NavLinkResponseDTO updateNavLink(String id, NavLinkRequestDTO request) throws GenericException;
-    void deleteNavLink(String id) throws GenericException;
+    NavLinkResponseDTO updateNavLink(Long id, NavLinkRequestDTO request) throws GenericException;
+    void deleteNavLink(Long id) throws GenericException;
     List<NavLinkResponseDTO> getNavLinks();
     Page<NavLinkResponseDTO> getAllNavLinks(
             Pageable pageable,
@@ -22,6 +22,6 @@ public interface NavLinkService {
             String sortBy,
             String sortDir
     );
-    NavLinkResponseDTO getNavLink(String id) throws GenericException;
+    NavLinkResponseDTO getNavLink(Long id) throws GenericException;
     List<GroupedNavLinkResponseDTO> getGroupedNavLinks();
 }

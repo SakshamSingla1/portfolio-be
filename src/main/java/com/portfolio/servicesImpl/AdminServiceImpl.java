@@ -62,7 +62,7 @@ public class AdminServiceImpl implements AdminService {
                 .userName(registerDTO.getUserName())
                 .email(registerDTO.getEmail())
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
-                .roleId("69e4c480fd5a769716235d8b")
+                .roleId(2L)
                 .phone(registerDTO.getPhone())
                 .status(StatusEnum.ACTIVE)
                 .emailVerified(VerificationStatusEnum.PENDING)
@@ -281,7 +281,7 @@ public class AdminServiceImpl implements AdminService {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Phone number is not verified. Please verify your phone number first.");
         }
 
-        String token = jwtUtil.generateAccessToken(user.getEmail(), user.getId());
+        String token = jwtUtil.generateAccessToken(user.getEmail(), String.valueOf(user.getId()));
         ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
                 .map(mapping -> {
                     try {

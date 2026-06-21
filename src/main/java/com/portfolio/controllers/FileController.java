@@ -25,7 +25,7 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<FileAssetDTO>> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("resourceId") String resourceId,
+            @RequestParam("resourceId") Long resourceId,
             @RequestParam("resourceType") ResourceTypeEnum resourceType,
             @RequestParam(value = "isPrimary", defaultValue = "false") boolean isPrimary,
             @RequestParam(value = "sortOrder", defaultValue = "0") int sortOrder,
@@ -48,7 +48,7 @@ public class FileController {
     @GetMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<List<FileAssetDTO>>> getByResource(
             @PathVariable String resourceType,
-            @PathVariable String resourceId
+            @PathVariable Long resourceId
     ) {
         List<FileAssetDTO> result = fileService.getByResource(resourceId, resourceType);
         return ApiResponse.respond(result, "Files fetched successfully", "Failed to fetch files");
@@ -56,13 +56,13 @@ public class FileController {
 
     @Operation(summary = "Get a file by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<FileAssetDTO>> getById(@PathVariable String id) throws Exception {
+    public ResponseEntity<ResponseModel<FileAssetDTO>> getById(@PathVariable Long id) throws Exception {
         return ApiResponse.respond(fileService.getById(id), "File fetched successfully", "Failed to fetch file");
     }
 
     @Operation(summary = "Delete a file by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> delete(@PathVariable String id) throws Exception {
+    public ResponseEntity<ResponseModel<Void>> delete(@PathVariable Long id) throws Exception {
         fileService.delete(id);
         return ApiResponse.respond(null, "File deleted successfully", "Failed to delete file");
     }
@@ -71,7 +71,7 @@ public class FileController {
     @DeleteMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<Void>> deleteByResource(
             @PathVariable String resourceType,
-            @PathVariable String resourceId
+            @PathVariable Long resourceId
     ) throws Exception {
         fileService.deleteByResource(resourceId, resourceType);
         return ApiResponse.respond(null, "Files deleted successfully", "Failed to delete files");

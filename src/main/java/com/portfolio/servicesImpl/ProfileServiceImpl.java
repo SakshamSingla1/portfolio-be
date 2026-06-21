@@ -42,14 +42,14 @@ public class ProfileServiceImpl implements ProfileService {
     private final RoleRepository roleRepository;
 
     @Override
-    public ProfileResponse get(String id) throws GenericException {
+    public ProfileResponse get(Long id) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         return mapToResponse(profile);
     }
 
     @Override
-    public ProfileResponse update(String id, ProfileRequest req) throws GenericException, IOException {
+    public ProfileResponse update(Long id, ProfileRequest req) throws GenericException, IOException {
 
         Profile existing = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
@@ -101,7 +101,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ImageUploadResponse uploadProfileImage(
-            String profileId,
+            Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
@@ -112,7 +112,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ImageUploadResponse uploadAboutMeImage(
-            String profileId,
+            Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
@@ -123,7 +123,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     public ImageUploadResponse uploadLogoImage(
-            String profileId,
+            Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
@@ -177,30 +177,31 @@ public class ProfileServiceImpl implements ProfileService {
         boolean hasSearch = search != null && !search.isBlank();
         boolean hasStatus = status != null;
         boolean hasRole = role != null && !role.isBlank();
+        Long numericRole = hasRole ? Long.valueOf(role) : null;
 
         Page<Profile> profiles;
 
         if (hasSearch && hasStatus && hasRole) {
             profiles = profileRepository.searchByRoleAndStatus(
-                    search, status, role, sortedPageable);
+                    search, status, numericRole, sortedPageable);
         } else if (hasSearch && hasStatus) {
             profiles = profileRepository.searchByStatus(
                     search, status, sortedPageable);
         } else if (hasSearch && hasRole) {
             profiles = profileRepository.searchByRole(
-                    search, role, sortedPageable);
+                    search, numericRole, sortedPageable);
         } else if (hasStatus && hasRole) {
             profiles = profileRepository.findByStatus(status, sortedPageable);
             profiles = new PageImpl<>(
                     profiles.getContent().stream()
-                            .filter(profile -> role.equals(profile.getRoleId()))
+                            .filter(profile -> numericRole.equals(profile.getRoleId()))
                             .collect(Collectors.toList()),
                     pageable,
                     profiles.getTotalElements());
         } else if (hasStatus) {
             profiles = profileRepository.findByStatus(status, sortedPageable);
         } else if (hasRole) {
-            profiles = profileRepository.searchByRole("", role, sortedPageable);
+            profiles = profileRepository.searchByRole("", numericRole, sortedPageable);
         } else if (hasSearch) {
             profiles = profileRepository.search(search, sortedPageable);
         } else {
@@ -211,14 +212,14 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public UserResponse getUserById(String id) throws GenericException {
+    public UserResponse getUserById(Long id) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         return mapToUserResponse(profile);
     }
 
     @Override
-    public UserResponse updateUserStatus(String id, StatusUpdateRequest request) throws GenericException {
+    public UserResponse updateUserStatus(Long id, StatusUpdateRequest request) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
@@ -229,18 +230,18 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public UserResponse updateUserRole(String id, RoleUpdateRequest request) throws GenericException {
+    public UserResponse updateUserRole(Long id, RoleUpdateRequest request) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
-        profile.setRoleId(request.getRole());
+        profile.setRoleId(Long.parseLong(request.getRole()));
         profileRepository.save(profile);
 
         return mapToUserResponse(profile);
     }
 
     @Override
-    public UserResponse toggleUserVerification(String id) throws GenericException {
+    public UserResponse toggleUserVerification(Long id) throws GenericException {
         Profile profile = profileRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
@@ -278,8 +279,8 @@ public class ProfileServiceImpl implements ProfileService {
         return user;
     }
 
-    private String getRoleNameById(String roleId) {
-        if (roleId == null || roleId.isBlank()) {
+    private String getRoleNameById(Long roleId) {
+        if (roleId == null) {
             return null;
         }
         return roleRepository.findById(roleId)

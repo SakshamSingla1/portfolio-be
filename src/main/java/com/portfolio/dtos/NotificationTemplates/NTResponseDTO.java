@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class NTResponseDTO {
-    private String id;
+    private Long id;
     private String name;
     private String subject;
     private String body;

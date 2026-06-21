@@ -10,9 +10,9 @@ import java.util.List;
 
 public interface ExperienceService {
     ExperienceResponse create(ExperienceRequest request) throws GenericException;
-    ExperienceResponse update(String id,ExperienceRequest request) throws GenericException;
-    ExperienceResponse getById(String id) throws GenericException;
-    String delete(String id) throws GenericException;
-    Page<ExperienceResponse> getByProfile(String profileId, String search , String sortDir, String sortBy, Pageable pageable);
-    List<ExperienceResponse> getByProfile(String profileId);
+    ExperienceResponse update(Long id,ExperienceRequest request) throws GenericException;
+    ExperienceResponse getById(Long id) throws GenericException;
+    String delete(Long id) throws GenericException;
+    Page<ExperienceResponse> getByProfile(Long profileId, String search , String sortDir, String sortBy, Pageable pageable);
+    List<ExperienceResponse> getByProfile(Long profileId);
 }

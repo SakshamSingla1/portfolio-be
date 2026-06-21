@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @Builder
 public class ExperienceResponse {
-    private String id;
+    private Long id;
     private String companyName;
     private String jobTitle;
     private String location;

@@ -1,41 +1,59 @@
 package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
+import com.portfolio.converters.LogoConverter;
 import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+@EqualsAndHashCode(callSuper = false)
 
+@Entity
+@Table(
+    name = "skills",
+    uniqueConstraints = @UniqueConstraint(name = "uk_skill_profile_logo", columnNames = {"profile_id", "logo_id"})
+)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "skills")
-@CompoundIndexes({
-        @CompoundIndex(
-                name = "idx_profile_logo_unique",
-                def = "{ 'profileId': 1, 'logoId': 1 }",
-                unique = true
-        ),
-        @CompoundIndex(
-                name = "idx_profile_updated",
-                def = "{ 'profileId': 1, 'updatedAt': -1 }"
-        )
-})
-
 public class Skill extends Auditable {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Convert(converter = LogoConverter.class)
+    @Column(columnDefinition = "TEXT")
     private Logo logo;
+
+    // Denormalized for queries — synced from logo on every save
+    @Column(name = "logo_id")
+    private Long logoId;
+
+    @Column(name = "logo_name")
+    private String logoName;
+
+    @Enumerated(EnumType.STRING)
     private SkillLevelEnum level;
+
+    @Enumerated(EnumType.STRING)
     private SkillCategoryEnum category;
-    @Indexed
-    private String profileId;
+
+    @Column(name = "profile_id")
+    private Long profileId;
+
+    @PrePersist
+    @PreUpdate
+    private void syncLogoFields() {
+        if (logo != null) {
+            this.logoId = logo.getId();
+            this.logoName = logo.getName();
+        }
+    }
 }

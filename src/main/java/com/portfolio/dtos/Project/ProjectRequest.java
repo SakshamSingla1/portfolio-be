@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @Builder
 public class ProjectRequest {
-    private String profileId;
+    private Long profileId;
     private String projectName;
     private String projectDescription;
     private List<String> githubRepositories;

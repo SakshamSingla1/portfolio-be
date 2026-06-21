@@ -42,7 +42,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
         SocialLinks socialLink = socialLinkRepository.findByPlatformAndUrl(PlatformEnum.PORTFOLIO, domain)
                 .orElseThrow(
                         () -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social Link not found"));
-        String profileId = socialLink.getProfileId();
+        Long profileId = socialLink.getProfileId();
         ProfileResponse profileResponse = profileService.get(profileId);
         ProfileThemeResponse theme = profileThemeService.getThemeByProfileId(profileId);
         List<SocialLinkResponseDTO> socialLinks = socialLinkService.getByProfile(profileId);

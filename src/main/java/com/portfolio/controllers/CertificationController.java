@@ -38,7 +38,7 @@ public class CertificationController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id, 
+            @PathVariable Long id, 
             @RequestBody CertificationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.updateCertification(id, dto);
@@ -46,7 +46,7 @@ public class CertificationController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<CertificationResponseDTO>> getCertificationById(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<CertificationResponseDTO>> getCertificationById(@PathVariable Long id) throws GenericException {
         CertificationResponseDTO response = certificationService.getCertificationById(id);
         return ApiResponse.respond(response, "Certification fetched successfully", "Failed to fetch certification");
     }
@@ -59,13 +59,13 @@ public class CertificationController {
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> deleteCertification(@PathVariable String id) throws GenericException {
+    public ResponseEntity<ResponseModel<Void>> deleteCertification(@PathVariable Long id) throws GenericException {
         certificationService.deleteById(id);
         return ApiResponse.respond(null, "Certification deleted successfully", "Failed to delete certification");
     }
@@ -76,7 +76,7 @@ public class CertificationController {
             @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(certificationService.uploadCredentialImage(profileId, file), "Profile image uploaded successfully", "Failed to upload profile image");
     }
 }

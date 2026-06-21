@@ -37,7 +37,7 @@ public class LogoController {
 
     @Operation(summary = "Get logo by ID", description = "Fetches a single logo by its ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<LogoResponse>> getLogoById(@PathVariable String id) {
+    public ResponseEntity<ResponseModel<LogoResponse>> getLogoById(@PathVariable Long id) {
         try {
             LogoResponse response = logoService.getById(id);
             return ApiResponse.respond(response, "Logo fetched successfully", "Failed to fetch logo");
@@ -62,7 +62,7 @@ public class LogoController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<LogoResponse>> updateLogo(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody LogoRequest request) {
         try {
             LogoResponse response = logoService.update(id, request);
@@ -75,7 +75,7 @@ public class LogoController {
     @Operation(summary = "Delete a logo", description = "Deletes a logo by ID")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> deleteLogo(@PathVariable String id) {
+    public ResponseEntity<ResponseModel<String>> deleteLogo(@PathVariable Long id) {
         try {
             logoService.delete(id);
             return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully",

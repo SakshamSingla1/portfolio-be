@@ -55,7 +55,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public PermissionResponseDTO updatePermission(String id, PermissionRequestDTO request) throws GenericException {
+    public PermissionResponseDTO updatePermission(Long id, PermissionRequestDTO request) throws GenericException {
         if (request == null || request.getName() == null || request.getName().isBlank()) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Permission name is required");
         }
@@ -73,7 +73,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public void deletePermission(String id) throws GenericException {
+    public void deletePermission(Long id) throws GenericException {
         Permission permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
         
@@ -81,7 +81,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public PermissionResponseDTO getPermissionById(String id) throws GenericException {
+    public PermissionResponseDTO getPermissionById(Long id) throws GenericException {
         Permission permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
         
@@ -105,13 +105,21 @@ public class PermissionServiceImpl implements PermissionService {
         
         if (search != null && !search.isBlank()) {
             if (permissionIds != null && !permissionIds.isBlank()) {
-                List<String> permissionIdList = Arrays.asList(permissionIds.split(","));
+                List<Long> permissionIdList = Arrays.stream(permissionIds.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .map(Long::valueOf)
+                        .toList();
                 permissions = permissionRepository.searchByNameAndIds(search, permissionIdList, sortedPageable);
             } else {
                 permissions = permissionRepository.searchByName(search, sortedPageable);
             }
         } else if (permissionIds != null && !permissionIds.isBlank()) {
-            List<String> permissionIdList = Arrays.asList(permissionIds.split(","));
+            List<Long> permissionIdList = Arrays.stream(permissionIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::valueOf)
+                    .toList();
             permissions = permissionRepository.findByIdIn(permissionIdList, sortedPageable);
         } else {
             permissions = permissionRepository.findAll(sortedPageable);
@@ -151,17 +159,18 @@ public class PermissionServiceImpl implements PermissionService {
             permissions = permissionRepository.findByStatus(status, sortedPageable);
         } else if (role != null && !role.isBlank()) {
             // Filter permissions by role through role-permission mapping
+            Long roleId = Long.valueOf(role);
             List<RolePermission> rolePermissions = rolePermissionRepository.findAll();
-            List<String> permissionIds = rolePermissions.stream()
-                    .filter(rp -> role.equals(rp.getRoleId()))
+            List<Long> permissionIdsList = rolePermissions.stream()
+                    .filter(rp -> roleId.equals(rp.getRoleId()))
                     .map(RolePermission::getPermissionId)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
             
-            if (permissionIds.isEmpty()) {
+            if (permissionIdsList.isEmpty()) {
                 permissions = Page.empty(sortedPageable);
             } else {
-                permissions = permissionRepository.searchByNameAndIds(search, permissionIds, sortedPageable);
+                permissions = permissionRepository.searchByNameAndIds(search, permissionIdsList, sortedPageable);
             }
         } else {
             permissions = permissionRepository.findAll(sortedPageable);

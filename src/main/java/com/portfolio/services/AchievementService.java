@@ -13,10 +13,10 @@ import java.util.List;
 
 public interface AchievementService {
     AchievementResponseDTO createAchievement(AchievementRequestDTO AchievementRequestDTO) throws GenericException;
-    AchievementResponseDTO updateAchievement(String id, AchievementRequestDTO AchievementDTO) throws GenericException;
-    AchievementResponseDTO getAchievementById(String id) throws GenericException;
-    Page<AchievementResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable);
-    Void deleteById(String id) throws GenericException;
-    ImageUploadResponse uploadImage(String id,MultipartFile file) throws GenericException, IOException;
-    List<AchievementResponseDTO> getByProfile(String profileId);
+    AchievementResponseDTO updateAchievement(Long id, AchievementRequestDTO AchievementDTO) throws GenericException;
+    AchievementResponseDTO getAchievementById(Long id) throws GenericException;
+    Page<AchievementResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Void deleteById(Long id) throws GenericException;
+    ImageUploadResponse uploadImage(Long id,MultipartFile file) throws GenericException, IOException;
+    List<AchievementResponseDTO> getByProfile(Long profileId);
 }

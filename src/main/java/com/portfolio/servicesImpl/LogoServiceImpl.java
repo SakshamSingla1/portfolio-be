@@ -39,7 +39,7 @@ public class LogoServiceImpl implements LogoService {
 
     // ================= UPDATE =================
     @Override
-    public LogoResponse update(String id, LogoRequest request) throws GenericException {
+    public LogoResponse update(Long id, LogoRequest request) throws GenericException {
 
         Logo existingLogo = logoRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LOGO_NOT_FOUND,"Logo not found"));
@@ -55,7 +55,7 @@ public class LogoServiceImpl implements LogoService {
     }
 
     @Override
-    public LogoResponse getById(String id) throws GenericException {
+    public LogoResponse getById(Long id) throws GenericException {
         Logo logo = logoRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LOGO_NOT_FOUND,"Logo not found"));
         return mapToResponse(logo);
@@ -80,7 +80,7 @@ public class LogoServiceImpl implements LogoService {
     }
 
     @Override
-    public void delete(String id) throws GenericException {
+    public void delete(Long id) throws GenericException {
         Logo logo = logoRepository.findById(id)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.LOGO_NOT_FOUND, "Logo not found"));

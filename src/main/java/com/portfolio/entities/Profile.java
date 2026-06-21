@@ -3,36 +3,43 @@ package com.portfolio.entities;
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "profiles")
+@EqualsAndHashCode(callSuper = false)
+
+@Entity
+@Table(name = "profiles")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@CompoundIndex(name = "profile_updated", def = "{ 'id': 1, 'updatedAt': -1 }")
 public class Profile extends Auditable {
+
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String fullName;
 
-    @Indexed(unique = true)
+    @Column(unique = true)
     private String userName;
+
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String aboutMe;
 
-    @Indexed(unique = true)
+    @Column(unique = true)
     private String email;
 
-    @Indexed(unique = true)
+    @Column(unique = true)
     private String phone;
+
     private String location;
     private String password;
     private String profileImageUrl;
@@ -41,8 +48,14 @@ public class Profile extends Auditable {
     private String aboutMeImagePublicId;
     private String logoUrl;
     private String logoPublicId;
-    private String roleId;
+    private Long roleId;
+
+    @Enumerated(EnumType.STRING)
     private StatusEnum status;
+
+    @Enumerated(EnumType.STRING)
     private VerificationStatusEnum emailVerified;
+
+    @Enumerated(EnumType.STRING)
     private VerificationStatusEnum phoneVerified;
 }

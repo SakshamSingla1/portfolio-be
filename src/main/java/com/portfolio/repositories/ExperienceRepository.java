@@ -3,8 +3,9 @@ package com.portfolio.repositories;
 import com.portfolio.entities.Experience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -12,61 +13,29 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ExperienceRepository extends MongoRepository<Experience, String> {
+public interface ExperienceRepository extends JpaRepository<Experience, Long> {
 
     boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(
-            String profileId,
-            String companyName,
-            String jobTitle,
-            LocalDate startDate
-    );
+            Long profileId, String companyName, String jobTitle, LocalDate startDate);
 
     boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDateAndIdNot(
-            String profileId,
-            String companyName,
-            String jobTitle,
-            LocalDate startDate,
-            String id
-    );
+            Long profileId, String companyName, String jobTitle, LocalDate startDate, Long id);
 
-    @Query("""
-    {
-      $and: [
-        {
-          $or: [
-            { "companyName": { "$regex": ?1, "$options": "i" } },
-            { "jobTitle": { "$regex": ?1, "$options": "i" } },
-            { "location": { "$regex": ?1, "$options": "i" } }
-          ]
-        },
-        { "profileId": ?0 }
-      ]
-    }
-    """)
+    @Query("SELECT e FROM Experience e WHERE e.profileId = :profileId AND (LOWER(e.companyName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Experience> findByProfileIdWithSearch(
-            String profileId,
-            String search,
+            @Param("profileId") Long profileId,
+            @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("""
-    {
-      $or: [
-        { "companyName": { "$regex": ?0, "$options": "i" } },
-        { "jobTitle": { "$regex": ?0, "$options": "i" } },
-        { "location": { "$regex": ?0, "$options": "i" } }
-      ]
-    }
-    """)
-    Page<Experience> findBySearch(String search, Pageable pageable);
+    @Query("SELECT e FROM Experience e WHERE LOWER(e.companyName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Experience> findBySearch(@Param("search") String search, Pageable pageable);
 
-    Page<Experience> findAll(Pageable pageable);
+    Page<Experience> findByProfileId(Long profileId, Pageable pageable);
 
-    Page<Experience> findByProfileId(String profileId, Pageable pageable);
+    List<Experience> findByProfileId(Long profileId);
 
-    List<Experience> findByProfileId(String profileId);
+    long countByProfileId(Long profileId);
 
-    long countByProfileId(String profileId);
-
-    Optional<Experience> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
+    Optional<Experience> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
 }

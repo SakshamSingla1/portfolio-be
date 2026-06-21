@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class SocialLinkRequestDTO {
-    private String profileId;
+    private Long profileId;
     private PlatformEnum platform;
     private String url;
     private String order;

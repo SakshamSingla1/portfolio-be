@@ -50,7 +50,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     }
 
     @Override
-    public TestimonialResponseDTO updateTestimonial(String id, TestimonialRequestDTO dto) throws GenericException {
+    public TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO dto) throws GenericException {
         Testimonial existing = testimonialRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
         if (dto.getOrder() != null && testimonialRepository.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
@@ -70,14 +70,14 @@ public class TestimonialServiceImpl implements TestimonialService {
     }
 
     @Override
-    public TestimonialResponseDTO getTestimonialById(String id) throws GenericException {
+    public TestimonialResponseDTO getTestimonialById(Long id) throws GenericException {
         Testimonial Testimonial = testimonialRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
         return mapToResponse(Testimonial);
     }
 
     @Override
-    public Page<TestimonialResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable) {
+    public Page<TestimonialResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC
@@ -103,7 +103,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     }
 
     @Override
-    public Void deleteById(String id) throws GenericException {
+    public Void deleteById(Long id) throws GenericException {
         if (!testimonialRepository.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found");
         }
@@ -111,7 +111,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         return null;
     }
 
-    public List<TestimonialResponseDTO> getByProfile(String profileId) {
+    public List<TestimonialResponseDTO> getByProfile(Long profileId) {
         return testimonialRepository
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()
@@ -121,7 +121,7 @@ public class TestimonialServiceImpl implements TestimonialService {
 
     @Override
     public ImageUploadResponse uploadImage(
-            String profileId,
+            Long profileId,
             MultipartFile file
     ) throws GenericException, IOException {
         profileRepository.findById(profileId)

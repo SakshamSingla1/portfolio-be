@@ -10,12 +10,12 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class AuthResponseDTO {
-    private String id;
+    private Long id;
     private String userName;
     private String fullName;
     private String email;
     private String phone;
-    private String roleId;
+    private Long roleId;
     private String roleName;
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;

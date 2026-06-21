@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class CertificationResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String title;
     private String issuer;
     private String credentialId;

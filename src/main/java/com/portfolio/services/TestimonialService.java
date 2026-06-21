@@ -13,10 +13,10 @@ import java.util.List;
 
 public interface TestimonialService {
     TestimonialResponseDTO createTestimonial(TestimonialRequestDTO TestimonialRequestDTO) throws GenericException;
-    TestimonialResponseDTO updateTestimonial(String id, TestimonialRequestDTO TestimonialDTO) throws GenericException;
-    TestimonialResponseDTO getTestimonialById(String id) throws GenericException;
-    Page<TestimonialResponseDTO> getByProfile(String profileId, String search, String sortDir, String sortBy, Pageable pageable);
-    Void deleteById(String id) throws GenericException;
-    ImageUploadResponse uploadImage(String id, MultipartFile file) throws GenericException, IOException;
-    List<TestimonialResponseDTO> getByProfile(String profileId);
+    TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO TestimonialDTO) throws GenericException;
+    TestimonialResponseDTO getTestimonialById(Long id) throws GenericException;
+    Page<TestimonialResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Void deleteById(Long id) throws GenericException;
+    ImageUploadResponse uploadImage(Long id, MultipartFile file) throws GenericException, IOException;
+    List<TestimonialResponseDTO> getByProfile(Long profileId);
 }

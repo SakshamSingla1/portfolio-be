@@ -8,6 +8,6 @@ import java.util.List;
 @Data
 @SuperBuilder
 public class PermissionDTO {
-    private String id;
+    private Long id;
     private String name;
 }

@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class RolePermissionRequestDTO {
-    private String navLinkId;
-    private String permissionId;
+    private Long navLinkId;
+    private Long permissionId;
 }

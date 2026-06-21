@@ -5,5 +5,5 @@ import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 
 public interface PortfolioViewService {
     void trackView(PortfolioViewRequest request);
-    ViewStatsDTO getViewStats(String profileId);
+    ViewStatsDTO getViewStats(Long profileId);
 }

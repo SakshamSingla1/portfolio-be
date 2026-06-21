@@ -29,7 +29,7 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
     private final Helper helper;
 
     @Override
-    public ProfileThemeResponse getThemeByProfileId(String profileId) throws GenericException {
+    public ProfileThemeResponse getThemeByProfileId(Long profileId) throws GenericException {
         ProfileThemeMapping mapping = mappingRepository.findByProfileId(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Theme mapping not found for profile: " + profileId));
         
@@ -45,7 +45,7 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
     }
 
     @Override
-    public ProfileThemeResponse setThemeForProfile(String profileId, ProfileThemeRequest request) throws GenericException {
+    public ProfileThemeResponse setThemeForProfile(Long profileId, ProfileThemeRequest request) throws GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + profileId));
         
@@ -65,7 +65,7 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
     }
 
     @Override
-    public List<ProfileThemeResponse> getProfilesByThemeId(String themeId) throws GenericException {
+    public List<ProfileThemeResponse> getProfilesByThemeId(Long themeId) throws GenericException {
         List<ProfileThemeMapping> mappings = mappingRepository.findAllByThemeId(themeId);
         ColorTheme theme = themeRepository.findById(themeId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "Theme not found: " + themeId));
@@ -81,7 +81,7 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
     }
 
     @Override
-    public long countProfilesByThemeId(String themeId) {
+    public long countProfilesByThemeId(Long themeId) {
         return mappingRepository.countByThemeId(themeId);
     }
 

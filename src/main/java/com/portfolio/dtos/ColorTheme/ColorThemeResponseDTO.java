@@ -10,7 +10,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
 public class ColorThemeResponseDTO extends AuditableResponse {
-    private String id;
+    private Long id;
     private String themeName;
     private ColorPaletteDTO palette;
     private StatusEnum status;

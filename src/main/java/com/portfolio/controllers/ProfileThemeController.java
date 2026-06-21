@@ -24,7 +24,7 @@ public class ProfileThemeController {
     @GetMapping
     public ResponseEntity<ResponseModel<ProfileThemeResponse>> getTheme(@RequestHeader("Authorization") String auth)
             throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.getThemeByProfileId(profileId);
         return ApiResponse.respond(response, "Active theme fetched successfully", "Failed to fetch active theme");
     }
@@ -33,13 +33,13 @@ public class ProfileThemeController {
     public ResponseEntity<ResponseModel<ProfileThemeResponse>> setTheme(
             @RequestHeader("Authorization") String auth,
             @RequestBody ProfileThemeRequest request) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.setThemeForProfile(profileId, request);
         return ApiResponse.respond(response, "Theme updated successfully", "Failed to update theme");
     }
 
     @GetMapping("/theme/{themeId}")
-    public ResponseEntity<ResponseModel<List<ProfileThemeResponse>>> getProfilesByThemeId(@PathVariable String themeId)
+    public ResponseEntity<ResponseModel<List<ProfileThemeResponse>>> getProfilesByThemeId(@PathVariable Long themeId)
             throws GenericException {
         List<ProfileThemeResponse> response = profileThemeService.getProfilesByThemeId(themeId);
         return ApiResponse.respond(response, "Profiles fetched by theme successfully",
@@ -47,7 +47,7 @@ public class ProfileThemeController {
     }
 
     @GetMapping("/theme/{themeId}/count")
-    public ResponseEntity<ResponseModel<Long>> countProfilesByThemeId(@PathVariable String themeId) {
+    public ResponseEntity<ResponseModel<Long>> countProfilesByThemeId(@PathVariable Long themeId) {
         Long response = profileThemeService.countProfilesByThemeId(themeId);
         return ApiResponse.respond(response, "Theme usage count fetched successfully",
                 "Failed to fetch theme usage count");

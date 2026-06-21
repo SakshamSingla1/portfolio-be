@@ -1,13 +1,12 @@
 package com.portfolio.entities;
 
+import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "otp_store")
+@Entity
+@Table(name = "otp_store")
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,12 +14,13 @@ import java.time.LocalDateTime;
 public class OtpStore {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Indexed
-    private String profileId;
+    @Column(name = "profile_id")
+    private Long profileId;
+
     private String otp;
     private LocalDateTime createdAt;
     private LocalDateTime expiryDate;
 }
-

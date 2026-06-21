@@ -42,7 +42,7 @@ public class PermissionController {
         @Operation(summary = "Update an existing permission")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> updatePermission(
-                        @PathVariable String id,
+                        @PathVariable Long id,
                         @RequestBody PermissionRequestDTO request) throws GenericException {
                 PermissionResponseDTO response = permissionService.updatePermission(id, request);
                 return ApiResponse.respond(
@@ -53,7 +53,7 @@ public class PermissionController {
 
         @Operation(summary = "Delete a permission")
         @DeleteMapping("/{id}")
-        public ResponseEntity<ResponseModel<String>> deletePermission(@PathVariable String id) throws GenericException {
+        public ResponseEntity<ResponseModel<String>> deletePermission(@PathVariable Long id) throws GenericException {
                 permissionService.deletePermission(id);
                 return ApiResponse.respond(
                                 "Permission deleted successfully",
@@ -63,7 +63,7 @@ public class PermissionController {
 
         @Operation(summary = "Get permission by ID")
         @GetMapping("/{id}")
-        public ResponseEntity<ResponseModel<PermissionResponseDTO>> getPermissionById(@PathVariable String id)
+        public ResponseEntity<ResponseModel<PermissionResponseDTO>> getPermissionById(@PathVariable Long id)
                         throws GenericException {
                 PermissionResponseDTO response = permissionService.getPermissionById(id);
                 return ApiResponse.respond(

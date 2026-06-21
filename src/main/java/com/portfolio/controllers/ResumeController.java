@@ -29,7 +29,7 @@ public class ResumeController {
     public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> upload(
             @RequestHeader("Authorization") String auth,
             @RequestParam MultipartFile file) throws IOException, GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         ResumeUploadResponseDTO resumeUploadResponseDTO = resumeService.uploadResume(profileId, file);
         return ApiResponse.respond(resumeUploadResponseDTO, "Resume uploaded successfully", "Failed to upload resume");
     }
@@ -42,7 +42,7 @@ public class ResumeController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<ResumeUploadResponseDTO> resumeDtos = resumeService.getByProfile(profileId, status, pageable, search, sortDir, sortBy);
         return ApiResponse.respond(resumeDtos, "Resumes fetched successfully", "failed to fetch resumes");
     }
@@ -50,15 +50,15 @@ public class ResumeController {
     @PutMapping("/activate")
     public ResponseEntity<ResponseModel<String>> activate(
             @RequestHeader("Authorization") String auth,
-            @RequestParam String resumeId) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+            @RequestParam Long resumeId) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
         resumeService.activateResume(profileId, resumeId);
         return ApiResponse.successResponse(null, "Resume activated successfully");
     }
 
     @DeleteMapping("/{resumeId}")
     public ResponseEntity<ResponseModel<String>> deleteResume(
-            @PathVariable String resumeId
+            @PathVariable Long resumeId
     ) throws GenericException {
         resumeService.deleteResume(resumeId);
         return ApiResponse.successResponse(null, "Resume deleted successfully");

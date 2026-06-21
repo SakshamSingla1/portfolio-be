@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class ProfileThemeRequest {
-    private String themeId;
+    private Long themeId;
 }

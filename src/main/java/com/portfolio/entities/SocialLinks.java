@@ -3,39 +3,38 @@ package com.portfolio.entities;
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+@EqualsAndHashCode(callSuper = false)
 
-@Document(collection = "social_links")
+@Entity
+@Table(name = "social_links")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@CompoundIndexes({
-        @CompoundIndex(
-                name = "idx_profile_status_order",
-                def = "{ 'profileId': 1, 'status': 1, 'order': 1 }"
-        )
-})
-
 public class SocialLinks extends Auditable {
+
     @Id
-    private String id;
-    @Indexed
-    private String profileId;
-    @Indexed
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "profile_id")
+    private Long profileId;
+
+    @Enumerated(EnumType.STRING)
     private PlatformEnum platform;
+
     private String url;
+
+    @Column(name = "sort_order")
     private String order;
-    @Indexed
+
+    @Enumerated(EnumType.STRING)
     private StatusEnum status;
 }

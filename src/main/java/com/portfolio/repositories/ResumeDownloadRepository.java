@@ -1,10 +1,11 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.ResumeDownload;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ResumeDownloadRepository extends MongoRepository<ResumeDownload, String> {
-    long countByProfileId(String profileId);
+public interface ResumeDownloadRepository extends JpaRepository<ResumeDownload, Long> {
+
+    long countByProfileId(Long profileId);
 }

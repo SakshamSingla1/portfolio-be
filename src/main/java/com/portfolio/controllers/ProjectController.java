@@ -44,7 +44,7 @@ public class ProjectController {
 
     @Operation(summary = "Get Project by ID", description = "Retrieve project details by project ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(@PathVariable String id) {
+    public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(@PathVariable Long id) {
         try {
             ProjectResponse response = projectService.getById(id);
             return ApiResponse.successResponse(response, "Project fetched successfully");
@@ -57,7 +57,7 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(
             @RequestHeader("Authorization") String auth,
-            @PathVariable String id, 
+            @PathVariable Long id, 
             @RequestBody ProjectRequest request) {
         try {
             request.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -70,7 +70,7 @@ public class ProjectController {
 
     @Operation(summary = "Delete Project", description = "Delete project by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> deleteProject(@PathVariable String id) {
+    public ResponseEntity<ResponseModel<String>> deleteProject(@PathVariable Long id) {
         try {
             String message = projectService.delete(id);
             return ApiResponse.successResponse(message, "Project deleted successfully");
@@ -87,7 +87,7 @@ public class ProjectController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search, sortDir, sortBy);
         return ApiResponse.successResponse(projects, "Projects fetched successfully");
     }
@@ -98,7 +98,7 @@ public class ProjectController {
             @RequestHeader("Authorization") String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
                 projectService.uploadProjectImage(profileId, file),
                 "Project image uploaded successfully",

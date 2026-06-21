@@ -35,7 +35,7 @@ public class ColorThemeController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<ColorThemeResponseDTO>> updateTheme(
-                        @PathVariable String id,
+                        @PathVariable Long id,
                         @RequestBody ColorThemeRequestDTO dto) throws GenericException {
                 ColorThemeResponseDTO response = colorThemeService.updateTheme(id, dto);
                 return ApiResponse.respond(
@@ -46,7 +46,7 @@ public class ColorThemeController {
 
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<ColorThemeResponseDTO>> getThemeById(
-                        @PathVariable String id) throws GenericException {
+                        @PathVariable Long id) throws GenericException {
                 ColorThemeResponseDTO response = colorThemeService.getThemeById(id);
                 return ApiResponse.respond(
                                 response,
@@ -75,7 +75,7 @@ public class ColorThemeController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @DeleteMapping("/{id}")
         public ResponseEntity<ResponseModel<String>> deleteTheme(
-                        @PathVariable String id) throws GenericException {
+                        @PathVariable Long id) throws GenericException {
                 String response = colorThemeService.deleteTheme(id);
                 return ApiResponse.respond(
                                 response,

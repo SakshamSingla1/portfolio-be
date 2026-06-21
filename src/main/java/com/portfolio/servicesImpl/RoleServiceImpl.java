@@ -39,13 +39,13 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional
-    public RoleListResponseDTO upsertRole(String id, RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
+    public RoleListResponseDTO upsertRole(Long id, RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
         if (roleRequestBodyDTO == null || roleRequestBodyDTO.getName() == null) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Role name is required");
         }
         Role role;
         if (id != null) {
-            role = roleRepository.findById(String.valueOf(id))
+            role = roleRepository.findById(id)
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         } else {
             if (roleRepository.existsByName(roleRequestBodyDTO.getName())) {
@@ -75,8 +75,8 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RolePermissionResponseDTO getRolePermissionsByRoleId(String id) throws GenericException {
-        Role role = roleRepository.findById(String.valueOf(id))
+    public RolePermissionResponseDTO getRolePermissionsByRoleId(Long id) throws GenericException {
+        Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
 
         List<RolePermission> rolePermissions = rolePermissionRepository.findByRoleId(id);
@@ -150,7 +150,11 @@ public class RoleServiceImpl implements RoleService {
         } else if (status != null && !status.isBlank()) {
             roles = roleRepository.findByStatus(status, pageable);
         } else if (roleIds != null && !roleIds.isBlank()) {
-            List<String> roleIdList = Arrays.asList(roleIds.split(","));
+            List<Long> roleIdList = Arrays.stream(roleIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::valueOf)
+                    .toList();
             roles = roleRepository.findByIdIn(roleIdList, pageable);
         } else {
             roles = roleRepository.findAllActive(pageable);
@@ -205,7 +209,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public RoleListResponseDTO getRoleById(String id) throws GenericException {
+    public RoleListResponseDTO getRoleById(Long id) throws GenericException {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         return mapToRoleListResponseDTO(role);

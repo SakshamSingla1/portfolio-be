@@ -2,33 +2,37 @@ package com.portfolio.entities;
 
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.index.TextIndexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
+@EqualsAndHashCode(callSuper = false)
 
+@Entity
+@Table(name = "nav_links")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "nav-links")
 public class NavLink extends Auditable {
+
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "nav_index")
     private String index;
-    @TextIndexed
+
     private String name;
-    @Indexed
     private String path;
     private String icon;
-    @Indexed
+
+    @Column(name = "nav_group")
     private String navGroup;
-    @Indexed
+
+    @Enumerated(EnumType.STRING)
     private StatusEnum status;
 }

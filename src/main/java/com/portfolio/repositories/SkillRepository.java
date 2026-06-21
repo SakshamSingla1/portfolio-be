@@ -4,54 +4,36 @@ import com.portfolio.entities.Skill;
 import com.portfolio.enums.SkillLevelEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SkillRepository extends MongoRepository<Skill, String> {
+public interface SkillRepository extends JpaRepository<Skill, Long> {
 
-    @Query("""
-    {
-      $and: [
-        {
-          $or: [
-            { "logo.name": { "$regex": ?1, "$options": "i" } }
-          ]
-        },
-        { "profileId": ?0 }
-      ]
-    }
-    """)
+    @Query("SELECT s FROM Skill s WHERE s.profileId = :profileId AND LOWER(s.logoName) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Skill> findByProfileIdWithSearch(
-            String profileId,
-            String search,
+            @Param("profileId") Long profileId,
+            @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("""
-    {
-      $or: [
-        { "logo.name": { "$regex": ?0, "$options": "i" } }
-      ]
-    }
-    """)
-    Page<Skill> findBySearch(String search, Pageable pageable);
+    @Query("SELECT s FROM Skill s WHERE LOWER(s.logoName) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Skill> findBySearch(@Param("search") String search, Pageable pageable);
 
-    Page<Skill> findAll(Pageable pageable);
+    Page<Skill> findByProfileId(Long profileId, Pageable pageable);
 
-    Page<Skill> findByProfileId(String profileId, Pageable pageable);
+    List<Skill> findByProfileId(Long profileId);
 
-    List<Skill> findByProfileId(String profileId);
+    boolean existsByLogoIdAndProfileId(Long logoId, Long profileId);
 
-    boolean existsByLogoIdAndProfileId(String logoId, String profileId);
+    long countByProfileId(Long profileId);
 
-    long countByProfileId(String profileId);
-
-    Optional<Skill> findTop1ByProfileIdOrderByUpdatedAtDesc(String profileId);
+    Optional<Skill> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
 
     Long countByLevel(SkillLevelEnum levelEnum);
 }

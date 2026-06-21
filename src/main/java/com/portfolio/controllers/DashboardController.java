@@ -20,7 +20,7 @@ public class DashboardController {
 
     @GetMapping
     public ResponseEntity<ResponseModel<DashboardSummaryDTO>> getDashboardSummary(@RequestHeader("Authorization") String auth) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         DashboardSummaryDTO result = dashboardService.getDashboardSummary(profileId);
         return ApiResponse.respond(result,ApiResponse.SUCCESS,ApiResponse.FAILED);
     }

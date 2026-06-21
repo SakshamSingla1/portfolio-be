@@ -21,7 +21,7 @@ public class PlatformSettingsServiceImpl implements PlatformSettingsService {
                 .findByResourceIdAndResourceTypeAndIsPrimaryTrue(BANNER_RESOURCE_ID, ResourceTypeEnum.BANNER)
                 .map(asset -> PlatformSettingsDTO.builder()
                         .bannerImageUrl(asset.getPath())
-                        .bannerAssetId(asset.getId())
+                        .bannerAssetId(String.valueOf(asset.getId()))
                         .build())
                 .orElse(PlatformSettingsDTO.builder().build());
     }

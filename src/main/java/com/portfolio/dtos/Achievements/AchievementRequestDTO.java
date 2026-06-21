@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 @Data
 public class AchievementRequestDTO {
-    private String profileId;
+    private Long profileId;
     private String title;
     private String description;
     private String issuer;

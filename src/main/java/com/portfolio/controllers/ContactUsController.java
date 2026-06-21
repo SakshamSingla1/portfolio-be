@@ -33,7 +33,7 @@ public class ContactUsController {
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) throws GenericException {
-        String profileId = helper.getProfileIdFromHeader(auth);
+        Long profileId = helper.getProfileIdFromHeader(auth);
         Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, pageable, search,sortBy,sortDir);
         return ApiResponse.respond(page, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
@@ -41,7 +41,7 @@ public class ContactUsController {
     @Operation(summary = "Marks as Read", description = "Make unread message to read")
     @PatchMapping("/{id}/mark-read")
     public ResponseEntity<ResponseModel<String>> updateStatus(
-            @PathVariable String id
+            @PathVariable Long id
     ) throws GenericException {
         contactUsService.updateStatus(id, ContactUsStatusEnum.READ);
         return ApiResponse.respond("Success", ApiResponse.SUCCESS, ApiResponse.FAILED);

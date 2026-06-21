@@ -8,8 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface RoleService {
-    RoleListResponseDTO upsertRole(String id, RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException;
-    RolePermissionResponseDTO getRolePermissionsByRoleId(String id) throws GenericException;
+    RoleListResponseDTO upsertRole(Long id, RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException;
+    RolePermissionResponseDTO getRolePermissionsByRoleId(Long id) throws GenericException;
     Page<RoleListResponseDTO> getAllRolesByCriteria(
             String search, String roleIds,
             String navLinkIds, String permissionIds, String status,
@@ -26,5 +26,5 @@ public interface RoleService {
 
     RoleListResponseDTO getRoleByName(String name) throws GenericException;
 
-    RoleListResponseDTO getRoleById(String id) throws GenericException;
+    RoleListResponseDTO getRoleById(Long id) throws GenericException;
 }

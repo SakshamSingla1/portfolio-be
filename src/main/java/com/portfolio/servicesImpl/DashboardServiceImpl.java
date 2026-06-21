@@ -35,7 +35,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final PortfolioViewService portfolioViewService;
 
     @Override
-    public DashboardSummaryDTO getDashboardSummary(String profileId) {
+    public DashboardSummaryDTO getDashboardSummary(Long profileId) {
 
         Profile profile = profileRepository.findById(profileId).orElse(null);
 
@@ -152,7 +152,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     // ---------------- RECENT ACTIVITY ----------------
 
-    private List<ActivityDTO> buildLatestActivities(String profileId) {
+    private List<ActivityDTO> buildLatestActivities(Long profileId) {
 
         List<ActivityDTO> activities = new ArrayList<>();
 
@@ -247,12 +247,12 @@ public class DashboardServiceImpl implements DashboardService {
         return value == null ? "" : value;
     }
 
-    private ActivityDTO createActivity(String type, String description, LocalDateTime time, String entityId) {
+    private ActivityDTO createActivity(String type, String description, LocalDateTime time, Long entityId) {
         return ActivityDTO.builder()
                 .type(type)
                 .description(description)
                 .timestamp(time)
-                .entityId(entityId)
+                .entityId(String.valueOf(entityId))
                 .build();
     }
 

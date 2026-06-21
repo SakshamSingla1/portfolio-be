@@ -43,7 +43,7 @@ public class Helper {
                 .orElseThrow(() -> new GenericException( ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found" ));
     }
 
-    public String getProfileIdFromHeader(String header) throws GenericException {
+    public Long getProfileIdFromHeader(String header) throws GenericException {
         return getProfileFromHeader(header).getId();
     }
 
@@ -66,8 +66,16 @@ public class Helper {
     public Map<String, String> prepareUserMap(Collection<? extends Auditable> entities) {
         if (entities == null || entities.isEmpty()) return Collections.emptyMap();
 
-        Set<String> ids = entities.stream()
+        Set<Long> ids = entities.stream()
                 .flatMap(e -> Stream.of(e.getCreatedBy(), e.getUpdatedBy()))
+                .filter(Objects::nonNull)
+                .map(idStr -> {
+                    try {
+                        return Long.parseLong(idStr);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -76,7 +84,7 @@ public class Helper {
         return profileRepository.findAllById(ids)
                 .stream()
                 .collect(Collectors.toMap(
-                        Profile::getId,
+                        p -> String.valueOf(p.getId()),
                         Profile::getFullName
                 ));
     }
@@ -115,15 +123,20 @@ public class Helper {
     }
 
     private String resolveUsername(String id) {
-        if (id == null) return SYSTEM;
+        if (id == null || id.equals(SYSTEM)) return SYSTEM;
 
-        return profileRepository.findById(id)
-                .map(Profile::getFullName)
-                .orElse(UNKNOWN);
+        try {
+            Long numericId = Long.parseLong(id);
+            return profileRepository.findById(numericId)
+                    .map(Profile::getFullName)
+                    .orElse(UNKNOWN);
+        } catch (NumberFormatException e) {
+            return id;
+        }
     }
 
     private String resolveFromMap(String id, Map<String, String> userMap) {
-        if (id == null) return SYSTEM;
+        if (id == null || id.equals(SYSTEM)) return SYSTEM;
         return userMap.getOrDefault(id, UNKNOWN);
     }
 }
