@@ -20,7 +20,7 @@ public class FileAssetDTO {
     private LocalDateTime validityFrom;
     private LocalDateTime validityTo;
     private String platform;
-    private String createdBy;
+    private Long createdBy;
     private String creatorName;
     private boolean isPrimary;
     private int sortOrder;

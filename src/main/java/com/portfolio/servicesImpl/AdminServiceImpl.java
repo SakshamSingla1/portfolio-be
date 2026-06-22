@@ -78,7 +78,6 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .createdAt(LocalDateTime.now())
                         .expiryDate(LocalDateTime.now().plusMinutes(10))
                         .build()
         );
@@ -120,7 +119,6 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .createdAt(LocalDateTime.now())
                         .expiryDate(LocalDateTime.now().plusMinutes(10))
                         .build()
         );
@@ -169,7 +167,6 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .createdAt(LocalDateTime.now())
                         .expiryDate(LocalDateTime.now().plusMinutes(10))
                         .build()
         );
@@ -358,7 +355,6 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .createdAt(LocalDateTime.now())
                         .expiryDate(LocalDateTime.now().plusMinutes(5))
                         .build()
         );
