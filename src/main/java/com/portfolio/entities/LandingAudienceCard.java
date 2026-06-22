@@ -1,19 +1,22 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "landing_audience_cards")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LandingAudienceCard {
+public class LandingAudienceCard extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,6 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.converters.StringListConverter;
 import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.StatusEnum;
@@ -7,6 +8,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -15,10 +17,11 @@ import java.util.List;
 @Entity
 @Table(name = "seo_meta")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SeoMeta {
+public class SeoMeta extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,5 +55,4 @@ public class SeoMeta {
     @Enumerated(EnumType.STRING)
     private StatusEnum status;
 
-    private LocalDateTime updatedAt;
 }

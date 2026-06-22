@@ -1,19 +1,18 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.enums.ResourceTypeEnum;
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "file_assets")
 @Data
-@EntityListeners(AuditingEntityListener.class)
-public class FileAsset {
+@EqualsAndHashCode(callSuper = false)
+public class FileAsset extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,18 +33,10 @@ public class FileAsset {
     @Column(columnDefinition = "TEXT")
     private String metaData;
 
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
     private LocalDateTime validityFrom;
     private LocalDateTime validityTo;
 
     private String platform;
-
-    @CreatedBy
-    @Column(updatable = false)
-    private String createdBy;
 
     private String creatorName;
 

@@ -1,11 +1,13 @@
 package com.portfolio.entities;
 
+import com.portfolio.audit.Auditable;
 import com.portfolio.converters.StringListConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
@@ -13,10 +15,11 @@ import java.util.List;
 @Entity
 @Table(name = "landing_how_to_use_steps")
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LandingHowToUseStep {
+public class LandingHowToUseStep extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
