@@ -25,7 +25,7 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<FileAssetDTO>> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("resourceId") Long resourceId,
+            @RequestParam("resourceId") String resourceId,
             @RequestParam("resourceType") ResourceTypeEnum resourceType,
             @RequestParam(value = "isPrimary", defaultValue = "false") boolean isPrimary,
             @RequestParam(value = "sortOrder", defaultValue = "0") int sortOrder,
@@ -48,7 +48,7 @@ public class FileController {
     @GetMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<List<FileAssetDTO>>> getByResource(
             @PathVariable String resourceType,
-            @PathVariable Long resourceId
+            @PathVariable String resourceId
     ) {
         List<FileAssetDTO> result = fileService.getByResource(resourceId, resourceType);
         return ApiResponse.respond(result, "Files fetched successfully", "Failed to fetch files");
@@ -71,7 +71,7 @@ public class FileController {
     @DeleteMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<Void>> deleteByResource(
             @PathVariable String resourceType,
-            @PathVariable Long resourceId
+            @PathVariable String resourceId
     ) throws Exception {
         fileService.deleteByResource(resourceId, resourceType);
         return ApiResponse.respond(null, "Files deleted successfully", "Failed to delete files");

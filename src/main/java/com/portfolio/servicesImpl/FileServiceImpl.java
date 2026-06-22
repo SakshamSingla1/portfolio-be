@@ -34,7 +34,7 @@ public class FileServiceImpl implements FileService {
         // If this asset is primary, demote any existing primary for the same resource
         if (request.isPrimary()) {
             fileAssetRepository
-                    .findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(request.getResourceId()), request.getResourceType())
+                    .findByResourceIdAndResourceTypeAndIsPrimaryTrue(request.getResourceId(), request.getResourceType())
                     .ifPresent(existing -> {
                         existing.setPrimary(false);
                         fileAssetRepository.save(existing);
@@ -45,7 +45,7 @@ public class FileServiceImpl implements FileService {
         asset.setLocation(folder);
         asset.setPath((String) result.get("secure_url"));
         asset.setPublicId((String) result.get("public_id"));
-        asset.setResourceId(String.valueOf(request.getResourceId()));
+        asset.setResourceId(request.getResourceId());
         asset.setResourceType(request.getResourceType());
         asset.setMimeType(file.getContentType());
         asset.setMetaData(request.getMetaData());
@@ -58,10 +58,10 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<FileAssetDTO> getByResource(Long resourceId, String resourceType) {
+    public List<FileAssetDTO> getByResource(String resourceId, String resourceType) {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
         return fileAssetRepository
-                .findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(resourceId), type)
+                .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -85,16 +85,16 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void deleteByResource(Long resourceId, String resourceType) throws Exception {
+    public void deleteByResource(String resourceId, String resourceType) throws Exception {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
         List<FileAsset> assets = fileAssetRepository
-                .findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(resourceId), type);
+                .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type);
         for (FileAsset asset : assets) {
             if (asset.getPublicId() != null && !asset.getPublicId().isBlank()) {
                 try { cloudinaryService.deleteFile(asset.getPublicId()); } catch (Exception ignored) {}
             }
         }
-        fileAssetRepository.deleteByResourceIdAndResourceType(String.valueOf(resourceId), type);
+        fileAssetRepository.deleteByResourceIdAndResourceType(resourceId, type);
     }
 
     private FileAssetDTO toDTO(FileAsset asset) {
@@ -102,7 +102,7 @@ public class FileServiceImpl implements FileService {
                 .id(asset.getId())
                 .location(asset.getLocation())
                 .path(asset.getPath())
-                .resourceId(asset.getResourceId() == null ? null : Long.valueOf(asset.getResourceId()))
+                .resourceId(asset.getResourceId())
                 .resourceType(asset.getResourceType())
                 .mimeType(asset.getMimeType())
                 .metaData(asset.getMetaData())
