@@ -63,7 +63,6 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                 theme.setPalette(mapPaletteDtoToEntity(dto.getPalette()));
                 theme.setStatus(dto.getStatus());
                 theme.setUpdatedAt(LocalDateTime.now());
-                theme.setUpdatedBy("SUPER_ADMIN");
                 repository.save(theme);
                 return mapToResponse(theme);
         }

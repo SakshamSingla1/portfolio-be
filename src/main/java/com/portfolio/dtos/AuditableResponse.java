@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 public class AuditableResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private String createdBy;
-    private String updatedBy;
+    private Long createdBy;
+    private Long updatedBy;
     private String createdByName;
     private String updatedByName;
 }

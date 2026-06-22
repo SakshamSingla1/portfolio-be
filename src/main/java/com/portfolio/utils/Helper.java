@@ -63,19 +63,11 @@ public class Helper {
         dto.setUpdatedByName(resolveUsername(entity.getUpdatedBy()));
     }
 
-    public Map<String, String> prepareUserMap(Collection<? extends Auditable> entities) {
+    public Map<Long, String> prepareUserMap(Collection<? extends Auditable> entities) {
         if (entities == null || entities.isEmpty()) return Collections.emptyMap();
 
         Set<Long> ids = entities.stream()
                 .flatMap(e -> Stream.of(e.getCreatedBy(), e.getUpdatedBy()))
-                .filter(Objects::nonNull)
-                .map(idStr -> {
-                    try {
-                        return Long.parseLong(idStr);
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
@@ -84,7 +76,7 @@ public class Helper {
         return profileRepository.findAllById(ids)
                 .stream()
                 .collect(Collectors.toMap(
-                        p -> String.valueOf(p.getId()),
+                        Profile::getId,
                         Profile::getFullName
                 ));
     }
@@ -92,7 +84,7 @@ public class Helper {
     public void setAudit(
             Auditable entity,
             AuditableResponse dto,
-            Map<String, String> userMap
+            Map<Long, String> userMap
     ) {
         if (entity == null || dto == null) return;
 
@@ -111,7 +103,7 @@ public class Helper {
     ) {
         if (entities == null || entities.isEmpty()) return Collections.emptyList();
 
-        Map<String, String> userMap = prepareUserMap(entities);
+        Map<Long, String> userMap = prepareUserMap(entities);
 
         return entities.stream()
                 .map(entity -> {
@@ -122,21 +114,15 @@ public class Helper {
                 .collect(Collectors.toList());
     }
 
-    private String resolveUsername(String id) {
-        if (id == null || id.equals(SYSTEM)) return SYSTEM;
-
-        try {
-            Long numericId = Long.parseLong(id);
-            return profileRepository.findById(numericId)
-                    .map(Profile::getFullName)
-                    .orElse(UNKNOWN);
-        } catch (NumberFormatException e) {
-            return id;
-        }
+    private String resolveUsername(Long id) {
+        if (id == null) return SYSTEM;
+        return profileRepository.findById(id)
+                .map(Profile::getFullName)
+                .orElse(UNKNOWN);
     }
 
-    private String resolveFromMap(String id, Map<String, String> userMap) {
-        if (id == null || id.equals(SYSTEM)) return SYSTEM;
+    private String resolveFromMap(Long id, Map<Long, String> userMap) {
+        if (id == null) return SYSTEM;
         return userMap.getOrDefault(id, UNKNOWN);
     }
 }
