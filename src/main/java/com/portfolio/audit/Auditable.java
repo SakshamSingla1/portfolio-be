@@ -26,8 +26,8 @@ public abstract class Auditable {
 
     @CreatedBy
     @Column(updatable = false)
-    private String createdBy;
+    private Long createdBy;
 
     @LastModifiedBy
-    private String updatedBy;
+    private Long updatedBy;
 }
