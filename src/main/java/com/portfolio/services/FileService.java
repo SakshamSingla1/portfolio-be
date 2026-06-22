@@ -10,11 +10,11 @@ public interface FileService {
 
     FileAssetDTO upload(MultipartFile file, FileUploadRequest request) throws Exception;
 
-    List<FileAssetDTO> getByResource(Long resourceId, String resourceType);
+    List<FileAssetDTO> getByResource(String resourceId, String resourceType);
 
     FileAssetDTO getById(Long id) throws Exception;
 
     void delete(Long id) throws Exception;
 
-    void deleteByResource(Long resourceId, String resourceType) throws Exception;
+    void deleteByResource(String resourceId, String resourceType) throws Exception;
 }
