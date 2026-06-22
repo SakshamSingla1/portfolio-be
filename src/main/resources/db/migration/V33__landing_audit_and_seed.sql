@@ -96,10 +96,6 @@ ALTER TABLE otp_store
     ADD COLUMN updated_at  TIMESTAMP(6),
     ADD COLUMN created_by  BIGINT DEFAULT 2,
     ADD COLUMN updated_by  BIGINT DEFAULT 2;
-ALTER TABLE otp_store
-    ADD COLUMN updated_at  TIMESTAMP(6),
-    ADD COLUMN created_by  BIGINT DEFAULT 2,
-    ADD COLUMN updated_by  BIGINT DEFAULT 2;
 
 UPDATE contact_us  SET updated_at = NOW(), created_by = 2, updated_by = 2;
 UPDATE file_assets SET updated_at = NOW(),                 updated_by = 2;
