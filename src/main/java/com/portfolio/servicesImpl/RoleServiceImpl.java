@@ -61,7 +61,6 @@ public class RoleServiceImpl implements RoleService {
             rolePermissionRepository.deleteByRoleId(savedRole.getId());
 
             List<RolePermission> permissions = roleRequestBodyDTO.getRolePermissions().stream()
-                    .filter(rp -> rp.getNavLinkId() != null && rp.getPermissionId() != null)
                     .map(rp -> RolePermission.builder()
                             .roleId(savedRole.getId())
                             .navLinkId(rp.getNavLinkId())
