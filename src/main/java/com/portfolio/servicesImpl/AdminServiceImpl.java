@@ -300,7 +300,10 @@ public class AdminServiceImpl implements AdminService {
                     }
                 })
                 .filter(Objects::nonNull)
-                .orElse(colorThemeService.getDefaultTheme());
+                .orElseGet(() -> {
+                    try { return colorThemeService.getDefaultTheme(); }
+                    catch (GenericException e) { return null; }
+                });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
         Role role = roleRepository.findById(user.getRoleId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND,"Role not found"));
@@ -469,7 +472,10 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 })
                 .filter(Objects::nonNull)
-                .orElse(colorThemeService.getDefaultTheme());
+                .orElseGet(() -> {
+                    try { return colorThemeService.getDefaultTheme(); }
+                    catch (GenericException e) { return null; }
+                });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
         Role role = roleRepository.findById(user.getRoleId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
