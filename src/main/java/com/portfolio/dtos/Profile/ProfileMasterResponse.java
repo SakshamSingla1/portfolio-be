@@ -9,6 +9,7 @@ import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.dtos.GitHub.GitHubStatsDTO;
+import com.portfolio.dtos.SeoMeta.SeoMetaResponseDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import lombok.Builder;
 import lombok.Data;
@@ -29,4 +30,5 @@ public class ProfileMasterResponse {
     private List<CertificationResponseDTO> certifications;
     private List<SocialLinkResponseDTO> socialLinks;
     private GitHubStatsDTO githubStats;
+    private SeoMetaResponseDTO seoMeta;
 }

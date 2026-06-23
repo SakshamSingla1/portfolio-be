@@ -4,12 +4,16 @@ import com.portfolio.dtos.GitHub.GitHubStatsDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.dtos.ProfileTheme.ProfileThemeResponse;
+import com.portfolio.dtos.SeoMeta.SeoMetaResponseDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
+import com.portfolio.entities.SeoMeta;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.repositories.SeoMetaRepository;
 import com.portfolio.repositories.SocialLinkRepository;
 import com.portfolio.services.*;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +38,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final ColorThemeService colorThemeService;
     private final ProfileThemeService profileThemeService;
     private final GitHubService gitHubService;
+    private final SeoMetaRepository seoMetaRepository;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
@@ -54,6 +59,11 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .map(l -> gitHubService.fetchStats(l.getUrl()))
                 .orElse(null);
 
+        SeoMetaResponseDTO seoMeta = seoMetaRepository
+                .findByProfileIdAndPageKey(profileId, PageKeyEnum.HOME)
+                .map(this::toSeoDto)
+                .orElse(null);
+
         return ProfileMasterResponse.builder()
                 .profile(profileResponse)
                 .colorTheme(colorThemeService.getThemeById(theme.getThemeId()))
@@ -66,6 +76,23 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .certifications(certificationService.getByProfile(profileId))
                 .socialLinks(socialLinks)
                 .githubStats(githubStats)
+                .seoMeta(seoMeta)
+                .build();
+    }
+
+    private SeoMetaResponseDTO toSeoDto(SeoMeta e) {
+        return SeoMetaResponseDTO.builder()
+                .id(e.getId())
+                .pageKey(e.getPageKey())
+                .title(e.getTitle())
+                .description(e.getDescription())
+                .keywords(e.getKeywords())
+                .ogTitle(e.getOgTitle())
+                .ogDescription(e.getOgDescription())
+                .ogImageUrl(e.getOgImageUrl())
+                .canonicalUrl(e.getCanonicalUrl())
+                .indexable(e.getIndexable())
+                .followLinks(e.getFollowLinks())
                 .build();
     }
 
