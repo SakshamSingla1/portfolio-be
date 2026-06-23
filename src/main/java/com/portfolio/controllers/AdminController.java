@@ -129,8 +129,8 @@ public class AdminController {
     @PutMapping("/2fa/toggle")
     public ResponseEntity<ResponseModel<String>> toggle2Fa(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestParam String totpCode) throws GenericException {
-        String message = adminService.toggle2Fa(authorizationHeader, totpCode);
+            @RequestBody TotpCodeDTO dto) throws GenericException {
+        String message = adminService.toggle2Fa(authorizationHeader, dto.getTotpCode());
         return ApiResponse.respond(message, "2FA toggled successfully", "Failed to toggle 2FA");
     }
 }
