@@ -27,5 +27,11 @@ public interface AdminService {
 
     @Transactional
     String verifyEmailChangeOtp(String authorizationHeader, VerifyEmailChangeDTO dto) throws GenericException;
+
+    TwoFactorSetupResponseDTO generate2FaSecret(String authorizationHeader) throws GenericException;
+
+    LoginResponseDTO verify2Fa(TwoFactorVerifyDTO dto) throws GenericException;
+
+    String toggle2Fa(String authHeader, String totpCode) throws GenericException;
 }
 
