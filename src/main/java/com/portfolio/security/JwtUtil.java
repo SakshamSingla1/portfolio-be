@@ -37,6 +37,29 @@ public class JwtUtil {
                 .compact();
     }
 
+    // 5-minute pending token issued mid-login when 2FA is required.
+    // JwtAuthFilter rejects it for normal API calls (type != null).
+    public String generatePendingToken(String email, Long userId) {
+        long fiveMinutes = 5 * 60 * 1000L;
+        return Jwts.builder()
+                .subject(email)
+                .claim("userId", String.valueOf(userId))
+                .claim("type", "PENDING_2FA")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + fiveMinutes))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isPendingToken(String token) {
+        try {
+            Claims claims = getClaims(token);
+            return "PENDING_2FA".equals(claims.get("type", String.class));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ================= EXTRACT =================
     public String extractEmail(String token) {
         return getClaims(token).getSubject();

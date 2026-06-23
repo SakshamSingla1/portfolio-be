@@ -108,4 +108,29 @@ public class AdminController {
         String message = adminService.verifyEmailChangeOtp(authorizationHeader, requestDTO);
         return ApiResponse.respond(message,"Email updated successfully","Failed to update email");
     }
+
+    @Operation(summary = "Generate secret + QR URI")
+    @PostMapping("/2fa/setup")
+    public ResponseEntity<ResponseModel<TwoFactorSetupResponseDTO>> generate2FaSecret(
+            @RequestHeader("Authorization") String authorizationHeader) throws GenericException {
+        TwoFactorSetupResponseDTO response = adminService.generate2FaSecret(authorizationHeader);
+        return ApiResponse.respond(response, "Secret and QR URI generated successfully", "Failed to generate secret and QR URI");
+    }
+
+    @Operation(summary = "Verify TOTP code for 2FA and return access token")
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<ResponseModel<LoginResponseDTO>> verify2Fa(
+            @RequestBody  TwoFactorVerifyDTO requestDTO) throws GenericException {
+        LoginResponseDTO response = adminService.verify2Fa(requestDTO);
+        return ApiResponse.respond(response, "2FA verified successfully", "Failed to verify 2FA");
+    }
+
+    @Operation(summary = "Enable or disable 2FA for the authenticated user")
+    @PutMapping("/2fa/toggle")
+    public ResponseEntity<ResponseModel<String>> toggle2Fa(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam String totpCode) throws GenericException {
+        String message = adminService.toggle2Fa(authorizationHeader, totpCode);
+        return ApiResponse.respond(message, "2FA toggled successfully", "Failed to toggle 2FA");
+    }
 }

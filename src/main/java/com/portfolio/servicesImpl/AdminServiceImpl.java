@@ -15,6 +15,11 @@ import com.portfolio.repositories.ProfileThemeMappingRepository;
 import com.portfolio.repositories.RoleRepository;
 import com.portfolio.security.JwtUtil;
 import com.portfolio.services.*;
+import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.code.DefaultCodeVerifier;
+import dev.samstevens.totp.qr.QrData;
+import dev.samstevens.totp.secret.DefaultSecretGenerator;
+import dev.samstevens.totp.time.SystemTimeProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -277,6 +282,13 @@ public class AdminServiceImpl implements AdminService {
         if (user.getPhoneVerified() != VerificationStatusEnum.VERIFIED) {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Phone number is not verified. Please verify your phone number first.");
         }
+        if (user.isTwoFactorEnabled()) {
+            String pendingToken = jwtUtil.generatePendingToken(user.getEmail(), user.getId());
+            return LoginResponseDTO.builder()
+                    .twoFactorRequired(true)
+                    .pendingToken(pendingToken)
+                    .build();
+        }
 
         String token = jwtUtil.generateAccessToken(user.getEmail(), String.valueOf(user.getId()));
         ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
@@ -413,6 +425,92 @@ public class AdminServiceImpl implements AdminService {
         profileRepository.save(user);
         otpRepository.deleteByProfileId(user.getId());
         return "Email updated successfully";
+    }
+
+    @Override
+    @Transactional
+    public TwoFactorSetupResponseDTO generate2FaSecret(String authorizationHeader) throws GenericException {
+        Profile profile = helper.getProfileFromHeader(authorizationHeader);
+        String secret = new DefaultSecretGenerator().generate();
+        profile.setTotpSecret(secret);
+        profileRepository.save(profile);
+        String otpAuthUrl = new QrData.Builder()
+                .label(profile.getEmail())
+                .secret(secret)
+                .issuer("Portfolio Admin")
+                .digits(6)
+                .period(30)
+                .build()
+                .getUri();
+        return TwoFactorSetupResponseDTO.builder()
+                .secret(secret)
+                .otpAuthUrl(otpAuthUrl)
+                .build();
+    }
+
+    @Override
+    public LoginResponseDTO verify2Fa(TwoFactorVerifyDTO dto) throws GenericException {
+        if (!jwtUtil.isPendingToken(dto.getPendingToken())) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid or expired session. Please log in again.");
+        }
+        String email = jwtUtil.extractEmail(dto.getPendingToken());
+        Profile user = profileRepository.findByEmail(email)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+        boolean valid = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider())
+                .isValidCode(user.getTotpSecret(), dto.getTotpCode());
+        if (!valid) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid authenticator code. Please try again.");
+        }
+        String token = jwtUtil.generateAccessToken(user.getEmail(), String.valueOf(user.getId()));
+        ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
+                .map(mapping -> {
+                    try { return colorThemeService.getThemeById(mapping.getThemeId()); }
+                    catch (GenericException e) { return null; }
+                })
+                .filter(Objects::nonNull)
+                .orElse(colorThemeService.getDefaultTheme());
+        RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
+        Role role = roleRepository.findById(user.getRoleId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
+        return LoginResponseDTO.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .userName(user.getUserName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .roleId(role.getId())
+                .roleName(role.getName())
+                .status(user.getStatus())
+                .emailVerified(user.getEmailVerified())
+                .phoneVerified(user.getPhoneVerified())
+                .token("Bearer " + token)
+                .defaultTheme(defaultTheme)
+                .rolePermissions(rolePermissionResponse)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public String toggle2Fa(String authHeader, String totpCode) throws GenericException {
+        Profile profile = helper.getProfileFromHeader(authHeader);
+        if (profile.getTotpSecret() == null) {
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "2FA not set up. Call /2fa/setup first.");
+        }
+        boolean valid = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider())
+                .isValidCode(profile.getTotpSecret(), totpCode);
+        if (!valid) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid authenticator code. Please try again.");
+        }
+        if (profile.isTwoFactorEnabled()) {
+            profile.setTwoFactorEnabled(false);
+            profile.setTotpSecret(null);
+            profileRepository.save(profile);
+            return "Two-factor authentication disabled";
+        } else {
+            profile.setTwoFactorEnabled(true);
+            profileRepository.save(profile);
+            return "Two-factor authentication enabled";
+        }
     }
 
 

@@ -58,4 +58,7 @@ public class Profile extends Auditable {
 
     @Enumerated(EnumType.STRING)
     private VerificationStatusEnum phoneVerified;
+
+    private boolean isTwoFactorEnabled;
+    private String totpSecret;
 }

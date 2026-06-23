@@ -27,4 +27,6 @@ public class LoginResponseDTO {
     private VerificationStatusEnum phoneVerified;
     private ColorThemeResponseDTO defaultTheme;
     private RolePermissionResponseDTO rolePermissions;
+    private boolean twoFactorRequired;
+    private String pendingToken;
 }
