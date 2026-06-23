@@ -6,6 +6,7 @@ import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,5 +30,6 @@ public class LoginResponseDTO {
     private RolePermissionResponseDTO rolePermissions;
     private boolean twoFactorRequired;
     private String pendingToken;
+    @JsonProperty("isTwoFactorEnabled")
     private boolean isTwoFactorEnabled;
 }
