@@ -29,4 +29,5 @@ public class LoginResponseDTO {
     private RolePermissionResponseDTO rolePermissions;
     private boolean twoFactorRequired;
     private String pendingToken;
+    private boolean isTwoFactorEnabled;
 }
