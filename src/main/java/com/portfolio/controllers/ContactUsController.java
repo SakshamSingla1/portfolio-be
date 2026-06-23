@@ -1,5 +1,6 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dtos.ContactUs.ContactUsReplyDTO;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -45,6 +46,17 @@ public class ContactUsController {
     ) throws GenericException {
         contactUsService.updateStatus(id, ContactUsStatusEnum.READ);
         return ApiResponse.respond("Success", ApiResponse.SUCCESS, ApiResponse.FAILED);
+    }
+
+    @Operation(summary = "Reply to a contact message", description = "Sends an email reply to the sender and marks the message as REPLIED.")
+    @PostMapping("/{id}/reply")
+    public ResponseEntity<ResponseModel<ContactUsResponse>> reply(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String auth,
+            @RequestBody ContactUsReplyDTO dto
+    ) throws GenericException {
+        ContactUsResponse response = contactUsService.reply(id, dto.getMessage(), auth);
+        return ApiResponse.respond(response, "Reply sent successfully", ApiResponse.FAILED);
     }
 
 }

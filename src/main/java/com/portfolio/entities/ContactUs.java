@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "contact_us")
@@ -35,4 +36,10 @@ public class ContactUs extends Auditable {
 
     @Enumerated(EnumType.STRING)
     private ContactUsStatusEnum status;
+
+    @Column(name = "reply_message", columnDefinition = "TEXT")
+    private String replyMessage;
+
+    @Column(name = "replied_at")
+    private LocalDateTime repliedAt;
 }

@@ -16,4 +16,6 @@ public class ContactUsResponse {
     private String phone;
     private ContactUsStatusEnum status;
     private LocalDateTime createdAt;
+    private String replyMessage;
+    private LocalDateTime repliedAt;
 }
