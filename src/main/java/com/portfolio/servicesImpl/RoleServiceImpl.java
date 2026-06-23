@@ -82,6 +82,7 @@ public class RoleServiceImpl implements RoleService {
         List<RolePermission> rolePermissions = rolePermissionRepository.findByRoleId(id);
         
         List<ModulePermissionDTO> navLinkDTOs = rolePermissions.stream()
+                .filter(rp -> rp.getNavLinkId() != null)
                 .collect(Collectors.groupingBy(RolePermission::getNavLinkId))
                 .entrySet().stream()
                 .map(entry -> {
