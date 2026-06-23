@@ -54,4 +54,10 @@ public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
             @Param("platform") PlatformEnum platform,
             @Param("status") StatusEnum status
     );
+
+    @Query("SELECT s FROM SocialLinks s WHERE s.platform = :platform AND LOWER(s.url) LIKE LOWER(CONCAT('%', :host, '%'))")
+    Optional<SocialLinks> findByPlatformAndUrlContainingHost(
+            @Param("platform") PlatformEnum platform,
+            @Param("host") String host
+    );
 }
