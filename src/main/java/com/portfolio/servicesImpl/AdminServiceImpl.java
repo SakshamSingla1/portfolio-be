@@ -319,6 +319,7 @@ public class AdminServiceImpl implements AdminService {
                 .token("Bearer " + token)
                 .defaultTheme(defaultTheme)
                 .rolePermissions(rolePermissionResponse)
+                .isTwoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
     }
 
@@ -486,6 +487,7 @@ public class AdminServiceImpl implements AdminService {
                 .token("Bearer " + token)
                 .defaultTheme(defaultTheme)
                 .rolePermissions(rolePermissionResponse)
+                .isTwoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
     }
 
