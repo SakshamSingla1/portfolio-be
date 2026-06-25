@@ -23,6 +23,7 @@ import dev.samstevens.totp.qr.QrData;
 import dev.samstevens.totp.secret.DefaultSecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -163,24 +165,32 @@ public class AdminServiceImpl implements AdminService {
         profileRepository.save(profile);
         otpRepository.deleteByProfileId(profile.getId());
 
-        if (profileThemeMappingRepository.findByProfileId(profile.getId()).isEmpty()) {
-            profileThemeMappingRepository.save(
-                    ProfileThemeMapping.builder()
-                            .profileId(profile.getId())
-                            .themeId(1L)
-                            .build()
-            );
+        try {
+            if (profileThemeMappingRepository.findByProfileId(profile.getId()).isEmpty()) {
+                profileThemeMappingRepository.save(
+                        ProfileThemeMapping.builder()
+                                .profileId(profile.getId())
+                                .themeId(1L)
+                                .build()
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to create theme mapping for profile {}: {}", profile.getId(), e.getMessage(), e);
         }
 
-        socialLinkService.createLink(
-                SocialLinkRequestDTO.builder()
-                        .profileId(profile.getId())
-                        .platform(PlatformEnum.PORTFOLIO)
-                        .url(profile.getUserName() + ".portfoliosbuilder.com")
-                        .order("1")
-                        .status(StatusEnum.ACTIVE)
-                        .build()
-        );
+        try {
+            socialLinkService.createLink(
+                    SocialLinkRequestDTO.builder()
+                            .profileId(profile.getId())
+                            .platform(PlatformEnum.PORTFOLIO)
+                            .url(profile.getUserName() + ".portfoliosbuilder.com")
+                            .order("1")
+                            .status(StatusEnum.ACTIVE)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create portfolio social link for profile {}: {}", profile.getId(), e.getMessage(), e);
+        }
 
         return "OTP verified successfully";
     }
