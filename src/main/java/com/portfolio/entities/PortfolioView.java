@@ -32,4 +32,15 @@ public class PortfolioView extends Auditable {
     private String device;
     private String referrer;
     private LocalDateTime timestamp;
+
+    // visitor metadata
+    private String browser;
+    private String os;
+    private String language;
+    private String timezone;
+    private String country;
+    private String city;
+
+    @Column(name = "country_code")
+    private String countryCode;
 }
