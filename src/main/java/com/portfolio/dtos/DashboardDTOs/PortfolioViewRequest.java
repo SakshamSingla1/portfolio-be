@@ -6,7 +6,12 @@ import lombok.Data;
 public class PortfolioViewRequest {
     private Long profileId;
     private String sessionId;
-    private String device;    // DESKTOP | MOBILE | TABLET
+    private String device;
     private String referrer;
     private String path;
+    // enriched fields sent by the browser
+    private String browser;
+    private String os;
+    private String language;
+    private String timezone;
 }

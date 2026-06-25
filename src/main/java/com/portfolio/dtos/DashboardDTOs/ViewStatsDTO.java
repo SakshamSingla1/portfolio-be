@@ -17,5 +17,7 @@ public class ViewStatsDTO {
     private long resumeDownloads;
     private List<DailyViewDTO> weeklyTrend;
     private Map<String, Long> deviceBreakdown;
+    private Map<String, Long> browserBreakdown;
+    private Map<String, Long> locationBreakdown;
     private List<PortfolioViewDTO> recentViews;
 }

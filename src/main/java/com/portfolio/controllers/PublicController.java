@@ -61,9 +61,19 @@ public class PublicController {
 
     @Operation(summary = "Track portfolio view", description = "Records a page view from the public portfolio site.")
     @PostMapping("/track-view")
-    public ResponseEntity<Void> trackView(@RequestBody PortfolioViewRequest request) {
-        portfolioViewService.trackView(request);
+    public ResponseEntity<Void> trackView(@RequestBody PortfolioViewRequest request, HttpServletRequest httpRequest) {
+        String ip = resolveClientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
+        portfolioViewService.trackView(request, ip, ua);
         return ResponseEntity.ok().build();
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
 }
