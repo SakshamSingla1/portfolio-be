@@ -146,6 +146,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String verifyOtp(OtpRequestDTO dto) throws GenericException {
         Profile profile = profileRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
