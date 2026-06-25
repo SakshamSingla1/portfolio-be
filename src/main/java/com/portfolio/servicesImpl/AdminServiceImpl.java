@@ -3,7 +3,9 @@ package com.portfolio.servicesImpl;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
+import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.entities.*;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
@@ -49,6 +51,7 @@ public class AdminServiceImpl implements AdminService {
     private final RoleService roleService;
     private final RoleRepository roleRepository;
     private final ProfileThemeMappingRepository profileThemeMappingRepository;
+    private final SocialLinkService socialLinkService;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
@@ -69,7 +72,7 @@ public class AdminServiceImpl implements AdminService {
                 .password(passwordEncoder.encode(registerDTO.getPassword()))
                 .roleId(2L)
                 .phone(registerDTO.getPhone())
-                .status(StatusEnum.ACTIVE)
+                .status(StatusEnum.INACTIVE)
                 .emailVerified(VerificationStatusEnum.PENDING)
                 .phoneVerified(VerificationStatusEnum.PENDING)
                 .build();
@@ -155,9 +158,30 @@ public class AdminServiceImpl implements AdminService {
         }
         profile.setEmailVerified(VerificationStatusEnum.VERIFIED);
         profile.setPhoneVerified(VerificationStatusEnum.VERIFIED);
+        profile.setStatus(StatusEnum.ACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
         profileRepository.save(profile);
         otpRepository.deleteByProfileId(profile.getId());
+
+        if (profileThemeMappingRepository.findByProfileId(profile.getId()).isEmpty()) {
+            profileThemeMappingRepository.save(
+                    ProfileThemeMapping.builder()
+                            .profileId(profile.getId())
+                            .themeId(1L)
+                            .build()
+            );
+        }
+
+        socialLinkService.createLink(
+                SocialLinkRequestDTO.builder()
+                        .profileId(profile.getId())
+                        .platform(PlatformEnum.PORTFOLIO)
+                        .url(profile.getUserName() + ".portfoliosbuilder.com")
+                        .order("1")
+                        .status(StatusEnum.ACTIVE)
+                        .build()
+        );
+
         return "OTP verified successfully";
     }
 
@@ -276,6 +300,9 @@ public class AdminServiceImpl implements AdminService {
                 throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid password");
         }
 
+        if (user.getStatus() != StatusEnum.ACTIVE) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Account is not active. Please verify your email first.");
+        }
         if (user.getEmailVerified() != VerificationStatusEnum.VERIFIED) {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Email is not verified. Please verify your email first.");
         }
