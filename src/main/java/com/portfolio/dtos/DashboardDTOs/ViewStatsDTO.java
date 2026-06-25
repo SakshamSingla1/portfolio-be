@@ -12,6 +12,7 @@ public class ViewStatsDTO {
     private long totalViews;
     private long viewsToday;
     private long viewsThisWeek;
+    private long viewsLastWeek;
     private long viewsThisMonth;
     private long uniqueVisitors;
     private long resumeDownloads;

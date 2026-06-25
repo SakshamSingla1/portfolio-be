@@ -60,9 +60,12 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
         LocalDateTime startWeek  = now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();
         LocalDateTime startMonth = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
 
+        LocalDateTime startLastWeek = startWeek.minusDays(7);
+
         long totalViews     = viewRepository.countByProfileId(profileId);
         long viewsToday     = viewRepository.countByProfileIdAndTimestampBetween(profileId, startDay, now);
         long viewsThisWeek  = viewRepository.countByProfileIdAndTimestampBetween(profileId, startWeek, now);
+        long viewsLastWeek  = viewRepository.countByProfileIdAndTimestampBetween(profileId, startLastWeek, startWeek);
         long viewsThisMonth = viewRepository.countByProfileIdAndTimestampBetween(profileId, startMonth, now);
 
         List<PortfolioView> last30 = viewRepository.findByProfileIdAndTimestampAfter(profileId, now.minusDays(30));
@@ -108,6 +111,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .totalViews(totalViews)
                 .viewsToday(viewsToday)
                 .viewsThisWeek(viewsThisWeek)
+                .viewsLastWeek(viewsLastWeek)
                 .viewsThisMonth(viewsThisMonth)
                 .uniqueVisitors(uniqueVisitors)
                 .resumeDownloads(resumeDownloads)
