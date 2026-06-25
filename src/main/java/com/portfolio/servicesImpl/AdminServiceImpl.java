@@ -184,7 +184,7 @@ public class AdminServiceImpl implements AdminService {
                     SocialLinkRequestDTO.builder()
                             .profileId(profile.getId())
                             .platform(PlatformEnum.PORTFOLIO)
-                            .url(profile.getUserName() + ".portfoliosbuilder.com")
+                            .url("https://" + profile.getUserName() + ".portfoliosbuilder.com/")
                             .order("1")
                             .status(StatusEnum.ACTIVE)
                             .build()
