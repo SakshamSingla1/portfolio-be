@@ -25,16 +25,16 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
 
     Page<Resume> findByStatusAndProfileId(StatusEnum status, Long profileId, Pageable pageable);
 
-    @Query("SELECT r FROM Resume r WHERE LOWER(r.fileName) LIKE LOWER(CONCAT('%', :search, '%'))")
+    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Resume> search(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT r FROM Resume r WHERE LOWER(r.fileName) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status")
+    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status")
     Page<Resume> searchByStatus(@Param("search") String search, @Param("status") StatusEnum status, Pageable pageable);
 
-    @Query("SELECT r FROM Resume r WHERE LOWER(r.fileName) LIKE LOWER(CONCAT('%', :search, '%')) AND r.profileId = :profileId")
+    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.profileId = :profileId")
     Page<Resume> searchByProfileId(@Param("search") String search, @Param("profileId") Long profileId, Pageable pageable);
 
-    @Query("SELECT r FROM Resume r WHERE LOWER(r.fileName) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status AND r.profileId = :profileId")
+    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status AND r.profileId = :profileId")
     Page<Resume> searchByProfileIdAndStatus(
             @Param("search") String search,
             @Param("status") StatusEnum status,

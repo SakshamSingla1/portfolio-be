@@ -1,1 +1,0 @@
-ALTER TABLE profiles ADD COLUMN is_two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE;

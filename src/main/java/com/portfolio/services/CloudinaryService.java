@@ -15,5 +15,7 @@ public interface CloudinaryService {
 
     Map<String, Object> uploadImage(MultipartFile file, String folder) throws IOException;
 
+    Map<String, Object> uploadRawDocument(MultipartFile file, String folder) throws IOException;
+
     void deleteFile(String publicId) throws IOException;
 }

@@ -2,19 +2,24 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Admin.RoleUpdateRequest;
 import com.portfolio.dtos.Admin.StatusUpdateRequest;
+import com.portfolio.dtos.File.FileAssetDTO;
+import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Profile.ProfileRequest;
 import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.dtos.User.UserResponse;
+import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
 import com.portfolio.entities.Role;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.repositories.RoleRepository;
-import com.portfolio.services.CloudinaryService;
+import com.portfolio.services.FileService;
 import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +33,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,7 +44,8 @@ import java.util.stream.Collectors;
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
-    private final CloudinaryService cloudinaryService;
+    private final FileService fileService;
+    private final FileAssetRepository fileAssetRepository;
     private final Helper helper;
     private final RoleRepository roleRepository;
 
@@ -73,66 +81,106 @@ public class ProfileServiceImpl implements ProfileService {
         existing.setEmail(req.getEmail());
         existing.setPhone(req.getPhone());
         existing.setLocation(req.getLocation());
-        if (!Objects.equals(existing.getProfileImagePublicId(), req.getProfileImagePublicId())) {
-            if (existing.getProfileImagePublicId() != null) {
-                cloudinaryService.deleteFile(existing.getProfileImagePublicId());
-            }
-            existing.setProfileImageUrl(req.getProfileImageUrl());
-            existing.setProfileImagePublicId(req.getProfileImagePublicId());
-        }
-        if (!Objects.equals(existing.getAboutMeImageUrl(), req.getAboutMeImagePublicId())) {
-            if (existing.getAboutMeImageUrl() != null) {
-                cloudinaryService.deleteFile(existing.getAboutMeImagePublicId());
-            }
-            existing.setAboutMeImageUrl(req.getAboutMeImageUrl());
-            existing.setAboutMeImagePublicId(req.getAboutMeImagePublicId());
-        }
-        if (!Objects.equals(existing.getLogoPublicId(), req.getLogoPublicId())) {
-            if (existing.getLogoPublicId() != null) {
-                cloudinaryService.deleteFile(existing.getLogoPublicId());
-            }
-            existing.setLogoUrl(req.getLogoUrl());
-            existing.setLogoPublicId(req.getLogoPublicId());
-        }
         existing.setUpdatedAt(LocalDateTime.now());
         Profile updated = profileRepository.save(existing);
         return mapToResponse(updated);
     }
-
+ 
     @Override
     public ImageUploadResponse uploadProfileImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        Map uploadResult = cloudinaryService.uploadProfileImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
-                uploadResult.get("public_id").toString());
+        fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profileId), ResourceTypeEnum.PROFILE)
+                .ifPresent(existing -> {
+                    try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
+                });
+        FileUploadRequest uploadReq = new FileUploadRequest();
+        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
+        uploadReq.setPrimary(true);
+        uploadReq.setMetaData("PROFILE_IMAGE");
+        try {
+            FileAssetDTO asset = fileService.upload(file, uploadReq);
+            return new ImageUploadResponse(asset.getPath(), asset.getPublicId());
+        } catch (Exception e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload profile image: " + e.getMessage());
+        }
     }
-
+ 
     @Override
     public ImageUploadResponse uploadAboutMeImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        Map uploadResult = cloudinaryService.uploadProfileImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
-                uploadResult.get("public_id").toString());
+        List<FileAsset> existingList = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profileId), ResourceTypeEnum.PROFILE);
+        for (FileAsset asset : existingList) {
+            if ("ABOUT_ME_IMAGE".equals(asset.getMetaData())) {
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+            }
+        }
+        FileUploadRequest uploadReq = new FileUploadRequest();
+        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
+        uploadReq.setPrimary(false);
+        uploadReq.setMetaData("ABOUT_ME_IMAGE");
+        try {
+            FileAssetDTO asset = fileService.upload(file, uploadReq);
+            return new ImageUploadResponse(asset.getPath(), asset.getPublicId());
+        } catch (Exception e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload about me image: " + e.getMessage());
+        }
     }
-
+ 
     @Override
     public ImageUploadResponse uploadLogoImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        Map uploadResult = cloudinaryService.uploadLogoImage(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(),
-                uploadResult.get("public_id").toString());
+        fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profileId), ResourceTypeEnum.LOGO)
+                .ifPresent(existing -> {
+                    try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
+                });
+        FileUploadRequest uploadReq = new FileUploadRequest();
+        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceType(ResourceTypeEnum.LOGO);
+        uploadReq.setPrimary(true);
+        try {
+            FileAssetDTO asset = fileService.upload(file, uploadReq);
+            return new ImageUploadResponse(asset.getPath(), asset.getPublicId());
+        } catch (Exception e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload logo: " + e.getMessage());
+        }
     }
-
+ 
     private ProfileResponse mapToResponse(Profile profile) {
+        String profileImageUrl = null;
+        String profileImagePublicId = null;
+        String aboutMeImageUrl = null;
+        String aboutMeImagePublicId = null;
+        String logoUrl = null;
+        String logoPublicId = null;
+ 
+        List<FileAsset> profileAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profile.getId()), ResourceTypeEnum.PROFILE);
+        for (FileAsset asset : profileAssets) {
+            if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
+                profileImageUrl = asset.getPath();
+                profileImagePublicId = asset.getPublicId();
+            } else if ("ABOUT_ME_IMAGE".equals(asset.getMetaData())) {
+                aboutMeImageUrl = asset.getPath();
+                aboutMeImagePublicId = asset.getPublicId();
+            }
+        }
+ 
+        Optional<FileAsset> logoAsset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profile.getId()), ResourceTypeEnum.LOGO);
+        if (logoAsset.isPresent()) {
+            logoUrl = logoAsset.get().getPath();
+            logoPublicId = logoAsset.get().getPublicId();
+        }
+ 
         return ProfileResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())
@@ -144,12 +192,12 @@ public class ProfileServiceImpl implements ProfileService {
                 .roleId(profile.getRoleId())
                 .status(profile.getStatus())
                 .location(profile.getLocation())
-                .profileImageUrl(profile.getProfileImageUrl())
-                .profileImagePublicId(profile.getProfileImagePublicId())
-                .aboutMeImageUrl(profile.getAboutMeImageUrl())
-                .aboutMeImagePublicId(profile.getAboutMeImagePublicId())
-                .logoUrl(profile.getLogoUrl())
-                .logoPublicId(profile.getLogoPublicId())
+                .profileImageUrl(profileImageUrl)
+                .profileImagePublicId(profileImagePublicId)
+                .aboutMeImageUrl(aboutMeImageUrl)
+                .aboutMeImagePublicId(aboutMeImagePublicId)
+                .logoUrl(logoUrl)
+                .logoPublicId(logoPublicId)
                 .emailVerified(profile.getEmailVerified())
                 .phoneVerified(profile.getPhoneVerified())
                 .build();
@@ -263,6 +311,15 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     private UserResponse mapToUserResponse(Profile profile) {
+        String profileImageUrl = null;
+        List<FileAsset> profileAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profile.getId()), ResourceTypeEnum.PROFILE);
+        for (FileAsset asset : profileAssets) {
+            if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
+                profileImageUrl = asset.getPath();
+                break;
+            }
+        }
+
         UserResponse user = UserResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())
@@ -273,7 +330,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .status(profile.getStatus())
                 .emailVerified(profile.getEmailVerified())
                 .phoneVerified(profile.getPhoneVerified())
-                .profileImageUrl(profile.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl)
                 .build();
         helper.setAudit(profile, user);
         return user;

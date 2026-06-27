@@ -1,5 +1,9 @@
 CREATE TABLE landing_page_config (
     id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP(6),
+    updated_at TIMESTAMP(6),
+    created_by BIGINT,
+    updated_by BIGINT,
     hero_eyebrow VARCHAR(255),
     hero_headline_1 VARCHAR(255),
     hero_headline_2 VARCHAR(255),
@@ -13,3 +17,4 @@ CREATE TABLE landing_page_config (
     cta_button_text VARCHAR(255),
     cta_trust_points TEXT
 );
+

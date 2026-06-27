@@ -3,11 +3,14 @@ package com.portfolio.servicesImpl;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
+import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Logo;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.repositories.LogoRepository;
 import com.portfolio.repositories.SkillRepository;
 import com.portfolio.services.SkillService;
@@ -27,6 +30,7 @@ public class SkillServiceImpl implements SkillService {
 
     private final SkillRepository skillRepository;
     private final LogoRepository logoRepository;
+    private final FileAssetRepository fileAssetRepository;
 
     @Override
     public SkillResponse create(SkillRequest request) throws GenericException {
@@ -119,11 +123,14 @@ public class SkillServiceImpl implements SkillService {
     }
 
     private SkillResponse mapToResponse(Skill skill) {
+        String logoUrl = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(skill.getLogoId()), ResourceTypeEnum.LOGO)
+                .map(FileAsset::getPath)
+                .orElse(null);
         return SkillResponse.builder()
                 .id(skill.getId())
-                .logoId(skill.getLogo().getId())
-                .logoName(skill.getLogo().getName())
-                .logoUrl(skill.getLogo().getUrl())
+                .logoId(skill.getLogoId())
+                .logoName(skill.getLogoName())
+                .logoUrl(logoUrl)
                 .category(skill.getCategory())
                 .level(skill.getLevel())
                 .createdAt(skill.getCreatedAt())

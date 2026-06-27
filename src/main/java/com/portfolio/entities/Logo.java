@@ -23,5 +23,6 @@ public class Logo extends Auditable {
     private Long id;
 
     private String name;
+    @Transient
     private String url;
 }

@@ -1,9 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
 import com.portfolio.entities.Resume;
 import com.portfolio.entities.ResumeDownload;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.ResourceTypeEnum;
+import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ProfileRepository;
@@ -25,17 +28,26 @@ public class ResumePublicServiceImpl implements ResumePublicService {
     private final ProfileRepository profileRepository;
     private final ResumeRepository resumeRepository;
     private final ResumeDownloadRepository resumeDownloadRepository;
+    private final FileAssetRepository fileAssetRepository;
 
     @Override
     public void viewResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        streamPdf(resume.getFileUrl(), response, false);
+        FileAsset asset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(resume.getId()), ResourceTypeEnum.RESUME)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
+        streamPdf(asset.getPath(), response, false);
     }
 
     @Override
     public void downloadResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        streamPdf(resume.getFileUrl(), response, true, resume.getFileName());
+        FileAsset asset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(resume.getId()), ResourceTypeEnum.RESUME)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
+        String fileName = asset.getMetaData();
+        if (fileName == null || fileName.isBlank()) {
+            fileName = "resume";
+        }
+        streamPdf(asset.getPath(), response, true, fileName);
         resumeDownloadRepository.save(ResumeDownload.builder()
                 .profileId(resume.getProfileId())
                 .resumeId(resume.getId())

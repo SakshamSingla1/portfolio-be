@@ -16,4 +16,12 @@ public interface FileAssetRepository extends JpaRepository<FileAsset, Long> {
     Optional<FileAsset> findByResourceIdAndResourceTypeAndIsPrimaryTrue(String resourceId, ResourceTypeEnum resourceType);
 
     void deleteByResourceIdAndResourceType(String resourceId, ResourceTypeEnum resourceType);
+
+    Optional<FileAsset> findByPublicId(String publicId);
+
+    Optional<FileAsset> findByPath(String path);
+
+    List<FileAsset> findByResourceIdInAndResourceType(List<String> resourceIds, ResourceTypeEnum resourceType);
+
+    List<FileAsset> findByResourceIdInAndResourceTypeAndIsPrimaryTrue(List<String> resourceIds, ResourceTypeEnum resourceType);
 }

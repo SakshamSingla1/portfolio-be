@@ -30,7 +30,6 @@ public class Certifications extends Auditable {
     private String title;
     private String issuer;
     private String credentialId;
-    private String credentialUrl;
     private LocalDate issueDate;
     private LocalDate expiryDate;
 
