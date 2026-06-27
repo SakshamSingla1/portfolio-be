@@ -9,6 +9,7 @@ import com.portfolio.dtos.DashboardDTOs.StatsDTO;
 import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.ContactUsStatusEnum;
+import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.repositories.*;
 import com.portfolio.services.DashboardService;
 import com.portfolio.services.PortfolioViewService;
@@ -33,6 +34,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final SocialLinkRepository socialLinkRepository;
     private final ProfileRepository profileRepository;
     private final PortfolioViewService portfolioViewService;
+    private final FileAssetRepository fileAssetRepository;
 
     @Override
     public DashboardSummaryDTO getDashboardSummary(Long profileId) {
@@ -100,11 +102,19 @@ public class DashboardServiceImpl implements DashboardService {
 
     private ProfileSummaryDTO buildProfileSummary(Profile profile) {
         if (profile == null) return ProfileSummaryDTO.builder().build();
+        String profileImageUrl = null;
+        List<FileAsset> profileAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profile.getId()), ResourceTypeEnum.PROFILE);
+        for (FileAsset asset : profileAssets) {
+            if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
+                profileImageUrl = asset.getPath();
+                break;
+            }
+        }
         return ProfileSummaryDTO.builder()
                 .fullName(safe(profile.getFullName()))
                 .title(safe(profile.getTitle()))
                 .location(safe(profile.getLocation()))
-                .profileImageUrl(safe(profile.getProfileImageUrl()))
+                .profileImageUrl(safe(profileImageUrl))
                 .build();
     }
 

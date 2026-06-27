@@ -29,15 +29,22 @@ public class FileServiceImpl implements FileService {
     @Override
     public FileAssetDTO upload(MultipartFile file, FileUploadRequest request) throws Exception {
         String folder = FOLDER_PREFIX + request.getResourceType().name().toLowerCase();
-        Map<String, Object> result = cloudinaryService.uploadImage(file, folder);
+        String contentType = file.getContentType();
+        Map<String, Object> result = (contentType != null && contentType.startsWith("image/"))
+                ? cloudinaryService.uploadImage(file, folder)
+                : cloudinaryService.uploadRawDocument(file, folder);
 
-        // If this asset is primary, demote any existing primary for the same resource
+        // If this asset is primary, delete the existing primary for the same resource to avoid orphaned assets
         if (request.isPrimary()) {
             fileAssetRepository
                     .findByResourceIdAndResourceTypeAndIsPrimaryTrue(request.getResourceId(), request.getResourceType())
                     .ifPresent(existing -> {
-                        existing.setPrimary(false);
-                        fileAssetRepository.save(existing);
+                        try {
+                            if (existing.getPublicId() != null && !existing.getPublicId().isBlank()) {
+                                cloudinaryService.deleteFile(existing.getPublicId());
+                            }
+                            fileAssetRepository.delete(existing);
+                        } catch (Exception ignored) {}
                     });
         }
 
@@ -97,11 +104,52 @@ public class FileServiceImpl implements FileService {
         fileAssetRepository.deleteByResourceIdAndResourceType(resourceId, type);
     }
 
+    @Override
+    public FileAssetDTO getPrimaryFile(String resourceId, ResourceTypeEnum resourceType) {
+        return fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType)
+                .map(this::toDTO)
+                .orElse(null);
+    }
+
+    @Override
+    public List<FileAssetDTO> getFiles(String resourceId, ResourceTypeEnum resourceType) {
+        return fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, resourceType)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, FileAssetDTO> getPrimaryFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType) {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            return Map.of();
+        }
+        return fileAssetRepository.findByResourceIdInAndResourceTypeAndIsPrimaryTrue(resourceIds, resourceType)
+                .stream()
+                .collect(Collectors.toMap(
+                        FileAsset::getResourceId,
+                        this::toDTO,
+                        (existing, replacement) -> existing
+                ));
+    }
+
+    @Override
+    public Map<String, List<FileAssetDTO>> getFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType) {
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            return Map.of();
+        }
+        return fileAssetRepository.findByResourceIdInAndResourceType(resourceIds, resourceType)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.groupingBy(FileAssetDTO::getResourceId));
+    }
+
     private FileAssetDTO toDTO(FileAsset asset) {
         return FileAssetDTO.builder()
                 .id(asset.getId())
                 .location(asset.getLocation())
                 .path(asset.getPath())
+                .publicId(asset.getPublicId())
                 .resourceId(asset.getResourceId())
                 .resourceType(asset.getResourceType())
                 .mimeType(asset.getMimeType())

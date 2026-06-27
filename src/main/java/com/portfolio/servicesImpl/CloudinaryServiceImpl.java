@@ -73,6 +73,22 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadRawDocument(MultipartFile file, String folder) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+        return cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", folder,
+                        "resource_type", "raw",
+                        "secure", true
+                )
+        );
+    }
+
+    @Override
     public void deleteFile(String publicId) throws IOException {
         cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
     }

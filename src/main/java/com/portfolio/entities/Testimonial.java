@@ -33,8 +33,6 @@ public class Testimonial extends Auditable {
     @Column(columnDefinition = "TEXT")
     private String message;
 
-    private String imageUrl;
-    private Long imageId;
     private String linkedInUrl;
 
     @Column(name = "sort_order")

@@ -34,8 +34,6 @@ public class Achievements extends Auditable {
 
     private String issuer;
     private LocalDate achievedAt;
-    private String proofUrl;
-    private String proofPublicId;
 
     @Column(name = "sort_order")
     private String order;

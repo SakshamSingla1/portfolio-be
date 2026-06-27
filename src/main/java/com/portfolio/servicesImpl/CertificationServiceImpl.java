@@ -2,15 +2,20 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.Certifications.CertificationRequestDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
+import com.portfolio.dtos.File.FileAssetDTO;
+import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Certifications;
+import com.portfolio.entities.FileAsset;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.CertificationsRepository;
+import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.CertificationService;
-import com.portfolio.services.CloudinaryService;
+import com.portfolio.services.FileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -21,6 +26,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +34,8 @@ public class CertificationServiceImpl implements CertificationService {
 
     private final CertificationsRepository certificationsRepository;
     private final ProfileRepository profileRepository;
-    private final CloudinaryService cloudinaryService;
+    private final FileService fileService;
+    private final FileAssetRepository fileAssetRepository;
     private final Helper helper;
 
     @Override
@@ -41,15 +48,16 @@ public class CertificationServiceImpl implements CertificationService {
                 .title(dto.getTitle())
                 .issuer(dto.getIssuer())
                 .credentialId(dto.getCredentialId())
-                .credentialUrl(dto.getCredentialUrl())
                 .issueDate(dto.getIssueDate())
                 .expiryDate(dto.getExpiryDate())
                 .status(dto.getStatus())
                 .order(dto.getOrder())
                 .build();
-        return mapToResponse(certificationsRepository.save(certification));
+        Certifications saved = certificationsRepository.save(certification);
+        linkFileAsset(saved.getId(), dto.getCredentialUrl());
+        return mapToResponse(saved);
     }
-
+ 
     @Override
     public CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO dto) throws GenericException {
         Certifications existing = certificationsRepository.findById(id)
@@ -60,22 +68,23 @@ public class CertificationServiceImpl implements CertificationService {
         existing.setTitle(dto.getTitle());
         existing.setIssuer(dto.getIssuer());
         existing.setCredentialId(dto.getCredentialId());
-        existing.setCredentialUrl(dto.getCredentialUrl());
         existing.setIssueDate(dto.getIssueDate());
         existing.setExpiryDate(dto.getExpiryDate());
         existing.setStatus(dto.getStatus());
         existing.setOrder(dto.getOrder());
         existing.setUpdatedAt(LocalDateTime.now());
-        return mapToResponse(certificationsRepository.save(existing));
+        Certifications saved = certificationsRepository.save(existing);
+        linkFileAsset(id, dto.getCredentialUrl());
+        return mapToResponse(saved);
     }
-
+ 
     @Override
     public CertificationResponseDTO getCertificationById(Long id) throws GenericException {
         Certifications certification = certificationsRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found"));
         return mapToResponse(certification);
     }
-
+ 
     @Override
     public Page<CertificationResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
@@ -101,16 +110,19 @@ public class CertificationServiceImpl implements CertificationService {
         }
         return page.map(this::mapToResponse);
     }
-
+ 
     @Override
     public Void deleteById(Long id) throws GenericException {
         if (!certificationsRepository.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found");
         }
+        try {
+            fileService.deleteByResource(String.valueOf(id), ResourceTypeEnum.CERTIFICATION.name());
+        } catch (Exception ignored) {}
         certificationsRepository.deleteById(id);
         return null;
     }
-
+ 
     @Override
     public ImageUploadResponse uploadCredentialImage(
             Long profileId,
@@ -118,10 +130,18 @@ public class CertificationServiceImpl implements CertificationService {
     ) throws GenericException, IOException {
         profileRepository.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        Map uploadResult = cloudinaryService.uploadFile(file);
-        return new ImageUploadResponse(uploadResult.get("secure_url").toString(), uploadResult.get("public_id").toString());
+        FileUploadRequest uploadReq = new FileUploadRequest();
+        uploadReq.setResourceId("TEMP_" + profileId);
+        uploadReq.setResourceType(ResourceTypeEnum.CERTIFICATION);
+        uploadReq.setPrimary(true);
+        try {
+            FileAssetDTO asset = fileService.upload(file, uploadReq);
+            return new ImageUploadResponse(asset.getPath(), asset.getPublicId());
+        } catch (Exception e) {
+            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload certification image: " + e.getMessage());
+        }
     }
-
+ 
     public List<CertificationResponseDTO> getByProfile(Long profileId) {
         return certificationsRepository
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
@@ -129,14 +149,43 @@ public class CertificationServiceImpl implements CertificationService {
                 .map(this::mapToResponse)
                 .toList();
     }
-
+ 
+    private void linkFileAsset(Long resourceId, String url) {
+        if (url == null || url.isBlank()) return;
+        List<FileAsset> existing = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(resourceId), ResourceTypeEnum.CERTIFICATION);
+        for (FileAsset asset : existing) {
+            if (!url.equals(asset.getPath())) {
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+            }
+        }
+        Optional<FileAsset> assetOpt = fileAssetRepository.findByPath(url);
+        if (assetOpt.isPresent()) {
+            FileAsset asset = assetOpt.get();
+            asset.setResourceId(String.valueOf(resourceId));
+            asset.setPrimary(true);
+            fileAssetRepository.save(asset);
+        } else {
+            FileAsset asset = new FileAsset();
+            asset.setResourceId(String.valueOf(resourceId));
+            asset.setResourceType(ResourceTypeEnum.CERTIFICATION);
+            asset.setPath(url);
+            asset.setPrimary(true);
+            fileAssetRepository.save(asset);
+        }
+    }
+ 
     private CertificationResponseDTO mapToResponse(Certifications c) {
+        String credentialUrl = null;
+        Optional<FileAsset> assetOpt = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(c.getId()), ResourceTypeEnum.CERTIFICATION);
+        if (assetOpt.isPresent()) {
+            credentialUrl = assetOpt.get().getPath();
+        }
         CertificationResponseDTO responseDTO = CertificationResponseDTO.builder()
                 .id(c.getId())
                 .title(c.getTitle())
                 .issuer(c.getIssuer())
                 .credentialId(c.getCredentialId())
-                .credentialUrl(c.getCredentialUrl())
+                .credentialUrl(credentialUrl)
                 .status(c.getStatus())
                 .order(c.getOrder())
                 .issueDate(c.getIssueDate())

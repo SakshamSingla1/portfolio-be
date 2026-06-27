@@ -26,10 +26,6 @@ public class Resume extends Auditable {
     @Column(name = "profile_id")
     private Long profileId;
 
-    private String fileName;
-    private String fileUrl;
-    private String publicId;
-
     @Enumerated(EnumType.STRING)
     private StatusEnum status;
 }

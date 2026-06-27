@@ -42,12 +42,6 @@ public class Profile extends Auditable {
 
     private String location;
     private String password;
-    private String profileImageUrl;
-    private String profileImagePublicId;
-    private String aboutMeImageUrl;
-    private String aboutMeImagePublicId;
-    private String logoUrl;
-    private String logoPublicId;
     private Long roleId;
 
     @Enumerated(EnumType.STRING)

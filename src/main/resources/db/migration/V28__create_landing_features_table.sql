@@ -1,5 +1,9 @@
 CREATE TABLE landing_features (
     id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP(6),
+    updated_at TIMESTAMP(6),
+    created_by BIGINT,
+    updated_by BIGINT,
     icon_name VARCHAR(255),
     color_key VARCHAR(255),
     title VARCHAR(255),
@@ -7,3 +11,5 @@ CREATE TABLE landing_features (
     sort_order INT,
     is_active BOOLEAN DEFAULT TRUE
 );
+
+CREATE INDEX IF NOT EXISTS idx_landing_features_active_sort ON landing_features(is_active, sort_order);
