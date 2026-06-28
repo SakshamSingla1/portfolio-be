@@ -2,7 +2,9 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
 import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
-import com.portfolio.enums.StatusEnum;
+import com.portfolio.dtos.NotificationTemplates.NotificationTemplateListResponseDTO;
+import com.portfolio.dtos.NotificationTemplates.NotificationTemplateVariablesListResponseDTO;
+import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,10 +12,16 @@ import org.springframework.data.domain.Pageable;
 import java.util.Map;
 
 public interface NTService {
-    NTResponseDTO createNT(NTRequestDTO ntRequestDTO) throws GenericException;
-    NTResponseDTO updateNT(String name,NTRequestDTO ntRequestDTO) throws GenericException;
-    String deleteNT(String name) throws GenericException;
-    NTResponseDTO findNTBy(String name) throws GenericException;
-    Page<NTResponseDTO> getAllNotificationTemplates(Pageable pageable, String search, StatusEnum status, String sortBy, String sortDir);
+
+    NotificationTemplate createNT(NTRequestDTO requestDTO) throws GenericException;
+
+    NotificationTemplate updateNT(Long id, NTRequestDTO requestDTO) throws GenericException;
+
+    NTResponseDTO findNTById(Long id) throws GenericException;
+
+    Page<NotificationTemplateListResponseDTO> getAllByCriteria(String search, String templateGroupIdString, Pageable pageable);
+
+    Page<NotificationTemplateVariablesListResponseDTO> getVariablesByCriteria(String search, Pageable pageable);
+
     void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException;
 }

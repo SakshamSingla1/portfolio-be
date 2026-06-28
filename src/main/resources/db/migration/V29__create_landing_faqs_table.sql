@@ -1,13 +1,11 @@
 CREATE TABLE landing_faqs (
-    id BIGSERIAL PRIMARY KEY,
-    created_at TIMESTAMP(6),
-    updated_at TIMESTAMP(6),
-    created_by BIGINT,
-    updated_by BIGINT,
-    question TEXT,
-    answer TEXT,
-    sort_order INT,
-    is_active BOOLEAN DEFAULT TRUE
+    id          BIGSERIAL    PRIMARY KEY,
+    question    TEXT,
+    answer      TEXT,
+    sort_order  INTEGER      NOT NULL DEFAULT 0,
+    is_active   BOOLEAN      NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by  BIGINT       NOT NULL DEFAULT 1,
+    updated_by  BIGINT       NOT NULL DEFAULT 1
 );
-
-CREATE INDEX IF NOT EXISTS idx_landing_faqs_active_sort ON landing_faqs(is_active, sort_order);

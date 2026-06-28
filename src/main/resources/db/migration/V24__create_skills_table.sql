@@ -1,18 +1,24 @@
+-- ============================================================
+-- Skills: technical and soft skills listed on the portfolio
+-- ============================================================
 CREATE TABLE skills (
-    id BIGSERIAL PRIMARY KEY,
-    created_at TIMESTAMP(6),
-    updated_at TIMESTAMP(6),
-    category VARCHAR(255) CHECK (category IN ('FRONTEND', 'BACKEND', 'PROGRAMMING', 'TOOL', 'DATABASE', 'DEVOPS', 'TESTING', 'MOBILE', 'CLOUD', 'SECURITY', 'DATA_SCIENCE', 'UI_UX', 'SOFT_SKILLS', 'OTHER')),
-    created_by BIGINT,
-    level VARCHAR(255) CHECK (level IN ('Beginner', 'Intermediate', 'Advanced', 'Expert')),
-    logo TEXT,
-    logo_id BIGINT,
-    logo_name VARCHAR(255),
-    profile_id BIGINT,
-    updated_by BIGINT,
-    CONSTRAINT uk_skill_profile_logo UNIQUE (profile_id, logo_id)
+    id            BIGSERIAL    PRIMARY KEY,
+    profile_id    BIGINT       NOT NULL,
+
+    name          VARCHAR(255),
+    category      VARCHAR(255),
+    proficiency   VARCHAR(255) CHECK (proficiency IN ('BEGINNER','INTERMEDIATE','ADVANCED','EXPERT')),
+    logo_id       BIGINT,
+    sort_order    INTEGER      NOT NULL DEFAULT 0,
+
+    status        VARCHAR(255) NOT NULL DEFAULT 'ACTIVE'
+                               CHECK (status IN ('ACTIVE','INACTIVE','BLOCKED','DELETED')),
+
+    created_at    TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by    BIGINT       NOT NULL DEFAULT 1,
+    updated_by    BIGINT       NOT NULL DEFAULT 1
 );
 
 CREATE INDEX IF NOT EXISTS idx_skills_profile_id ON skills(profile_id);
-CREATE INDEX IF NOT EXISTS idx_skills_logo_id ON skills(logo_id);
-CREATE INDEX IF NOT EXISTS idx_skills_category ON skills(category);
+CREATE INDEX IF NOT EXISTS idx_skills_status     ON skills(status);

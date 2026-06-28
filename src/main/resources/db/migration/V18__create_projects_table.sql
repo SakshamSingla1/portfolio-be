@@ -1,18 +1,25 @@
+-- ============================================================
+-- Projects: portfolio project showcase entries
+-- ============================================================
 CREATE TABLE projects (
-    id BIGSERIAL PRIMARY KEY,
-    project_end_date DATE,
-    project_start_date DATE,
-    created_at TIMESTAMP(6),
-    updated_at TIMESTAMP(6),
-    created_by BIGINT,
-    github_repositories TEXT,
-    profile_id BIGINT,
-    project_description TEXT,
-    project_link VARCHAR(255),
-    project_name VARCHAR(255),
-    skill_ids TEXT,
-    updated_by BIGINT,
-    work_status VARCHAR(255) CHECK (work_status IN ('CURRENT', 'COMPLETED'))
+    id           BIGSERIAL    PRIMARY KEY,
+    profile_id   BIGINT       NOT NULL,
+
+    title        VARCHAR(255),
+    description  TEXT,
+    tech_stack   TEXT,
+    project_url  TEXT,
+    github_url   TEXT,
+    sort_order   INTEGER      NOT NULL DEFAULT 0,
+
+    status       VARCHAR(255) NOT NULL DEFAULT 'ACTIVE'
+                              CHECK (status IN ('ACTIVE','INACTIVE','BLOCKED','DELETED')),
+
+    created_at   TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by   BIGINT       NOT NULL DEFAULT 1,
+    updated_by   BIGINT       NOT NULL DEFAULT 1
 );
 
 CREATE INDEX IF NOT EXISTS idx_projects_profile_id ON projects(profile_id);
+CREATE INDEX IF NOT EXISTS idx_projects_status     ON projects(status);
