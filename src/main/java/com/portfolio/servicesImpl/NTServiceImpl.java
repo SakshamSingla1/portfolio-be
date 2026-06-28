@@ -2,128 +2,160 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
 import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
+import com.portfolio.dtos.NotificationTemplates.NotificationTemplateListResponseDTO;
+import com.portfolio.dtos.NotificationTemplates.NotificationTemplateVariablesListResponseDTO;
 import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.NTRepository;
+import com.portfolio.repositories.NTVariablesRepository;
 import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class NTServiceImpl implements NTService {
 
     private final NTRepository ntRepository;
+    private final NTVariablesRepository ntVariablesRepository;
     private final EmailService emailService;
 
     @Override
-    public NTResponseDTO createNT(NTRequestDTO ntRequestDTO) throws GenericException {
-        if (ntRepository.existsByNameAndType(ntRequestDTO.getName(), ntRequestDTO.getType())) {
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_TEMPLATE,
-                    "Template with the same name and type already exists");
-        }
+    @Transactional
+    public NotificationTemplate createNT(NTRequestDTO dto) throws GenericException {
         NotificationTemplate template = NotificationTemplate.builder()
-                .name(ntRequestDTO.getName())
-                .subject(ntRequestDTO.getSubject())
-                .body(ntRequestDTO.getBody())
-                .type(ntRequestDTO.getType())
-                .status(StatusEnum.ACTIVE)
+                .message(dto.getMessage())
+                .messageTo(dto.getMessageTo())
+                .subject(dto.getSubject())
+                .messageBody(dto.getMessageBody())
+                .emailTo(dto.getEmailTo())
+                .emailCc(dto.getEmailCc())
+                .emailBcc(dto.getEmailBcc())
+                .emailReplyTo(dto.getEmailReplyTo())
+                .template(dto.getTemplate())
+                .isSms(dto.getIsSms())
+                .isEmail(dto.getIsEmail())
+                .isWhatsapp(dto.getIsWhatsapp())
+                .whatsappTemplateName(dto.getWhatsappTemplateName())
+                .whatsappTemplateBody(dto.getWhatsappTemplateBody())
+                .additionalData(dto.getAdditionalData())
+                .dltTemplateId(dto.getDltTemplateId())
+                .templateGroupId(dto.getTemplateGroupId())
                 .build();
-        ntRepository.save(template);
-        return mapToResponseDTO(template);
+        return ntRepository.save(template);
     }
 
     @Override
-    public NTResponseDTO updateNT(String name, NTRequestDTO ntRequestDTO) throws GenericException {
-        NotificationTemplate existingTemplate = ntRepository.findByName(name)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND,
-                        "Template not found for update"));
+    @Transactional
+    public NotificationTemplate updateNT(Long id, NTRequestDTO dto) throws GenericException {
+        NotificationTemplate existing = ntRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));
 
-        existingTemplate.setSubject(ntRequestDTO.getSubject());
-        existingTemplate.setBody(ntRequestDTO.getBody());
-        existingTemplate.setStatus(ntRequestDTO.getStatus());
-        existingTemplate.setUpdatedAt(LocalDateTime.now());
-
-        ntRepository.save(existingTemplate);
-        return mapToResponseDTO(existingTemplate);
+        existing.setMessage(dto.getMessage());
+        existing.setMessageTo(dto.getMessageTo());
+        existing.setSubject(dto.getSubject());
+        existing.setMessageBody(dto.getMessageBody());
+        existing.setEmailTo(dto.getEmailTo());
+        existing.setEmailCc(dto.getEmailCc());
+        existing.setEmailBcc(dto.getEmailBcc());
+        existing.setEmailReplyTo(dto.getEmailReplyTo());
+        existing.setTemplate(existing.getTemplate()); // template name is immutable
+        existing.setIsSms(dto.getIsSms());
+        existing.setIsEmail(dto.getIsEmail());
+        existing.setIsWhatsapp(dto.getIsWhatsapp());
+        existing.setWhatsappTemplateName(dto.getWhatsappTemplateName());
+        existing.setWhatsappTemplateBody(dto.getWhatsappTemplateBody());
+        existing.setAdditionalData(dto.getAdditionalData());
+        existing.setDltTemplateId(dto.getDltTemplateId());
+        existing.setTemplateGroupId(dto.getTemplateGroupId());
+        return ntRepository.save(existing);
     }
 
     @Override
-    public String deleteNT(String name) throws GenericException {
-        NotificationTemplate template = ntRepository.findByName(name)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND,
-                        "Template not found for deletion"));
-
-        ntRepository.delete(template);
-        return "Template deleted successfully";
+    public NTResponseDTO findNTById(Long id) throws GenericException {
+        NotificationTemplate nt = ntRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));
+        return mapToResponse(nt);
     }
 
     @Override
-    public NTResponseDTO findNTBy(String name) throws GenericException {
-        NotificationTemplate template = ntRepository.findByName(name)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND,
-                        "Template not found"));
-        return mapToResponseDTO(template);
-    }
-
-    @Override
-    public Page<NTResponseDTO> getAllNotificationTemplates(
-            Pageable pageable, String search, StatusEnum status, String sortBy, String sortDir) {
-        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-        boolean hasStatus = status != null;
-        boolean hasSearch = search != null && !search.isBlank();
-
-        Page<NotificationTemplate> notificationTemplates;
-        if( hasSearch && hasStatus){
-            notificationTemplates = ntRepository.searchByStatusAndSearch(search,status,sortedPageable);
-        }else if(hasSearch){
-            notificationTemplates = ntRepository.SearchByText(search,sortedPageable);
-        }else if(hasStatus) {
-            notificationTemplates = ntRepository.findByStatus(status, sortedPageable);
-        }else{
-            notificationTemplates = ntRepository.findAll(sortedPageable);
+    public Page<NotificationTemplateListResponseDTO> getAllByCriteria(
+            String search, String templateGroupIdString, Pageable pageable) {
+        List<Long> groupIds = parseGroupIds(templateGroupIdString);
+        String searchValue = (search == null || search.isBlank()) ? "" : search.trim();
+        if (groupIds == null) {
+            return ntRepository.findByCriteria(searchValue, pageable);
         }
-        return notificationTemplates.map(this::mapToResponseDTO);
+        return ntRepository.findByCriteriaWithGroups(searchValue, groupIds, pageable);
+    }
+
+    @Override
+    public Page<NotificationTemplateVariablesListResponseDTO> getVariablesByCriteria(String search, Pageable pageable) {
+        String searchValue = (search == null || search.isBlank()) ? "" : search.trim();
+        return ntVariablesRepository.findByCriteria(searchValue, pageable);
     }
 
     @Override
     public void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException {
-        NotificationTemplate template = ntRepository.findByName(templateName)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Template not found: " + templateName));
-        String subject = template.getSubject();
-        String body = template.getBody();
+        NotificationTemplate nt = ntRepository.findByTemplate(templateName)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found: " + templateName));
+        String subject = nt.getSubject() != null ? nt.getSubject() : "";
+        String body    = nt.getMessageBody() != null ? nt.getMessageBody() : "";
         for (Map.Entry<String, Object> entry : variables.entrySet()) {
             String value = entry.getValue() == null ? "" : entry.getValue().toString();
-            subject = subject.replace("{{" + entry.getKey() + "}}", value);
-            body = body.replace("{{" + entry.getKey() + "}}", value);
+            String placeholder = "{{" + entry.getKey() + "}}";
+            subject = subject.replace(placeholder, value);
+            body    = body.replace(placeholder, value);
         }
         emailService.sendEmail(toEmail, subject, body);
     }
 
-    private NTResponseDTO mapToResponseDTO(NotificationTemplate template) {
+    private List<Long> parseGroupIds(String templateGroupIdString) {
+        if (templateGroupIdString == null || templateGroupIdString.isBlank()) return null;
+        try {
+            return Arrays.stream(templateGroupIdString.split(","))
+                    .map(String::trim)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private NTResponseDTO mapToResponse(NotificationTemplate nt) {
         return NTResponseDTO.builder()
-                .id(template.getId())
-                .name(template.getName())
-                .subject(template.getSubject())
-                .body(template.getBody())
-                .type(template.getType())
-                .status(template.getStatus())
-                .createdAt(template.getCreatedAt())
-                .updatedAt(template.getUpdatedAt())
+                .id(nt.getId())
+                .message(nt.getMessage())
+                .messageTo(nt.getMessageTo())
+                .subject(nt.getSubject())
+                .messageBody(nt.getMessageBody())
+                .emailTo(nt.getEmailTo())
+                .emailCc(nt.getEmailCc())
+                .emailBcc(nt.getEmailBcc())
+                .emailReplyTo(nt.getEmailReplyTo())
+                .template(nt.getTemplate())
+                .isSms(nt.getIsSms())
+                .isEmail(nt.getIsEmail())
+                .isWhatsapp(nt.getIsWhatsapp())
+                .whatsappTemplateName(nt.getWhatsappTemplateName())
+                .whatsappTemplateBody(nt.getWhatsappTemplateBody())
+                .additionalData(nt.getAdditionalData())
+                .dltTemplateId(nt.getDltTemplateId())
+                .templateGroupId(nt.getTemplateGroupId())
+                .createdBy(nt.getCreatedBy())
+                .updatedBy(nt.getUpdatedBy())
+                .createdAt(nt.getCreatedAt())
+                .updatedAt(nt.getUpdatedAt())
                 .build();
     }
 }
