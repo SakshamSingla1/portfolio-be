@@ -24,10 +24,8 @@ public interface ProfileService {
     Page<UserResponse> getAllProfiles(
             Pageable pageable,
             String search,
-            StatusEnum status,
-            String role,
-            String sortBy,
-            String sortDir
+            String status,
+            String role
     );
 
     UserResponse getUserById(Long id) throws GenericException;

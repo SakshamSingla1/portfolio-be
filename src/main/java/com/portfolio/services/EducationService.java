@@ -13,6 +13,6 @@ public interface EducationService {
     EducationResponse updateEducation(Long id, EducationRequest request) throws GenericException;
     EducationResponse findById(Long id,Long profileId) throws GenericException;
     String delete(Long id,Long profileId) throws GenericException;
-    Page<EducationResponse> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Page<EducationResponse> getByProfile(Long profileId, String search, Pageable pageable);
     List<EducationResponse> getByProfile(Long profileId);
 }

@@ -1,5 +1,8 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
+import com.portfolio.dao.logo.LogoDao;
+import com.portfolio.dao.skill.SkillDao;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
@@ -10,9 +13,6 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.FileAssetRepository;
-import com.portfolio.repositories.LogoRepository;
-import com.portfolio.repositories.SkillRepository;
 import com.portfolio.services.SkillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,22 +21,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class SkillServiceImpl implements SkillService {
 
-    private final SkillRepository skillRepository;
-    private final LogoRepository logoRepository;
-    private final FileAssetRepository fileAssetRepository;
+    private final SkillDao skillDao;
+    private final LogoDao logoDao;
+    private final FileAssetDao fileAssetDao;
 
     @Override
     public SkillResponse create(SkillRequest request) throws GenericException {
-        Logo logo = logoRepository.findById(request.getLogoId())
+        Logo logo = logoDao.findById(request.getLogoId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Logo not found"));
-        if (skillRepository.existsByLogoIdAndProfileId(request.getLogoId(), request.getProfileId())) {
+        if (skillDao.existsByLogoIdAndProfileId(request.getLogoId(), request.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Skill already exists for this profile");
         }
         Skill skill = Skill.builder()
@@ -45,37 +44,36 @@ public class SkillServiceImpl implements SkillService {
                 .category(request.getCategory())
                 .profileId(request.getProfileId())
                 .build();
-        return mapToResponse(skillRepository.save(skill));
+        return mapToResponse(skillDao.save(skill));
     }
 
     @Override
     public SkillResponse update(Long id, SkillRequest request) throws GenericException {
-        Skill skill = skillRepository.findById(id)
+        Skill skill = skillDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
-        Logo logo = logoRepository.findById(request.getLogoId())
+        Logo logo = logoDao.findById(request.getLogoId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Logo not found"));
-        if (skillRepository.existsByLogoIdAndProfileId(request.getLogoId(), request.getProfileId()) && !skill.getLogo().getId().equals(request.getLogoId())) {
+        if (skillDao.existsByLogoIdAndProfileId(request.getLogoId(), request.getProfileId()) && !skill.getLogo().getId().equals(request.getLogoId())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Skill already exists for this profile");
         }
         skill.setLogo(logo);
         skill.setLevel(request.getLevel());
         skill.setCategory(request.getCategory());
         skill.setProfileId(request.getProfileId());
-        return mapToResponse(skillRepository.save(skill));
+        return mapToResponse(skillDao.save(skill));
     }
 
     @Override
     public SkillResponse getById(Long id) throws GenericException {
-        Skill skill = skillRepository.findById(id)
+        return skillDao.findDTOById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
-        return mapToResponse(skill);
     }
 
     @Override
     public void delete(Long id) throws GenericException {
-        Skill skill = skillRepository.findById(id)
+        Skill skill = skillDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
-        skillRepository.delete(skill);
+        skillDao.delete(skill);
     }
 
     @Override
@@ -88,25 +86,12 @@ public class SkillServiceImpl implements SkillService {
                 pageable.getPageSize(),
                 sort
         );
-        boolean hasProfileId = profileId != null;
-        boolean hasSearch = search != null && !search.isBlank();
-
-        Page<Skill> skills;
-        if( hasSearch && hasProfileId){
-            skills = skillRepository.findByProfileIdWithSearch(profileId,search,sortedPageable);
-        }else if(hasSearch){
-            skills = skillRepository.findBySearch(search,sortedPageable);
-        }else if(hasProfileId) {
-            skills = skillRepository.findByProfileId(profileId, sortedPageable);
-        }else{
-            skills = skillRepository.findAll(sortedPageable);
-        }
-        return skills.map(this::mapToResponse);
+        return skillDao.findByCriteria(profileId, search, sortedPageable);
     }
 
     @Override
     public List<SkillResponse> getByProfile(Long profileId){
-        return skillRepository.findByProfileId(profileId)
+        return skillDao.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -115,15 +100,15 @@ public class SkillServiceImpl implements SkillService {
     @Override
     public SkillStat getStats() {
         return SkillStat.builder()
-                .expertSkillCount(skillRepository.countByLevel(SkillLevelEnum.Expert))
-                .advancedSkillCount(skillRepository.countByLevel(SkillLevelEnum.Advanced))
-                .intermediateSkillCount(skillRepository.countByLevel(SkillLevelEnum.Intermediate))
-                .beginnerSkillCount(skillRepository.countByLevel(SkillLevelEnum.Beginner))
+                .expertSkillCount(skillDao.countByLevel(SkillLevelEnum.Expert))
+                .advancedSkillCount(skillDao.countByLevel(SkillLevelEnum.Advanced))
+                .intermediateSkillCount(skillDao.countByLevel(SkillLevelEnum.Intermediate))
+                .beginnerSkillCount(skillDao.countByLevel(SkillLevelEnum.Beginner))
                 .build();
     }
 
     private SkillResponse mapToResponse(Skill skill) {
-        String logoUrl = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(skill.getLogoId()), ResourceTypeEnum.LOGO)
+        String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId().intValue(), ResourceTypeEnum.LOGO)
                 .map(FileAsset::getPath)
                 .orElse(null);
         return SkillResponse.builder()

@@ -1,12 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.portfolio_view.PortfolioViewDao;
+import com.portfolio.dao.resume.ResumeDownloadDao;
 import com.portfolio.dtos.DashboardDTOs.DailyViewDTO;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewDTO;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 import com.portfolio.entities.PortfolioView;
-import com.portfolio.repositories.PortfolioViewRepository;
-import com.portfolio.repositories.ResumeDownloadRepository;
 import com.portfolio.services.PortfolioViewService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PortfolioViewServiceImpl implements PortfolioViewService {
 
-    private final PortfolioViewRepository viewRepository;
-    private final ResumeDownloadRepository resumeDownloadRepository;
+    private final PortfolioViewDao portfolioViewDao;
+    private final ResumeDownloadDao resumeDownloadDao;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
@@ -50,7 +50,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .timestamp(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
-        viewRepository.save(view);
+        portfolioViewDao.save(view);
     }
 
     @Override
@@ -62,13 +62,13 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
         LocalDateTime startLastWeek = startWeek.minusDays(7);
 
-        long totalViews     = viewRepository.countByProfileId(profileId);
-        long viewsToday     = viewRepository.countByProfileIdAndTimestampBetween(profileId, startDay, now);
-        long viewsThisWeek  = viewRepository.countByProfileIdAndTimestampBetween(profileId, startWeek, now);
-        long viewsLastWeek  = viewRepository.countByProfileIdAndTimestampBetween(profileId, startLastWeek, startWeek);
-        long viewsThisMonth = viewRepository.countByProfileIdAndTimestampBetween(profileId, startMonth, now);
+        long totalViews     = portfolioViewDao.countByProfileId(profileId);
+        long viewsToday     = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startDay, now);
+        long viewsThisWeek  = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startWeek, now);
+        long viewsLastWeek  = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startLastWeek, startWeek);
+        long viewsThisMonth = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startMonth, now);
 
-        List<PortfolioView> last30 = viewRepository.findByProfileIdAndTimestampAfter(profileId, now.minusDays(30));
+        List<PortfolioView> last30 = portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(30));
 
         long uniqueVisitors = last30.stream()
                 .map(PortfolioView::getSessionId)
@@ -99,9 +99,9 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
         List<DailyViewDTO> weeklyTrend = buildWeeklyTrend(last7, now);
 
-        long resumeDownloads = resumeDownloadRepository.countByProfileId(profileId);
+        long resumeDownloads = resumeDownloadDao.countByProfileId(profileId);
 
-        List<PortfolioViewDTO> recentViews = viewRepository
+        List<PortfolioViewDTO> recentViews = portfolioViewDao
                 .findTop30ByProfileIdOrderByTimestampDesc(profileId)
                 .stream()
                 .map(this::mapToViewDTO)

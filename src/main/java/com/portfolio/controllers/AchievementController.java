@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/v1/achievements")
@@ -56,12 +55,10 @@ public class AchievementController {
     public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "asc") String sortDir,
-            @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, search, sortDir, sortBy, pageable);
+        Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, search, pageable);
         return ApiResponse.respond(page, "Achievements fetched successfully", "Failed to fetch Achievements");
     }
 

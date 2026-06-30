@@ -18,15 +18,18 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     List<Project> findByProfileId(Long profileId);
 
-    @Query("SELECT p FROM Project p WHERE p.profileId = :profileId AND (LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Project> findByProfileIdWithSearch(
+    @Query("""
+            SELECT p FROM Project p
+            WHERE (:profileId IS NULL OR p.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    Page<Project> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
             Pageable pageable
     );
-
-    @Query("SELECT p FROM Project p WHERE LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Project> findBySearch(@Param("search") String search, Pageable pageable);
 
     Page<Project> findByProfileId(Long profileId, Pageable pageable);
 

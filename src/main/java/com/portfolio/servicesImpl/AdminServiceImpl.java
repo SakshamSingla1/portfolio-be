@@ -1,5 +1,10 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.authentication.OtpStoreDao;
+import com.portfolio.dao.authentication.PasswordResetTokenDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.profile_theme.ProfileThemeMappingDao;
+import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
@@ -10,11 +15,6 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.OtpStoreRepository;
-import com.portfolio.repositories.PasswordResetTokenRepository;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.ProfileThemeMappingRepository;
-import com.portfolio.repositories.RoleRepository;
 import com.portfolio.security.JwtUtil;
 import com.portfolio.services.*;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
@@ -42,29 +42,29 @@ public class AdminServiceImpl implements AdminService {
     @Value("${app.url}")
     private String url;
 
-    private final ProfileRepository profileRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final OtpStoreRepository otpRepository;
+    private final ProfileDao profileDao;
+    private final PasswordResetTokenDao passwordResetTokenDao;
+    private final OtpStoreDao otpStoreDao;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final Helper helper;
     private final NTService ntService;
     private final ColorThemeService colorThemeService;
     private final RoleService roleService;
-    private final RoleRepository roleRepository;
-    private final ProfileThemeMappingRepository profileThemeMappingRepository;
+    private final RoleDao roleDao;
+    private final ProfileThemeMappingDao profileThemeMappingDao;
     private final SocialLinkService socialLinkService;
 
     @Override
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
 
-        if (profileRepository.findByEmail(registerDTO.getEmail()).isPresent())
+        if (profileDao.findByEmail(registerDTO.getEmail()).isPresent())
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_EMAIL, "User with same email already exists");
 
-        if (profileRepository.findByUserName(registerDTO.getUserName()).isPresent())
+        if (profileDao.findByUserName(registerDTO.getUserName()).isPresent())
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same username already exists");
 
-        if (profileRepository.findByPhone(registerDTO.getPhone()).isPresent())
+        if (profileDao.findByPhone(registerDTO.getPhone()).isPresent())
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same phone number already exists");
 
         Profile user = Profile.builder()
@@ -78,13 +78,13 @@ public class AdminServiceImpl implements AdminService {
                 .emailVerified(VerificationStatusEnum.PENDING)
                 .phoneVerified(VerificationStatusEnum.PENDING)
                 .build();
-        profileRepository.save(user);
+        profileDao.save(user);
 
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
 
-        otpRepository.deleteByProfileId(user.getId());
-        otpRepository.save(
+        otpStoreDao.deleteByProfileId(user.getId());
+        otpStoreDao.save(
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
@@ -118,14 +118,14 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public String sendOtp(PhoneOtpRequestDTO dto) throws GenericException {
 
-        Profile user = profileRepository.findByPhone(dto.getPhone())
+        Profile user = profileDao.findByPhone(dto.getPhone())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
 
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
 
-        otpRepository.deleteByProfileId(user.getId());
-        otpRepository.save(
+        otpStoreDao.deleteByProfileId(user.getId());
+        otpStoreDao.save(
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
@@ -148,12 +148,12 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public String verifyOtp(OtpRequestDTO dto) throws GenericException {
-        Profile profile = profileRepository.findByEmail(dto.getEmail())
+        Profile profile = profileDao.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        OtpStore otpStore = otpRepository.findByProfileId(profile.getId())
+        OtpStore otpStore = otpStoreDao.findByProfileId(profile.getId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "OTP not found"));
         if (otpStore.getExpiryDate().isBefore(LocalDateTime.now())) {
-            otpRepository.deleteByProfileId(profile.getId());
+            otpStoreDao.deleteByProfileId(profile.getId());
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "OTP expired");
         }
         if (!passwordEncoder.matches(dto.getOtp(), otpStore.getOtp())) {
@@ -163,12 +163,12 @@ public class AdminServiceImpl implements AdminService {
         profile.setPhoneVerified(VerificationStatusEnum.VERIFIED);
         profile.setStatus(StatusEnum.ACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
-        profileRepository.save(profile);
-        otpRepository.deleteByProfileId(profile.getId());
+        profileDao.save(profile);
+        otpStoreDao.deleteByProfileId(profile.getId());
 
         try {
-            if (profileThemeMappingRepository.findByProfileId(profile.getId()).isEmpty()) {
-                profileThemeMappingRepository.save(
+            if (profileThemeMappingDao.findByProfileId(profile.getId()).isEmpty()) {
+                profileThemeMappingDao.save(
                         ProfileThemeMapping.builder()
                                 .profileId(profile.getId())
                                 .themeId(1L)
@@ -198,12 +198,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public String resendOtp(String email) throws GenericException {
-        Profile user = profileRepository.findByEmail(email)
+        Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
-        otpRepository.deleteByProfileId(user.getId());
-        otpRepository.save(
+        otpStoreDao.deleteByProfileId(user.getId());
+        otpStoreDao.save(
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
@@ -225,13 +225,13 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public String forgotPassword(PasswordResetRequestDTO dto) throws GenericException {
 
-        Profile user = profileRepository.findByEmail(dto.getEmail())
+        Profile user = profileDao.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
 
         String token = UUID.randomUUID().toString();
 
-        passwordResetTokenRepository.deleteByProfileId(user.getId());
-        passwordResetTokenRepository.save(
+        passwordResetTokenDao.deleteByProfileId(user.getId());
+        passwordResetTokenDao.save(
                 PasswordResetToken.builder()
                         .profileId(user.getId())
                         .token(token)
@@ -248,7 +248,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public String validatePasswordResetToken(String token) throws GenericException {
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+        PasswordResetToken resetToken = passwordResetTokenDao.findByToken(token)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Token not found"));
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now()))
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Token expired");
@@ -257,12 +257,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public String resetPassword(PasswordResetConfirmDTO dto) throws GenericException {
-        PasswordResetToken token = passwordResetTokenRepository.findByToken(dto.getToken())
+        PasswordResetToken token = passwordResetTokenDao.findByToken(dto.getToken())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid token"));
         if (token.getExpiryDate().isBefore(LocalDateTime.now()))
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Token expired");
 
-        Profile user = profileRepository.findById(token.getProfileId())
+        Profile user = profileDao.findById(token.getProfileId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
 
         if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword()))
@@ -271,8 +271,8 @@ public class AdminServiceImpl implements AdminService {
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
 
-        profileRepository.save(user);
-        passwordResetTokenRepository.delete(token);
+        profileDao.save(user);
+        passwordResetTokenDao.delete(token);
 
         return "Password reset successful";
     }
@@ -283,10 +283,10 @@ public class AdminServiceImpl implements AdminService {
         Profile user;
 
         if (StringUtils.hasText(dto.getPhone()) && StringUtils.hasText(dto.getOtp())) {
-            user = profileRepository.findByPhone(dto.getPhone().trim())
+            user = profileDao.findByPhone(dto.getPhone().trim())
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
 
-            OtpStore otpStore = otpRepository.findByProfileId(user.getId())
+            OtpStore otpStore = otpStoreDao.findByProfileId(user.getId())
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "OTP not found"));
 
             if (otpStore.getExpiryDate().isBefore(LocalDateTime.now())) {
@@ -296,13 +296,13 @@ public class AdminServiceImpl implements AdminService {
             if (!passwordEncoder.matches(dto.getOtp(), otpStore.getOtp())) {
                 throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid OTP");
             }
-            otpRepository.deleteByProfileId(user.getId());
+            otpStoreDao.deleteByProfileId(user.getId());
         } else {
             if (StringUtils.hasText(dto.getEmail())) {
-                user = profileRepository.findByEmail(dto.getEmail().trim())
+                user = profileDao.findByEmail(dto.getEmail().trim())
                         .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
             } else if (StringUtils.hasText(dto.getUsername())) {
-                user = profileRepository.findByUserName(dto.getUsername().trim())
+                user = profileDao.findByUserName(dto.getUsername().trim())
                         .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
             } else {
                 throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Email or username is required");
@@ -329,7 +329,7 @@ public class AdminServiceImpl implements AdminService {
         }
 
         String token = jwtUtil.generateAccessToken(user.getEmail(), String.valueOf(user.getId()));
-        ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
+        ColorThemeResponseDTO defaultTheme = profileThemeMappingDao.findByProfileId(user.getId())
                 .map(mapping -> {
                     try {
                         return colorThemeService.getThemeById(mapping.getThemeId());
@@ -343,7 +343,7 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
-        Role role = roleRepository.findById(user.getRoleId())
+        Role role = roleDao.findById(user.getRoleId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND,"Role not found"));
 
         return LoginResponseDTO.builder()
@@ -368,7 +368,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     public String changePassword(String authorizationHeader, ChangePasswordDTO dto) throws GenericException {
         String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileRepository.findByEmail(email)
+        Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() -> new GenericException( ExceptionCodeEnum.PROFILE_NOT_FOUND,"User not found" ));
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Incorrect current password");
@@ -381,7 +381,7 @@ public class AdminServiceImpl implements AdminService {
         }
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
-        profileRepository.save(user);
+        profileDao.save(user);
         return "Password changed successfully";
     }
 
@@ -389,7 +389,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public String requestEmailChange(String authorizationHeader, ChangeEmailRequestDTO dto)throws GenericException {
         String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileRepository.findByEmail(email)
+        Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() ->
                         new GenericException(
                                 ExceptionCodeEnum.PROFILE_NOT_FOUND,
@@ -404,8 +404,8 @@ public class AdminServiceImpl implements AdminService {
         }
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
-        otpRepository.deleteByProfileId(user.getId());
-        otpRepository.save(
+        otpStoreDao.deleteByProfileId(user.getId());
+        otpStoreDao.save(
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
@@ -428,7 +428,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public String verifyEmailChangeOtp(String authorizationHeader, VerifyEmailChangeDTO dto) throws GenericException {
         String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileRepository.findByEmail(email)
+        Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() ->
                         new GenericException(
                                 ExceptionCodeEnum.PROFILE_NOT_FOUND,
@@ -436,7 +436,7 @@ public class AdminServiceImpl implements AdminService {
                         )
                 );
 
-        OtpStore otpStore = otpRepository.findByProfileId(user.getId())
+        OtpStore otpStore = otpStoreDao.findByProfileId(user.getId())
                 .orElseThrow(() ->
                         new GenericException(
                                 ExceptionCodeEnum.BAD_REQUEST,
@@ -444,7 +444,7 @@ public class AdminServiceImpl implements AdminService {
                         )
                 );
         if (otpStore.getExpiryDate().isBefore(LocalDateTime.now())) {
-            otpRepository.deleteByProfileId(user.getId());
+            otpStoreDao.deleteByProfileId(user.getId());
             throw new GenericException(
                     ExceptionCodeEnum.BAD_REQUEST,
                     "OTP expired"
@@ -456,7 +456,7 @@ public class AdminServiceImpl implements AdminService {
                     "Invalid OTP"
             );
         }
-        if (profileRepository.existsByEmail(dto.getNewEmail())) {
+        if (profileDao.existsByEmail(dto.getNewEmail())) {
             throw new GenericException(
                     ExceptionCodeEnum.BAD_REQUEST,
                     "Email already attached with a profile"
@@ -464,8 +464,8 @@ public class AdminServiceImpl implements AdminService {
         }
         user.setEmail(dto.getNewEmail());
         user.setUpdatedAt(LocalDateTime.now());
-        profileRepository.save(user);
-        otpRepository.deleteByProfileId(user.getId());
+        profileDao.save(user);
+        otpStoreDao.deleteByProfileId(user.getId());
         return "Email updated successfully";
     }
 
@@ -475,7 +475,7 @@ public class AdminServiceImpl implements AdminService {
         Profile profile = helper.getProfileFromHeader(authorizationHeader);
         String secret = new DefaultSecretGenerator().generate();
         profile.setTotpSecret(secret);
-        profileRepository.save(profile);
+        profileDao.save(profile);
         String otpAuthUrl = new QrData.Builder()
                 .label(profile.getEmail())
                 .secret(secret)
@@ -496,7 +496,7 @@ public class AdminServiceImpl implements AdminService {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid or expired session. Please log in again.");
         }
         String email = jwtUtil.extractEmail(dto.getPendingToken());
-        Profile user = profileRepository.findByEmail(email)
+        Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         boolean valid = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider())
                 .isValidCode(user.getTotpSecret(), dto.getTotpCode());
@@ -504,7 +504,7 @@ public class AdminServiceImpl implements AdminService {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid authenticator code. Please try again.");
         }
         String token = jwtUtil.generateAccessToken(user.getEmail(), String.valueOf(user.getId()));
-        ColorThemeResponseDTO defaultTheme = profileThemeMappingRepository.findByProfileId(user.getId())
+        ColorThemeResponseDTO defaultTheme = profileThemeMappingDao.findByProfileId(user.getId())
                 .map(mapping -> {
                     try { return colorThemeService.getThemeById(mapping.getThemeId()); }
                     catch (GenericException e) { return null; }
@@ -515,7 +515,7 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
-        Role role = roleRepository.findById(user.getRoleId())
+        Role role = roleDao.findById(user.getRoleId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -550,11 +550,11 @@ public class AdminServiceImpl implements AdminService {
         if (profile.isTwoFactorEnabled()) {
             profile.setTwoFactorEnabled(false);
             profile.setTotpSecret(null);
-            profileRepository.save(profile);
+            profileDao.save(profile);
             return "Two-factor authentication disabled";
         } else {
             profile.setTwoFactorEnabled(true);
-            profileRepository.save(profile);
+            profileDao.save(profile);
             return "Two-factor authentication enabled";
         }
     }

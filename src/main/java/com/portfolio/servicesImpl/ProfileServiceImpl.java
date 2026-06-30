@@ -1,5 +1,8 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dtos.Admin.RoleUpdateRequest;
 import com.portfolio.dtos.Admin.StatusUpdateRequest;
 import com.portfolio.dtos.File.FileAssetDTO;
@@ -16,9 +19,6 @@ import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.FileAssetRepository;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.RoleRepository;
 import com.portfolio.services.FileService;
 import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
@@ -34,8 +34,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,15 +41,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
-    private final ProfileRepository profileRepository;
+    private final ProfileDao profileDao;
     private final FileService fileService;
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetDao fileAssetDao;
     private final Helper helper;
-    private final RoleRepository roleRepository;
+    private final RoleDao roleDao;
 
     @Override
     public ProfileResponse get(Long id) throws GenericException {
-        Profile profile = profileRepository.findById(id)
+        Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         return mapToResponse(profile);
     }
@@ -59,16 +57,16 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileResponse update(Long id, ProfileRequest req) throws GenericException, IOException {
 
-        Profile existing = profileRepository.findById(id)
+        Profile existing = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        profileRepository.findByEmail(req.getEmail())
+        profileDao.findByEmail(req.getEmail())
                 .ifPresent(owner -> {
                     if (!owner.getId().equals(id)) {
                         throw new RuntimeException(
                                 new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use"));
                     }
                 });
-        profileRepository.findByPhone(req.getPhone())
+        profileDao.findByPhone(req.getPhone())
                 .ifPresent(owner -> {
                     if (!owner.getId().equals(id)) {
                         throw new RuntimeException(
@@ -82,22 +80,22 @@ public class ProfileServiceImpl implements ProfileService {
         existing.setPhone(req.getPhone());
         existing.setLocation(req.getLocation());
         existing.setUpdatedAt(LocalDateTime.now());
-        Profile updated = profileRepository.save(existing);
+        Profile updated = profileDao.save(existing);
         return mapToResponse(updated);
     }
- 
+
     @Override
     public ImageUploadResponse uploadProfileImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
-        profileRepository.findById(profileId)
+        profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profileId), ResourceTypeEnum.PROFILE)
+        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.PROFILE)
                 .ifPresent(existing -> {
                     try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceId(profileId.intValue());
         uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
         uploadReq.setPrimary(true);
         uploadReq.setMetaData("PROFILE_IMAGE");
@@ -108,21 +106,21 @@ public class ProfileServiceImpl implements ProfileService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload profile image: " + e.getMessage());
         }
     }
- 
+
     @Override
     public ImageUploadResponse uploadAboutMeImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
-        profileRepository.findById(profileId)
+        profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        List<FileAsset> existingList = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profileId), ResourceTypeEnum.PROFILE);
+        List<FileAsset> existingList = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId.intValue(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : existingList) {
             if ("ABOUT_ME_IMAGE".equals(asset.getMetaData())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
             }
         }
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceId(profileId.intValue());
         uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
         uploadReq.setPrimary(false);
         uploadReq.setMetaData("ABOUT_ME_IMAGE");
@@ -133,19 +131,19 @@ public class ProfileServiceImpl implements ProfileService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload about me image: " + e.getMessage());
         }
     }
- 
+
     @Override
     public ImageUploadResponse uploadLogoImage(
             Long profileId,
             MultipartFile file) throws IOException, GenericException {
-        profileRepository.findById(profileId)
+        profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profileId), ResourceTypeEnum.LOGO)
+        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.LOGO)
                 .ifPresent(existing -> {
                     try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(String.valueOf(profileId));
+        uploadReq.setResourceId(profileId.intValue());
         uploadReq.setResourceType(ResourceTypeEnum.LOGO);
         uploadReq.setPrimary(true);
         try {
@@ -155,7 +153,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload logo: " + e.getMessage());
         }
     }
- 
+
     private ProfileResponse mapToResponse(Profile profile) {
         String profileImageUrl = null;
         String profileImagePublicId = null;
@@ -163,8 +161,8 @@ public class ProfileServiceImpl implements ProfileService {
         String aboutMeImagePublicId = null;
         String logoUrl = null;
         String logoPublicId = null;
- 
-        List<FileAsset> profileAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profile.getId()), ResourceTypeEnum.PROFILE);
+
+        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId().intValue(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : profileAssets) {
             if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
                 profileImageUrl = asset.getPath();
@@ -174,13 +172,13 @@ public class ProfileServiceImpl implements ProfileService {
                 aboutMeImagePublicId = asset.getPublicId();
             }
         }
- 
-        Optional<FileAsset> logoAsset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(profile.getId()), ResourceTypeEnum.LOGO);
+
+        Optional<FileAsset> logoAsset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profile.getId().intValue(), ResourceTypeEnum.LOGO);
         if (logoAsset.isPresent()) {
             logoUrl = logoAsset.get().getPath();
             logoPublicId = logoAsset.get().getPublicId();
         }
- 
+
         return ProfileResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())
@@ -207,90 +205,45 @@ public class ProfileServiceImpl implements ProfileService {
     public Page<UserResponse> getAllProfiles(
             Pageable pageable,
             String search,
-            StatusEnum status,
-            String role,
-            String sortBy,
-            String sortDir) {
-        Sort sort = Sort.by(
-                "desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC,
-                (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy);
-
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort);
-
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasStatus = status != null;
-        boolean hasRole = role != null && !role.isBlank();
-        Long numericRole = hasRole ? Long.valueOf(role) : null;
-
-        Page<Profile> profiles;
-
-        if (hasSearch && hasStatus && hasRole) {
-            profiles = profileRepository.searchByRoleAndStatus(
-                    search, status, numericRole, sortedPageable);
-        } else if (hasSearch && hasStatus) {
-            profiles = profileRepository.searchByStatus(
-                    search, status, sortedPageable);
-        } else if (hasSearch && hasRole) {
-            profiles = profileRepository.searchByRole(
-                    search, numericRole, sortedPageable);
-        } else if (hasStatus && hasRole) {
-            profiles = profileRepository.findByStatus(status, sortedPageable);
-            profiles = new PageImpl<>(
-                    profiles.getContent().stream()
-                            .filter(profile -> numericRole.equals(profile.getRoleId()))
-                            .collect(Collectors.toList()),
-                    pageable,
-                    profiles.getTotalElements());
-        } else if (hasStatus) {
-            profiles = profileRepository.findByStatus(status, sortedPageable);
-        } else if (hasRole) {
-            profiles = profileRepository.searchByRole("", numericRole, sortedPageable);
-        } else if (hasSearch) {
-            profiles = profileRepository.search(search, sortedPageable);
-        } else {
-            profiles = profileRepository.findAll(sortedPageable);
-        }
-
-        return profiles.map(this::mapToUserResponse);
+            String status,
+            String roleIdString) {
+                List<Long> roleIds = helper.parseIds(roleIdString);
+                List<StatusEnum> statusList = helper.parseStatuses(status);
+        return profileDao.findByCriteria(search, statusList, roleIds, pageable);
     }
 
     @Override
     public UserResponse getUserById(Long id) throws GenericException {
-        Profile profile = profileRepository.findById(id)
+        Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         return mapToUserResponse(profile);
     }
 
     @Override
     public UserResponse updateUserStatus(Long id, StatusUpdateRequest request) throws GenericException {
-        Profile profile = profileRepository.findById(id)
+        Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
         profile.setStatus(request.getStatus());
-        profileRepository.save(profile);
+        profileDao.save(profile);
 
         return mapToUserResponse(profile);
     }
 
     @Override
     public UserResponse updateUserRole(Long id, RoleUpdateRequest request) throws GenericException {
-        Profile profile = profileRepository.findById(id)
+        Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
         profile.setRoleId(Long.parseLong(request.getRole()));
-        profileRepository.save(profile);
+        profileDao.save(profile);
 
         return mapToUserResponse(profile);
     }
 
     @Override
     public UserResponse toggleUserVerification(Long id) throws GenericException {
-        Profile profile = profileRepository.findById(id)
+        Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
         if (profile.getEmailVerified() == VerificationStatusEnum.VERIFIED) {
@@ -305,14 +258,14 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         profile.setUpdatedAt(LocalDateTime.now());
-        profileRepository.save(profile);
+        profileDao.save(profile);
 
         return mapToUserResponse(profile);
     }
 
     private UserResponse mapToUserResponse(Profile profile) {
         String profileImageUrl = null;
-        List<FileAsset> profileAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(profile.getId()), ResourceTypeEnum.PROFILE);
+        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId().intValue(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : profileAssets) {
             if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
                 profileImageUrl = asset.getPath();
@@ -332,7 +285,6 @@ public class ProfileServiceImpl implements ProfileService {
                 .phoneVerified(profile.getPhoneVerified())
                 .profileImageUrl(profileImageUrl)
                 .build();
-        helper.setAudit(profile, user);
         return user;
     }
 
@@ -340,7 +292,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (roleId == null) {
             return null;
         }
-        return roleRepository.findById(roleId)
+        return roleDao.findById(roleId)
                 .map(Role::getName)
                 .orElse(null);
     }

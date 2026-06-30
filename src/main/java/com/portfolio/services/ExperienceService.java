@@ -13,6 +13,6 @@ public interface ExperienceService {
     ExperienceResponse update(Long id,ExperienceRequest request) throws GenericException;
     ExperienceResponse getById(Long id) throws GenericException;
     String delete(Long id) throws GenericException;
-    Page<ExperienceResponse> getByProfile(Long profileId, String search , String sortDir, String sortBy, Pageable pageable);
+    Page<ExperienceResponse> getByProfile(Long profileId, String search ,Pageable pageable);
     List<ExperienceResponse> getByProfile(Long profileId);
 }

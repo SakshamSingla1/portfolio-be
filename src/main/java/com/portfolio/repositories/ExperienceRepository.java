@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.entities.Experience;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,21 +22,29 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
     boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDateAndIdNot(
             Long profileId, String companyName, String jobTitle, LocalDate startDate, Long id);
 
-    @Query("SELECT e FROM Experience e WHERE e.profileId = :profileId AND (LOWER(e.companyName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Experience> findByProfileIdWithSearch(
-            @Param("profileId") Long profileId,
-            @Param("search") String search,
-            Pageable pageable
-    );
-
-    @Query("SELECT e FROM Experience e WHERE LOWER(e.companyName) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.jobTitle) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Experience> findBySearch(@Param("search") String search, Pageable pageable);
-
-    Page<Experience> findByProfileId(Long profileId, Pageable pageable);
-
     List<Experience> findByProfileId(Long profileId);
 
     long countByProfileId(Long profileId);
 
     Optional<Experience> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Experience.ExperienceResponse(
+                ex.id, ex.companyName, ex.jobTitle, ex.location,
+                ex.startDate, ex.endDate, ex.employmentStatus, ex.description,
+                ex.createdAt, ex.updatedAt, ex.createdBy, ex.updatedBy, p1.fullName, p2.fullName
+            ) FROM Experience ex
+            LEFT JOIN Profile p1 ON p1.id = ex.createdBy
+            LEFT JOIN Profile p2 ON p2.id = ex.updatedBy
+            WHERE (:profileId IS NULL OR ex.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(ex.companyName) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(ex.jobTitle) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(ex.location) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    Page<ExperienceResponse> findByCriteria(
+            @Param("profileId") Long profileId,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }

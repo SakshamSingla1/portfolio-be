@@ -18,4 +18,20 @@ public class ContactUsResponse {
     private LocalDateTime createdAt;
     private String replyMessage;
     private LocalDateTime repliedAt;
+
+    public ContactUsResponse(Long id, String name,
+                             String email, String message,
+                             String phone, ContactUsStatusEnum status,
+                             LocalDateTime createdAt, String replyMessage,
+                             LocalDateTime repliedAt) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.message = message;
+        this.phone = phone;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.replyMessage = replyMessage;
+        this.repliedAt = repliedAt;
+    }
 }

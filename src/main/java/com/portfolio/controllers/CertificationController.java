@@ -55,12 +55,11 @@ public class CertificationController {
     public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "asc") String sortDir,
-            @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, sortDir, sortBy, pageable);
+        System.out.println(profileId);
+        Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, pageable);
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
 

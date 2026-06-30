@@ -15,7 +15,7 @@ public interface CertificationService {
     CertificationResponseDTO createCertification(CertificationRequestDTO certificationRequestDTO) throws GenericException;
     CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO certificationDTO) throws GenericException;
     CertificationResponseDTO getCertificationById(Long id) throws GenericException;
-    Page<CertificationResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Page<CertificationResponseDTO> getByProfile(Long profileId, String search, Pageable pageable);
     Void deleteById(Long id) throws GenericException;
     ImageUploadResponse uploadCredentialImage(Long id,MultipartFile file) throws GenericException, IOException;
     List<CertificationResponseDTO> getByProfile(Long profileId);

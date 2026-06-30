@@ -1,5 +1,6 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.nav_link.NavLinkDao;
 import com.portfolio.dtos.NavLinks.NavLinkRequestDTO;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
@@ -8,7 +9,6 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.NavLinkRepository;
 import com.portfolio.services.NavLinkService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NavLinkServiceImpl implements NavLinkService {
 
-    private final NavLinkRepository navLinkRepository;
+    private final NavLinkDao navLinkDao;
     private final Helper helper;
 
     @Override
@@ -44,7 +44,7 @@ public class NavLinkServiceImpl implements NavLinkService {
                 .status(request.getStatus() != null ? request.getStatus() : StatusEnum.ACTIVE)
                 .build();
 
-        navLinkRepository.save(navLink);
+        navLinkDao.save(navLink);
         return toResponseDTO(navLink);
     }
 
@@ -52,7 +52,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     public NavLinkResponseDTO updateNavLink(Long id, NavLinkRequestDTO request)
             throws GenericException {
 
-        NavLink existing = navLinkRepository.findById(id)
+        NavLink existing = navLinkDao.findById(id)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
                         "Nav Link not found"
@@ -65,27 +65,27 @@ public class NavLinkServiceImpl implements NavLinkService {
         existing.setNavGroup(request.getNavGroup());
         existing.setStatus(request.getStatus());
 
-        navLinkRepository.save(existing);
+        navLinkDao.save(existing);
         return toResponseDTO(existing);
     }
 
     @Override
     public void deleteNavLink(Long id) throws GenericException {
 
-        NavLink navLink = navLinkRepository.findById(id)
+        NavLink navLink = navLinkDao.findById(id)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
                         "Nav Link not found"
                 ));
 
         navLink.setStatus(StatusEnum.INACTIVE);
-        navLinkRepository.save(navLink);
+        navLinkDao.save(navLink);
     }
 
     @Override
     public List<NavLinkResponseDTO> getNavLinks() {
 
-        return navLinkRepository.findAll()
+        return navLinkDao.findAll()
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -95,58 +95,14 @@ public class NavLinkServiceImpl implements NavLinkService {
     public Page<NavLinkResponseDTO> getAllNavLinks(
             Pageable pageable,
             String search,
-            StatusEnum status,
-            String sortBy,
-            String sortDir
-    ) {
-
-        Sort sort = Sort.by(
-                "desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC
-                        : Sort.Direction.ASC,
-                (sortBy == null || sortBy.isBlank()) ? "createdAt" : sortBy
-        );
-
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasStatus = status != null;
-
-        Page<NavLink> navLinks;
-
-        if (hasSearch && hasStatus) {
-            navLinks = navLinkRepository.searchByStatus(
-                    search, status, sortedPageable
-            );
-        } else if (hasStatus) {
-            navLinks = navLinkRepository.findByStatus(
-                    status, sortedPageable
-            );
-        } else if (hasSearch) {
-            navLinks = navLinkRepository.search(
-                    search, sortedPageable
-            );
-        } else {
-            navLinks = navLinkRepository.findAll(sortedPageable);
-        }
-
-        return navLinks.map(this::toResponseDTO);
-    }
+            StatusEnum status){
+                return navLinkDao.findByCriteria(search, status, pageable);
+            }
 
     @Override
     public NavLinkResponseDTO getNavLink(Long id) throws GenericException {
-
-        NavLink navLink = navLinkRepository.findById(id)
-                .orElseThrow(() -> new GenericException(
-                        ExceptionCodeEnum.NAV_LINK_NOT_FOUND,
-                        "Nav Link not found"
-                ));
-
-        return toResponseDTO(navLink);
+        return navLinkDao.findDTOById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND, "Nav Link not found"));
     }
 
     private NavLinkResponseDTO toResponseDTO(NavLink navLink) {
@@ -158,16 +114,21 @@ public class NavLinkServiceImpl implements NavLinkService {
                 .icon(navLink.getIcon())
                 .navGroup(navLink.getNavGroup())
                 .status(navLink.getStatus())
+                .createdAt(navLink.getCreatedAt())
+                .updatedAt(navLink.getUpdatedAt())
+                .createdBy(navLink.getCreatedBy())
+                .updatedBy(navLink.getUpdatedBy())
+                .createdByName(navLink.getCreatedBy() != null ? "Unknown" : null)
+                .updatedByName(navLink.getUpdatedBy() != null ? "Unknown" : null)
                 .build();
-        helper.setAudit(navLink, responseDTO);
         return responseDTO;
     }
 
     @Override
     public List<GroupedNavLinkResponseDTO> getGroupedNavLinks() {
 
-        List<NavLink> navLinks = navLinkRepository.findAll();
-        
+        List<NavLink> navLinks = navLinkDao.findAll();
+
         // Group by navGroup, treating null as "default"
         Map<String, List<NavLink>> groupedByNavGroup = navLinks.stream()
                 .collect(Collectors.groupingBy(

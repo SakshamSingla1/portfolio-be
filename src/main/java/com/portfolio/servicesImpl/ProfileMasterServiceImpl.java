@@ -1,5 +1,7 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.seo_meta.SeoMetaDao;
+import com.portfolio.dao.social_links.SocialLinksDao;
 import com.portfolio.dtos.GitHub.GitHubStatsDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.ProfileResponse;
@@ -13,8 +15,6 @@ import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.SeoMetaRepository;
-import com.portfolio.repositories.SocialLinkRepository;
 import com.portfolio.services.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,17 +34,17 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final TestimonialService testimonialService;
     private final CertificationService certificationService;
     private final SocialLinkService socialLinkService;
-    private final SocialLinkRepository socialLinkRepository;
+    private final SocialLinksDao socialLinksDao;
     private final ColorThemeService colorThemeService;
     private final ProfileThemeService profileThemeService;
     private final GitHubService gitHubService;
-    private final SeoMetaRepository seoMetaRepository;
+    private final SeoMetaDao seoMetaDao;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
             throws GenericException {
         String domain = normalizeDomain(host);
-        SocialLinks socialLink = socialLinkRepository.findByPlatformAndUrl(PlatformEnum.PORTFOLIO, domain)
+        SocialLinks socialLink = socialLinksDao.findByPlatformAndUrl(PlatformEnum.PORTFOLIO, domain)
                 .orElseThrow(
                         () -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social Link not found"));
         Long profileId = socialLink.getProfileId();
@@ -59,7 +59,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .map(l -> gitHubService.fetchStats(l.getUrl()))
                 .orElse(null);
 
-        SeoMetaResponseDTO seoMeta = seoMetaRepository
+        SeoMetaResponseDTO seoMeta = seoMetaDao
                 .findByProfileIdAndPageKey(profileId, PageKeyEnum.HOME)
                 .map(this::toSeoDto)
                 .orElse(null);

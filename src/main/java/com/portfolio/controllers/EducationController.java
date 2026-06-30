@@ -72,12 +72,11 @@ public class EducationController {
     public ResponseEntity<ResponseModel<Page<EducationResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+            @RequestParam(required = false) String search
+    ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
-                educationService.getByProfile(profileId, search, sortDir, sortBy, pageable),
+                educationService.getByProfile(profileId, search, pageable),
                 "Educations fetched successfully",
                 "Failed to fetch educations"
         );

@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Resume.ResumeUploadResponseDTO;
 import com.portfolio.entities.Resume;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
@@ -19,26 +20,30 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
 
     Optional<Resume> findByProfileIdAndStatus(Long profileId, StatusEnum status);
 
-    Page<Resume> findByStatus(StatusEnum status, Pageable pageable);
-
-    Page<Resume> findByProfileId(Long profileId, Pageable pageable);
-
-    Page<Resume> findByStatusAndProfileId(StatusEnum status, Long profileId, Pageable pageable);
-
-    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Resume> search(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status")
-    Page<Resume> searchByStatus(@Param("search") String search, @Param("status") StatusEnum status, Pageable pageable);
-
-    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.profileId = :profileId")
-    Page<Resume> searchByProfileId(@Param("search") String search, @Param("profileId") Long profileId, Pageable pageable);
-
-    @Query("SELECT r FROM Resume r, FileAsset f WHERE f.resourceId = CAST(r.id AS string) AND f.resourceType = com.portfolio.enums.ResourceTypeEnum.RESUME AND LOWER(f.metaData) LIKE LOWER(CONCAT('%', :search, '%')) AND r.status = :status AND r.profileId = :profileId")
-    Page<Resume> searchByProfileIdAndStatus(
-            @Param("search") String search,
-            @Param("status") StatusEnum status,
+    // idx_resumes_profile_id, idx_resumes_status, idx_file_assets_resource
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Resume.ResumeUploadResponseDTO(
+                r.id, fa.metaData, fa.path, fa.publicId, r.status, r.updatedAt
+            ) FROM Resume r
+            LEFT JOIN FileAsset fa ON fa.resourceId = r.id AND fa.resourceType = 'RESUME'
+            WHERE (:profileId IS NULL OR r.profileId = :profileId)
+            AND (:status IS NULL OR r.status = :status)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(fa.metaData) LIKE LOWER(CONCAT('%', :search, '%')))
+            """)
+    Page<ResumeUploadResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
+            @Param("status") StatusEnum status,
+            @Param("search") String search,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Resume.ResumeUploadResponseDTO(
+                r.id, fa.metaData, fa.path, fa.publicId, r.status, r.updatedAt
+            ) FROM Resume r
+            LEFT JOIN FileAsset fa ON fa.resourceId = r.id AND fa.resourceType = 'RESUME'
+            WHERE r.id = :id
+            """)
+    Optional<ResumeUploadResponseDTO> findDTOById(@Param("id") Long id);
 }

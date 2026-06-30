@@ -1,5 +1,11 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.landing.LandingAudienceCardDao;
+import com.portfolio.dao.landing.LandingFaqDao;
+import com.portfolio.dao.landing.LandingFeatureDao;
+import com.portfolio.dao.landing.LandingHowToUseStepDao;
+import com.portfolio.dao.landing.LandingPageConfigDao;
+import com.portfolio.dao.landing.LandingTestimonialDao;
 import com.portfolio.dtos.Landing.LandingAudienceCardRequest;
 import com.portfolio.dtos.Landing.LandingConfigRequest;
 import com.portfolio.dtos.Landing.LandingFaqRequest;
@@ -21,12 +27,6 @@ import com.portfolio.entities.LandingPageConfig;
 import com.portfolio.entities.LandingTestimonial;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.LandingAudienceCardRepository;
-import com.portfolio.repositories.LandingFaqRepository;
-import com.portfolio.repositories.LandingFeatureRepository;
-import com.portfolio.repositories.LandingHowToUseStepRepository;
-import com.portfolio.repositories.LandingPageConfigRepository;
-import com.portfolio.repositories.LandingTestimonialRepository;
 import com.portfolio.services.LandingPageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,12 +37,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LandingPageServiceImpl implements LandingPageService {
 
-    private final LandingPageConfigRepository configRepository;
-    private final LandingFeatureRepository featureRepository;
-    private final LandingFaqRepository faqRepository;
-    private final LandingHowToUseStepRepository stepRepository;
-    private final LandingAudienceCardRepository audienceCardRepository;
-    private final LandingTestimonialRepository testimonialRepository;
+    private final LandingPageConfigDao configRepository;
+    private final LandingFeatureDao featureRepository;
+    private final LandingFaqDao faqRepository;
+    private final LandingHowToUseStepDao stepRepository;
+    private final LandingAudienceCardDao audienceCardRepository;
+    private final LandingTestimonialDao landingTestimonialDao;
 
     // ── Public ────────────────────────────────────────────────────────────
 
@@ -51,16 +51,12 @@ public class LandingPageServiceImpl implements LandingPageService {
         LandingPageConfig config = configRepository.findAll().stream().findFirst().orElse(null);
         return LandingPageResponse.builder()
                 .config(config != null ? mapToConfigResponse(config) : null)
-                .features(featureRepository.findByIsActiveTrueOrderBySortOrderAsc()
-                        .stream().map(this::mapToFeatureResponse).toList())
-                .faqs(faqRepository.findByIsActiveTrueOrderBySortOrderAsc()
-                        .stream().map(this::mapToFaqResponse).toList())
+                .features(featureRepository.findActiveAsDTOs())
+                .faqs(faqRepository.findActiveAsDTOs())
                 .steps(stepRepository.findByIsActiveTrueOrderBySortOrderAsc()
                         .stream().map(this::mapToStepResponse).toList())
-                .audienceCards(audienceCardRepository.findByIsActiveTrueOrderBySortOrderAsc()
-                        .stream().map(this::mapToAudienceCardResponse).toList())
-                .testimonials(testimonialRepository.findByIsActiveTrueOrderBySortOrderAsc()
-                        .stream().map(this::mapToTestimonialResponse).toList())
+                .audienceCards(audienceCardRepository.findActiveAsDTOs())
+                .testimonials(landingTestimonialDao.findActiveAsDTOs())
                 .build();
     }
 
@@ -266,7 +262,7 @@ public class LandingPageServiceImpl implements LandingPageService {
 
     @Override
     public List<LandingTestimonialResponse> getTestimonials() {
-        return testimonialRepository.findAll().stream().map(this::mapToTestimonialResponse).toList();
+        return landingTestimonialDao.findAll().stream().map(this::mapToTestimonialResponse).toList();
     }
 
     @Override
@@ -281,12 +277,12 @@ public class LandingPageServiceImpl implements LandingPageService {
                 .sortOrder(req.getSortOrder())
                 .isActive(req.isActive())
                 .build();
-        return mapToTestimonialResponse(testimonialRepository.save(testimonial));
+        return mapToTestimonialResponse(landingTestimonialDao.save(testimonial));
     }
 
     @Override
     public LandingTestimonialResponse updateTestimonial(Long id, LandingTestimonialRequest req) throws GenericException {
-        LandingTestimonial testimonial = testimonialRepository.findById(id)
+        LandingTestimonial testimonial = landingTestimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
 
         testimonial.setAuthorName(req.getAuthorName());
@@ -298,14 +294,14 @@ public class LandingPageServiceImpl implements LandingPageService {
         testimonial.setSortOrder(req.getSortOrder());
         testimonial.setActive(req.isActive());
 
-        return mapToTestimonialResponse(testimonialRepository.save(testimonial));
+        return mapToTestimonialResponse(landingTestimonialDao.save(testimonial));
     }
 
     @Override
     public void deleteTestimonial(Long id) throws GenericException {
-        LandingTestimonial testimonial = testimonialRepository.findById(id)
+        LandingTestimonial testimonial = landingTestimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
-        testimonialRepository.delete(testimonial);
+        landingTestimonialDao.delete(testimonial);
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────

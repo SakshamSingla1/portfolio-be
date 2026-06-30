@@ -18,9 +18,7 @@ public interface NavLinkService {
     Page<NavLinkResponseDTO> getAllNavLinks(
             Pageable pageable,
             String search,
-            StatusEnum status,
-            String sortBy,
-            String sortDir
+            StatusEnum status
     );
     NavLinkResponseDTO getNavLink(Long id) throws GenericException;
     List<GroupedNavLinkResponseDTO> getGroupedNavLinks();

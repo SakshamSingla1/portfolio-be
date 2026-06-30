@@ -4,6 +4,7 @@ import com.portfolio.audit.Auditable;
 import com.portfolio.dtos.AuditableResponse;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.security.JwtUtil;
@@ -125,4 +126,29 @@ public class Helper {
         if (id == null) return SYSTEM;
         return userMap.getOrDefault(id, UNKNOWN);
     }
+
+    public List<Long> parseIds(String idsString) {
+        if (idsString == null || idsString.isBlank()) return null;
+        try {
+            return Arrays.stream(idsString.split(","))
+                    .map(String::trim)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+    
+    public List<StatusEnum> parseStatuses(String statusesString) {
+        if (statusesString == null || statusesString.isBlank()) return null;
+        try {
+            return Arrays.stream(statusesString.split(","))
+                    .map(String::trim)
+                    .map(StatusEnum::valueOf)
+                    .collect(Collectors.toList());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
 }

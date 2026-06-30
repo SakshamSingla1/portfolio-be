@@ -1,5 +1,9 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.project.ProjectDao;
+import com.portfolio.dao.skill.SkillDao;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.ProjectImages.ProjectImageRequest;
 import com.portfolio.dtos.Project.ProjectRequest;
@@ -14,10 +18,6 @@ import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.FileAssetRepository;
-import com.portfolio.repositories.ProjectRepository;
-import com.portfolio.repositories.SkillRepository;
 import com.portfolio.services.FileService;
 import com.portfolio.services.ProjectService;
 import lombok.RequiredArgsConstructor;
@@ -38,18 +38,18 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
-    private final ProjectRepository projectRepository;
-    private final SkillRepository skillRepository;
-    private final ProfileRepository profileRepository;
+    private final ProjectDao projectDao;
+    private final SkillDao skillDao;
+    private final ProfileDao profileDao;
     private final FileService fileService;
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetDao fileAssetDao;
 
     @Override
     public ProjectResponse create(ProjectRequest req) throws GenericException {
-        if (!profileRepository.existsById(req.getProfileId())) {
+        if (!profileDao.existsById(req.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found");
         }
-        if (projectRepository.existsByProjectNameAndProfileId(req.getProjectName(), req.getProfileId())) {
+        if (projectDao.existsByProjectNameAndProfileId(req.getProjectName(), req.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Project with same name already exists");
         }
         Project project = Project.builder()
@@ -67,7 +67,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .workStatus(req.getWorkStatus())
                 .skillIds(req.getSkillIds())
                 .build();
-        Project savedProject = projectRepository.save(project);
+        Project savedProject = projectDao.save(project);
         saveProjectImages(
                 savedProject.getId(),
                 req.getProfileId(),
@@ -78,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse update(Long id, ProjectRequest req) throws GenericException {
-        Project project = projectRepository.findById(id)
+        Project project = projectDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
         project.setProjectName(req.getProjectName());
         project.setProjectDescription(req.getProjectDescription());
@@ -93,7 +93,7 @@ public class ProjectServiceImpl implements ProjectService {
         project.setWorkStatus(req.getWorkStatus());
         project.setSkillIds(req.getSkillIds());
         project.setUpdatedAt(LocalDateTime.now());
-        Project updatedProject = projectRepository.save(project);
+        Project updatedProject = projectDao.save(project);
         saveProjectImages(
                 id,
                 req.getProfileId(),
@@ -101,13 +101,13 @@ public class ProjectServiceImpl implements ProjectService {
         );
         return mapToResponse(updatedProject);
     }
- 
+
     @Override
     public ImageUploadResponse uploadProjectImage(Long profileId, MultipartFile file) throws IOException, GenericException {
-        profileRepository.findById(profileId)
+        profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId("TEMP_" + profileId);
+        uploadReq.setResourceId(profileId.intValue());
         uploadReq.setResourceType(ResourceTypeEnum.PROJECT);
         uploadReq.setPrimary(false);
         try {
@@ -117,26 +117,26 @@ public class ProjectServiceImpl implements ProjectService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload project image: " + e.getMessage());
         }
     }
- 
+
     @Override
     public ProjectResponse getById(Long id) throws GenericException {
-        return projectRepository.findById(id)
+        return projectDao.findById(id)
                 .map(this::mapToResponse)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
     }
- 
+
     @Override
     public String delete(Long id) throws GenericException {
-        if (!projectRepository.existsById(id)) {
+        if (!projectDao.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found");
         }
         try {
-            fileService.deleteByResource(String.valueOf(id), ResourceTypeEnum.PROJECT.name());
+            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.PROJECT.name());
         } catch (Exception ignored) {}
-        projectRepository.deleteById(id);
+        projectDao.deleteById(id);
         return "Project deleted successfully";
     }
- 
+
     @Override
     public Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
@@ -147,33 +147,20 @@ public class ProjectServiceImpl implements ProjectService {
                 pageable.getPageSize(),
                 sort
         );
-        boolean hasProfileId = profileId != null;
-        boolean hasSearch = search != null && !search.isBlank();
- 
-        Page<Project> projects;
-        if( hasSearch && hasProfileId){
-            projects = projectRepository.findByProfileIdWithSearch(profileId,search,sortedPageable);
-        }else if(hasSearch){
-            projects = projectRepository.findBySearch(search,sortedPageable);
-        }else if(hasProfileId) {
-            projects = projectRepository.findByProfileId(profileId, sortedPageable);
-        }else{
-            projects = projectRepository.findAll(sortedPageable);
-        }
-        return projects.map(this::mapToResponse);
+        return projectDao.findByCriteria(profileId, search, sortedPageable).map(this::mapToResponse);
     }
- 
+
     @Override
     public List<ProjectResponse> getByProfile(Long profileId) {
-        return projectRepository.findByProfileId(profileId)
+        return projectDao.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
- 
+
     private void saveProjectImages(Long projectId, Long profileId, List<ProjectImageRequest> images) {
-        List<FileAsset> existingAssets = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(projectId), ResourceTypeEnum.PROJECT);
-        
+        List<FileAsset> existingAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(projectId.intValue(), ResourceTypeEnum.PROJECT);
+
         List<Long> targetAssetIds = new java.util.ArrayList<>();
         List<ProjectImageRequest> imagesList = images == null ? List.of() : images;
 
@@ -182,13 +169,13 @@ public class ProjectServiceImpl implements ProjectService {
             Optional<FileAsset> assetOpt = Optional.empty();
             try {
                 Long assetId = Long.parseLong(img.getPublicId());
-                assetOpt = fileAssetRepository.findById(assetId);
+                assetOpt = fileAssetDao.findById(assetId);
             } catch (NumberFormatException e) {
-                assetOpt = fileAssetRepository.findByPublicId(img.getPublicId());
+                assetOpt = fileAssetDao.findByPublicId(img.getPublicId());
             }
 
             if (assetOpt.isEmpty() && img.getUrl() != null && !img.getUrl().isBlank()) {
-                assetOpt = fileAssetRepository.findByPath(img.getUrl());
+                assetOpt = fileAssetDao.findByPath(img.getUrl());
             }
 
             assetOpt.ifPresent(asset -> targetAssetIds.add(asset.getId()));
@@ -209,46 +196,46 @@ public class ProjectServiceImpl implements ProjectService {
             Optional<FileAsset> assetOpt = Optional.empty();
             try {
                 Long assetId = Long.parseLong(img.getPublicId());
-                assetOpt = fileAssetRepository.findById(assetId);
+                assetOpt = fileAssetDao.findById(assetId);
             } catch (NumberFormatException e) {
-                assetOpt = fileAssetRepository.findByPublicId(img.getPublicId());
+                assetOpt = fileAssetDao.findByPublicId(img.getPublicId());
             }
 
             if (assetOpt.isEmpty() && img.getUrl() != null && !img.getUrl().isBlank()) {
-                assetOpt = fileAssetRepository.findByPath(img.getUrl());
+                assetOpt = fileAssetDao.findByPath(img.getUrl());
             }
 
             if (assetOpt.isPresent()) {
                 FileAsset asset = assetOpt.get();
-                asset.setResourceId(String.valueOf(projectId));
+                asset.setResourceId(projectId.intValue());
                 asset.setSortOrder(order++);
-                fileAssetRepository.save(asset);
+                fileAssetDao.save(asset);
             } else {
                 FileAsset asset = new FileAsset();
-                asset.setResourceId(String.valueOf(projectId));
+                asset.setResourceId(projectId.intValue());
                 asset.setResourceType(ResourceTypeEnum.PROJECT);
                 asset.setPath(img.getUrl());
                 asset.setPublicId(img.getPublicId());
                 asset.setSortOrder(order++);
-                fileAssetRepository.save(asset);
+                fileAssetDao.save(asset);
             }
         }
     }
- 
+
     private ProjectResponse mapToResponse(Project project) {
-        List<FileAsset> images = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(project.getId()), ResourceTypeEnum.PROJECT);
+        List<FileAsset> images = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(project.getId().intValue(), ResourceTypeEnum.PROJECT);
         List<Long> skillIdLongs = project.getSkillIds() == null ? List.of() : project.getSkillIds().stream()
                 .map(Long::valueOf)
                 .toList();
-        List<Skill> skills = skillIdLongs.isEmpty() ? List.of() : skillRepository.findAllById(skillIdLongs);
-        
+        List<Skill> skills = skillIdLongs.isEmpty() ? List.of() : skillDao.findAllById(skillIdLongs);
+
         List<SkillDropdown> skillDropdowns = skills.stream().map(skill -> {
-            String logoUrl = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(skill.getLogoId()), ResourceTypeEnum.LOGO)
+            String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId().intValue(), ResourceTypeEnum.LOGO)
                     .map(FileAsset::getPath)
                     .orElse(null);
             return new SkillDropdown(skill.getId(), skill.getLogoName(), logoUrl);
         }).toList();
- 
+
         return ProjectResponse.builder()
                 .id(project.getId())
                 .projectName(project.getProjectName())

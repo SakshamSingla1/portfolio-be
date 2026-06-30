@@ -12,19 +12,19 @@ public interface FileService {
 
     FileAssetDTO upload(MultipartFile file, FileUploadRequest request) throws Exception;
 
-    List<FileAssetDTO> getByResource(String resourceId, String resourceType);
+    List<FileAssetDTO> getByResource(Integer resourceId, String resourceType);
 
     FileAssetDTO getById(Long id) throws Exception;
 
     void delete(Long id) throws Exception;
 
-    void deleteByResource(String resourceId, String resourceType) throws Exception;
+    void deleteByResource(Integer resourceId, String resourceType) throws Exception;
 
-    FileAssetDTO getPrimaryFile(String resourceId, ResourceTypeEnum resourceType);
+    FileAssetDTO getPrimaryFile(Integer resourceId, ResourceTypeEnum resourceType);
 
-    List<FileAssetDTO> getFiles(String resourceId, ResourceTypeEnum resourceType);
+    List<FileAssetDTO> getFiles(Integer resourceId, ResourceTypeEnum resourceType);
 
-    Map<String, FileAssetDTO> getPrimaryFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType);
+    Map<Integer, FileAssetDTO> getPrimaryFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType);
 
-    Map<String, List<FileAssetDTO>> getFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType);
+    Map<Integer, List<FileAssetDTO>> getFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType);
 }

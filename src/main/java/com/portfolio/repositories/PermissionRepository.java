@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Permission.PermissionResponseDTO;
 import com.portfolio.entities.Permission;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,31 +19,42 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
 
     List<Permission> findAll();
 
-    @Query("SELECT p FROM Permission p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Permission> searchByName(@Param("name") String name);
-
-    @Query("SELECT p FROM Permission p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-    Page<Permission> searchByName(@Param("name") String name, Pageable pageable);
-
-    Page<Permission> findAll(Pageable pageable);
-
-    Page<Permission> findByIdIn(List<Long> permissionIds, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Permission.PermissionResponseDTO(
+                p.id, p.name, p.createdAt, p.updatedAt, p.createdBy, p.updatedBy, p1.fullName, p2.fullName
+            ) FROM Permission p
+            LEFT JOIN Profile p1 ON p1.id = p.createdBy
+            LEFT JOIN Profile p2 ON p2.id = p.updatedBy
+            WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))
+    """)
+    List<PermissionResponseDTO> searchByName(@Param("name") String name);
 
     boolean existsByName(String name);
 
     boolean existsByNameAndIdNot(String name, Long id);
 
-    @Query("SELECT p FROM Permission p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) AND p.id IN :permissionIds")
-    Page<Permission> searchByNameAndIds(
-         @Param("name") String name,
-         @Param("permissionIds") List<Long> permissionIds,
-         Pageable pageable
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Permission.PermissionResponseDTO(
+                p.id, p.name, p.createdAt, p.updatedAt, p.createdBy, p.updatedBy, p1.fullName, p2.fullName
+            ) FROM Permission p
+            LEFT JOIN Profile p1 ON p1.id = p.createdBy
+            LEFT JOIN Profile p2 ON p2.id = p.updatedBy
+            WHERE p.id = :id
+    """)
+    Optional<PermissionResponseDTO> findDTOById(@Param("id") Long id);
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Permission.PermissionResponseDTO(
+                p.id, p.name, p.createdAt, p.updatedAt, p.createdBy, p.updatedBy, p1.fullName, p2.fullName
+            ) FROM Permission p
+            LEFT JOIN Profile p1 ON p1.id = p.createdBy
+            LEFT JOIN Profile p2 ON p2.id = p.updatedBy
+            WHERE (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (:permissionIds IS NULL OR p.id IN :permissionIds)
+    """)
+    Page<PermissionResponseDTO> findByCriteria(
+            @Param("search") String search,
+            @Param("permissionIds") List<Long> permissionIds,
+            Pageable pageable
     );
-
-    // Permission entity has no status field — these return empty to preserve the existing API contract
-    @Query("SELECT p FROM Permission p WHERE p.id IS NULL")
-    Page<Permission> findByStatus(String status, Pageable pageable);
-
-    @Query("SELECT p FROM Permission p WHERE p.id IS NULL")
-    Page<Permission> searchByNameAndStatus(String name, String status, Pageable pageable);
 }

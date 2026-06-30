@@ -1,16 +1,19 @@
 package com.portfolio.dtos.NavLinks;
 
-import com.portfolio.dtos.AuditableResponse;
 import com.portfolio.enums.StatusEnum;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
-@SuperBuilder
-@EqualsAndHashCode(callSuper = true)
-public class NavLinkResponseDTO extends AuditableResponse {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class NavLinkResponseDTO {
     private Long id;
     private String index;
     private String name;
@@ -18,4 +21,10 @@ public class NavLinkResponseDTO extends AuditableResponse {
     private String icon;
     private String navGroup;
     private StatusEnum status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Long createdBy;
+    private Long updatedBy;
+    private String createdByName;
+    private String updatedByName;
 }

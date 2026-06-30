@@ -65,30 +65,15 @@ public class NavLinkController {
         }
 
         @GetMapping
-        public ResponseEntity<ResponseModel<List<NavLinkResponseDTO>>> getNavLinks() {
-
-                List<NavLinkResponseDTO> responseDTO = navLinkService.getNavLinks();
-
-                return ApiResponse.respond(
-                                responseDTO,
-                                "Nav Links fetched successfully",
-                                "Failed to fetch nav links");
-        }
-
-        @GetMapping("/all")
         public ResponseEntity<ResponseModel<Page<NavLinkResponseDTO>>> getAllNavLinks(
                         Pageable pageable,
                         @RequestParam(required = false) String search,
-                        @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-                        @RequestParam(required = false, defaultValue = "desc") String sortDir,
                         @RequestParam(required = false) StatusEnum status) {
 
                 Page<NavLinkResponseDTO> responseDTO = navLinkService.getAllNavLinks(
                                 pageable,
                                 search,
-                                status,
-                                sortBy,
-                                sortDir);
+                                status);
 
                 return ApiResponse.respond(
                                 responseDTO,

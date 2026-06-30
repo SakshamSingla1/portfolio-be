@@ -1,5 +1,6 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.color_theme.ColorThemeDao;
 import com.portfolio.dtos.ColorTheme.ColorGroupDTO;
 import com.portfolio.dtos.ColorTheme.ColorShadeDTO;
 import com.portfolio.dtos.ColorTheme.ColorPaletteDTO;
@@ -12,8 +13,8 @@ import com.portfolio.entities.ColorTheme;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ColorThemeRepository;
 import com.portfolio.services.ColorThemeService;
+import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,14 +30,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ColorThemeServiceImpl implements ColorThemeService {
 
-        private final ColorThemeRepository repository;
+        private final ColorThemeDao colorThemeDao;
+        private final Helper helper;
 
         @Override
         public ColorThemeResponseDTO createTheme(ColorThemeRequestDTO dto) throws GenericException {
 
                 String themeName = dto.getThemeName();
 
-                if (repository.findByThemeName(themeName).isPresent()) {
+                if (colorThemeDao.findByThemeName(themeName).isPresent()) {
                         throw new GenericException(ExceptionCodeEnum.COLOR_THEME_ALREADY_EXISTS,
                                         "Theme already exists for themeName '" + themeName + "'");
                 }
@@ -47,7 +49,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                                 .status(StatusEnum.ACTIVE)
                                 .build();
 
-                repository.save(theme);
+                colorThemeDao.save(theme);
 
                 return mapToResponse(theme);
         }
@@ -55,7 +57,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         @Override
         public ColorThemeResponseDTO updateTheme(Long id, ColorThemeRequestDTO dto) throws GenericException {
 
-                ColorTheme theme = repository.findById(id)
+                ColorTheme theme = colorThemeDao.findById(id)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "Theme not found"));
 
@@ -63,13 +65,13 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                 theme.setPalette(mapPaletteDtoToEntity(dto.getPalette()));
                 theme.setStatus(dto.getStatus());
                 theme.setUpdatedAt(LocalDateTime.now());
-                repository.save(theme);
+                colorThemeDao.save(theme);
                 return mapToResponse(theme);
         }
 
         @Override
         public ColorThemeResponseDTO getThemeById(Long themeId) throws GenericException {
-                ColorTheme theme = repository.findById(themeId)
+                ColorTheme theme = colorThemeDao.findById(themeId)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "Theme not found for id " + themeId));
                 return mapToResponse(theme);
@@ -78,45 +80,15 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         @Override
         public Page<ColorThemeResponseDTO> getAllThemes(
                         String search,
-                        String sortBy,
-                        String sortDir,
                         StatusEnum status,
                         Pageable pageable) {
-
-                Sort sort = Sort.by(
-                                "desc".equalsIgnoreCase(sortDir)
-                                                ? Sort.Direction.DESC
-                                                : Sort.Direction.ASC,
-                                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
-
-                Pageable sortedPageable = PageRequest.of(
-                                pageable.getPageNumber(),
-                                pageable.getPageSize(),
-                                sort);
-
-                boolean hasSearch = search != null && !search.isBlank();
-                boolean hasStatus = status != null;
-
-                Page<ColorTheme> colorThemes;
-
-                if (hasStatus) {
-                        colorThemes = repository.findByStatus(
-                                        status, sortedPageable);
-                } else if (hasSearch) {
-                        colorThemes = repository.searchByThemeName(
-                                        search, sortedPageable);
-                } else if (hasSearch && hasStatus) {
-                        colorThemes = repository.searchByThemeNameAndStatus(search, status, sortedPageable);
-                } else {
-                        colorThemes = repository.findAll(sortedPageable);
-                }
-
-                return colorThemes.map(this::mapToResponse);
+                return colorThemeDao.findByCriteria(search, status, pageable)
+                        .map(this::mapToResponse);
         }
 
         @Override
         public ColorThemeResponseDTO getDefaultTheme() throws GenericException {
-                return repository.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
+                return colorThemeDao.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
                                 .map(this::mapToResponse)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "No active default theme found"));
@@ -124,10 +96,10 @@ public class ColorThemeServiceImpl implements ColorThemeService {
 
         @Override
         public String deleteTheme(Long id) throws GenericException {
-                ColorTheme theme = repository.findById(id)
+                ColorTheme theme = colorThemeDao.findById(id)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
                                                 "Theme not found"));
-                repository.delete(theme);
+                colorThemeDao.delete(theme);
                 return "Theme deleted successfully";
         }
 
@@ -173,16 +145,14 @@ public class ColorThemeServiceImpl implements ColorThemeService {
                                                                 .map(this::mapGroupEntityToDto)
                                                                 .collect(Collectors.toList()));
 
-                return ColorThemeResponseDTO.builder()
+                ColorThemeResponseDTO responseDTO = ColorThemeResponseDTO.builder()
                                 .id(theme.getId())
                                 .themeName(theme.getThemeName())
                                 .palette(paletteDTO)
                                 .status(theme.getStatus())
-                                .createdAt(theme.getCreatedAt())
-                                .updatedAt(theme.getUpdatedAt())
-                                .createdBy(theme.getCreatedBy())
-                                .updatedBy(theme.getUpdatedBy())
                                 .build();
+                helper.setAudit(theme, responseDTO);
+                return responseDTO;
         }
 
         private ColorGroupDTO mapGroupEntityToDto(ColorGroup group) {

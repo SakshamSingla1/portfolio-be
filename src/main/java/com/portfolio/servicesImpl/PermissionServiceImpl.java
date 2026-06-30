@@ -1,13 +1,13 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.permission.PermissionDao;
+import com.portfolio.dao.role.RolePermissionDao;
 import com.portfolio.dtos.Permission.PermissionRequestDTO;
 import com.portfolio.dtos.Permission.PermissionResponseDTO;
 import com.portfolio.entities.Permission;
 import com.portfolio.entities.RolePermission;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.PermissionRepository;
-import com.portfolio.repositories.RolePermissionRepository;
 import com.portfolio.services.PermissionService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -19,21 +19,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PermissionServiceImpl implements PermissionService {
 
-    private final PermissionRepository permissionRepository;
-    private final RolePermissionRepository rolePermissionRepository;
+    private final PermissionDao permissionDao;
+    private final RolePermissionDao rolePermissionDao;
     private final Helper helper;
 
     @Override
     public List<Permission> getAllPermissions() {
-        return permissionRepository.findAll();
+        return permissionDao.findAll();
     }
 
     @Override
@@ -42,7 +39,7 @@ public class PermissionServiceImpl implements PermissionService {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Permission name is required");
         }
 
-        if (permissionRepository.existsByName(request.getName())) {
+        if (permissionDao.existsByName(request.getName())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PERMISSION, "Permission with this name already exists");
         }
 
@@ -50,7 +47,7 @@ public class PermissionServiceImpl implements PermissionService {
                 .name(request.getName())
                 .build();
 
-        Permission savedPermission = permissionRepository.save(permission);
+        Permission savedPermission = permissionDao.save(permission);
         return mapToResponseDTO(savedPermission);
     }
 
@@ -60,32 +57,30 @@ public class PermissionServiceImpl implements PermissionService {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Permission name is required");
         }
 
-        Permission existingPermission = permissionRepository.findById(id)
+        Permission existingPermission = permissionDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
 
-        if (!existingPermission.getName().equals(request.getName()) && 
-            permissionRepository.existsByName(request.getName())) {
+        if (!existingPermission.getName().equals(request.getName()) &&
+            permissionDao.existsByName(request.getName())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PERMISSION, "Permission with this name already exists");
         }
         existingPermission.setName(request.getName());
-        Permission updatedPermission = permissionRepository.save(existingPermission);
+        Permission updatedPermission = permissionDao.save(existingPermission);
         return mapToResponseDTO(updatedPermission);
     }
 
     @Override
     public void deletePermission(Long id) throws GenericException {
-        Permission permission = permissionRepository.findById(id)
+        Permission permission = permissionDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
-        
-        permissionRepository.delete(permission);
+
+        permissionDao.delete(permission);
     }
 
     @Override
     public PermissionResponseDTO getPermissionById(Long id) throws GenericException {
-        Permission permission = permissionRepository.findById(id)
+        return permissionDao.findDTOById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
-        
-        return mapToResponseDTO(permission);
     }
 
     @Override
@@ -94,38 +89,18 @@ public class PermissionServiceImpl implements PermissionService {
                 "desc".equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (search == null || search.isBlank()) ? "createdAt" : "name"
         );
-        
+
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort
         );
-        
-        Page<Permission> permissions;
-        
-        if (search != null && !search.isBlank()) {
-            if (permissionIds != null && !permissionIds.isBlank()) {
-                List<Long> permissionIdList = Arrays.stream(permissionIds.split(","))
-                        .map(String::trim)
-                        .filter(s -> !s.isEmpty())
-                        .map(Long::valueOf)
-                        .toList();
-                permissions = permissionRepository.searchByNameAndIds(search, permissionIdList, sortedPageable);
-            } else {
-                permissions = permissionRepository.searchByName(search, sortedPageable);
-            }
-        } else if (permissionIds != null && !permissionIds.isBlank()) {
-            List<Long> permissionIdList = Arrays.stream(permissionIds.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(Long::valueOf)
-                    .toList();
-            permissions = permissionRepository.findByIdIn(permissionIdList, sortedPageable);
-        } else {
-            permissions = permissionRepository.findAll(sortedPageable);
-        }
-        
-        return permissions.map(this::mapToResponseDTO);
+
+        List<Long> permissionIdList = (permissionIds != null && !permissionIds.isBlank())
+                ? Arrays.stream(permissionIds.split(",")).map(String::trim).filter(s -> !s.isEmpty()).map(Long::valueOf).toList()
+                : null;
+
+        return permissionDao.findByCriteria(search, permissionIdList, sortedPageable);
     }
 
     @Override
@@ -140,43 +115,25 @@ public class PermissionServiceImpl implements PermissionService {
                 "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (search == null || search.isBlank()) ? "createdAt" : "name"
         );
-        
+
         Pageable sortedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 sort
         );
-        
-        Page<Permission> permissions;
-        
-        if (search != null && !search.isBlank()) {
-            if (status != null && !status.isBlank()) {
-                permissions = permissionRepository.searchByNameAndStatus(search, status, sortedPageable);
-            } else {
-                permissions = permissionRepository.searchByName(search, sortedPageable);
-            }
-        } else if (status != null && !status.isBlank()) {
-            permissions = permissionRepository.findByStatus(status, sortedPageable);
-        } else if (role != null && !role.isBlank()) {
-            // Filter permissions by role through role-permission mapping
+
+        List<Long> rolePermissionIds = null;
+        if (role != null && !role.isBlank()) {
             Long roleId = Long.valueOf(role);
-            List<RolePermission> rolePermissions = rolePermissionRepository.findAll();
-            List<Long> permissionIdsList = rolePermissions.stream()
+            rolePermissionIds = rolePermissionDao.findAll().stream()
                     .filter(rp -> roleId.equals(rp.getRoleId()))
                     .map(RolePermission::getPermissionId)
                     .distinct()
                     .toList();
-            
-            if (permissionIdsList.isEmpty()) {
-                permissions = Page.empty(sortedPageable);
-            } else {
-                permissions = permissionRepository.searchByNameAndIds(search, permissionIdsList, sortedPageable);
-            }
-        } else {
-            permissions = permissionRepository.findAll(sortedPageable);
+            if (rolePermissionIds.isEmpty()) return Page.empty(sortedPageable);
         }
-        
-        return permissions.map(this::mapToResponseDTO);
+
+        return permissionDao.findByCriteria(search, rolePermissionIds, sortedPageable);
     }
 
     private PermissionResponseDTO mapToResponseDTO(Permission permission) {
@@ -184,7 +141,7 @@ public class PermissionServiceImpl implements PermissionService {
                 .id(permission.getId())
                 .name(permission.getName())
                 .build();
-        
+
         helper.setAudit(permission, responseDTO);
         return responseDTO;
     }

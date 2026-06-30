@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.entities.NavLink;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
@@ -9,16 +10,34 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface NavLinkRepository extends JpaRepository<NavLink, Long> {
 
-    Page<NavLink> findByStatus(StatusEnum status, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.NavLinks.NavLinkResponseDTO(
+            n.id, n.index, n.name, n.path, n.icon, n.navGroup, n.status,
+            n.createdAt, n.updatedAt, n.createdBy, n.updatedBy, p1.fullName, p2.fullName)
+            FROM NavLink n
+            LEFT JOIN Profile p1 ON n.createdBy = p1.id
+            LEFT JOIN Profile p2 ON n.updatedBy = p2.id
+            WHERE n.id = :id
+            """)
+    Optional<NavLinkResponseDTO> findDTOById(@Param("id") Long id);
 
-    @Query("SELECT n FROM NavLink n WHERE LOWER(n.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(n.path) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<NavLink> search(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT n FROM NavLink n WHERE (LOWER(n.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(n.path) LIKE LOWER(CONCAT('%', :search, '%'))) AND n.status = :status")
-    Page<NavLink> searchByStatus(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.NavLinks.NavLinkResponseDTO(
+            n.id, n.index, n.name, n.path, n.icon, n.navGroup, n.status, 
+            n.createdAt, n.updatedAt, n.createdBy, n.updatedBy, p1.fullName, 
+            p2.fullName)
+            FROM NavLink n
+            LEFT JOIN Profile p1 ON n.createdBy = p1.id
+            LEFT JOIN Profile p2 ON n.updatedBy = p2.id
+            WHERE (CAST(:search AS string) IS NULL OR LOWER(n.name) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (CAST(:status AS string) IS NULL OR n.status = :status)
+            """)
+    Page<NavLinkResponseDTO> findByCriteria(
             @Param("search") String search,
             @Param("status") StatusEnum status,
             Pageable pageable

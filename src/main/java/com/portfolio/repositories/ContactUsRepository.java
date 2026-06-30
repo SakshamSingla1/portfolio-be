@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.entities.ContactUs;
 import com.portfolio.enums.ContactUsStatusEnum;
 import org.springframework.data.domain.Page;
@@ -17,17 +18,33 @@ import java.util.Optional;
 @Repository
 public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
 
-    @Query("SELECT c FROM ContactUs c WHERE c.profileId = :profileId AND (LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<ContactUs> findByProfileIdWithSearch(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.ContactUs.ContactUsResponse(
+                cu.id, cu.name, cu.email, cu.message, cu.phone,
+                cu.status, cu.createdAt, cu.replyMessage, cu.repliedAt
+            ) FROM ContactUs cu
+            WHERE (:profileId IS NULL OR cu.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(cu.name) LIKE LOWER(CONCAT('%',:search,'%'))
+                OR LOWER(cu.email) LIKE LOWER(CONCAT('%',:search,'%'))
+                OR LOWER(cu.phone) LIKE LOWER(CONCAT('%',:search,'%')))
+            AND (:status IS NULL OR cu.status = :status)
+    """)
+    Page<ContactUsResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
+            @Param("status") ContactUsStatusEnum status,
             Pageable pageable
     );
 
-    @Query("SELECT c FROM ContactUs c WHERE LOWER(c.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.email) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<ContactUs> findBySearch(@Param("search") String search, Pageable pageable);
-
-    Page<ContactUs> findByProfileId(Long profileId, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.ContactUs.ContactUsResponse(
+                cu.id, cu.name, cu.email, cu.message, cu.phone,
+                cu.status, cu.createdAt, cu.replyMessage, cu.repliedAt
+            ) FROM ContactUs cu
+            WHERE cu.id = :id
+    """)
+    Optional<ContactUsResponse> findDTOById(@Param("id") Long id);
 
     @Modifying
     @Transactional
@@ -35,6 +52,17 @@ public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
     void updateStatusById(@Param("id") Long id, @Param("status") ContactUsStatusEnum status);
 
     List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(Long profileId);
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.ContactUs.ContactUsResponse(
+                cu.id, cu.name, cu.email, cu.message, cu.phone,
+                cu.status, cu.createdAt, cu.replyMessage, cu.repliedAt
+            ) FROM ContactUs cu
+            WHERE cu.profileId = :profileId
+            ORDER BY cu.createdAt DESC
+            LIMIT 5
+            """)
+    List<ContactUsResponse> findTop5DTOByProfileIdOrderByCreatedAtDesc(@Param("profileId") Long profileId);
 
     long countByProfileId(Long profileId);
 

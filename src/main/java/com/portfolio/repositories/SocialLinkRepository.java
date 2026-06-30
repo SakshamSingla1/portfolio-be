@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
@@ -22,28 +23,28 @@ public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
 
     boolean existsByProfileIdAndPlatformAndStatusNot(Long profileId, PlatformEnum platform, StatusEnum status);
 
-    Page<SocialLinks> findByStatus(StatusEnum status, Pageable pageable);
-
-    Page<SocialLinks> findByProfileId(Long profileId, Pageable pageable);
-
-    Page<SocialLinks> findByStatusAndProfileId(StatusEnum status, Long profileId, Pageable pageable);
-
-    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<SocialLinks> search(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.status = :status")
-    Page<SocialLinks> searchByStatus(@Param("search") String search, @Param("status") StatusEnum status, Pageable pageable);
-
-    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.profileId = :profileId")
-    Page<SocialLinks> searchByProfileId(@Param("search") String search, @Param("profileId") Long profileId, Pageable pageable);
-
-    @Query("SELECT s FROM SocialLinks s WHERE LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')) AND s.status = :status AND s.profileId = :profileId")
-    Page<SocialLinks> searchByProfileIdAndStatus(
-            @Param("search") String search,
-            @Param("status") StatusEnum status,
+    @Query("""
+            SELECT NEW com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO(
+                s.id, s.platform, s.url, s.order, s.status, s.createdAt, s.updatedAt
+            ) FROM SocialLinks s
+            WHERE (:profileId IS NULL OR s.profileId = :profileId)
+            AND (:status IS NULL OR s.status = :status)
+            AND (:search IS NULL OR :search = '' OR LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    Page<SocialLinkResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
+            @Param("status") StatusEnum status,
+            @Param("search") String search,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO(
+                s.id, s.platform, s.url, s.order, s.status, s.createdAt, s.updatedAt
+            ) FROM SocialLinks s
+            WHERE s.id = :id
+    """)
+    Optional<SocialLinkResponseDTO> findDTOById(@Param("id") Long id);
 
     long countByProfileId(Long profileId);
 
