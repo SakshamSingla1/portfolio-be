@@ -1,12 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.seo_meta.SeoMetaDao;
 import com.portfolio.dtos.SeoMeta.SeoMetaRequestDTO;
 import com.portfolio.dtos.SeoMeta.SeoMetaResponseDTO;
 import com.portfolio.entities.SeoMeta;
 import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.SeoMetaRepository;
 import com.portfolio.services.SeoMetaService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +19,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SeoMetaServiceImpl implements SeoMetaService {
 
-    private final SeoMetaRepository seoMetaRepository;
+    private final SeoMetaDao seoMetaDao;
     private final Helper helper;
 
     @Override
     public List<SeoMetaResponseDTO> getAllByProfile(String authHeader) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(authHeader);
-        return seoMetaRepository.findAllByProfileId(profileId)
+        return seoMetaDao.findAllByProfileId(profileId)
                 .stream()
                 .map(this::toDTO)
                 .toList();
@@ -34,7 +34,7 @@ public class SeoMetaServiceImpl implements SeoMetaService {
     @Override
     public SeoMetaResponseDTO getByPageKey(String authHeader, PageKeyEnum pageKey) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(authHeader);
-        return seoMetaRepository.findByProfileIdAndPageKey(profileId, pageKey)
+        return seoMetaDao.findByProfileIdAndPageKey(profileId, pageKey)
                 .map(this::toDTO)
                 .orElse(SeoMetaResponseDTO.builder().pageKey(pageKey).build());
     }
@@ -43,7 +43,7 @@ public class SeoMetaServiceImpl implements SeoMetaService {
     @Transactional
     public SeoMetaResponseDTO upsert(String authHeader, SeoMetaRequestDTO dto) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(authHeader);
-        SeoMeta entity = seoMetaRepository
+        SeoMeta entity = seoMetaDao
                 .findByProfileIdAndPageKey(profileId, dto.getPageKey())
                 .orElse(SeoMeta.builder()
                         .profileId(profileId)
@@ -61,7 +61,7 @@ public class SeoMetaServiceImpl implements SeoMetaService {
         entity.setIndexable(dto.getIndexable() != null ? dto.getIndexable() : true);
         entity.setFollowLinks(dto.getFollowLinks() != null ? dto.getFollowLinks() : true);
 
-        return toDTO(seoMetaRepository.save(entity));
+        return toDTO(seoMetaDao.save(entity));
     }
 
     private SeoMetaResponseDTO toDTO(SeoMeta e) {

@@ -95,31 +95,26 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<Page<UserResponse>>> getAllProfiles(
                         Pageable pageable,
                         @RequestParam(required = false) String search,
-                        @RequestParam(required = false) StatusEnum status,
-                        @RequestParam(required = false) String role,
-                        @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
-                        @RequestParam(required = false, defaultValue = "desc") String sortDir) {
+                        @RequestParam(required = false) String status,
+                        @RequestParam(required = false) String role) {
                 Page<UserResponse> profiles = profileService.getAllProfiles(
-                                pageable, search, status, role, sortBy, sortDir);
+                                pageable, search, status, role);
                 return ApiResponse.respond(
                                 profiles,
                                 "Profiles fetched successfully",
                                 "Failed to fetch profiles");
         }
 
-        // Admin User Management APIs
         @Operation(summary = "Get all users (Admin)")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @GetMapping("/users")
         public ResponseEntity<ResponseModel<Page<UserResponse>>> getAllUsers(
                         Pageable pageable,
                         @RequestParam(required = false) String search,
-                        @RequestParam(required = false) StatusEnum status,
-                        @RequestParam(required = false) String role,
-                        @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
-                        @RequestParam(required = false, defaultValue = "desc") String sortDir) {
+                        @RequestParam(required = false) String status,
+                        @RequestParam(required = false) String role) {
                 Page<UserResponse> users = profileService.getAllProfiles(
-                                pageable, search, status, role, sortBy, sortDir);
+                                pageable, search, status, role);
                 return ApiResponse.respond(
                                 users,
                                 "Users fetched successfully",

@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Certifications.CertificationResponseDTO;
 import com.portfolio.entities.Certifications;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
@@ -15,17 +16,38 @@ import java.util.Optional;
 @Repository
 public interface CertificationsRepository extends JpaRepository<Certifications, Long> {
 
-    @Query("SELECT c FROM Certifications c WHERE c.profileId = :profileId AND (LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.issuer) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Certifications> findByProfileIdWithSearch(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Certifications.CertificationResponseDTO(
+                c.id, c.title, c.issuer, c.credentialId, fa.path, c.status, c.order,
+                c.issueDate, c.expiryDate, c.createdAt, c.updatedAt, c.createdBy,
+                c.updatedBy, p1.fullName, p2.fullName
+            ) FROM Certifications c
+            LEFT JOIN FileAsset fa ON fa.resourceId = c.id AND fa.resourceType = 'CERTIFICATION'
+            LEFT JOIN Profile p1 ON p1.id = c.createdBy 
+            LEFT JOIN Profile p2 ON p2.id = c.updatedBy
+            WHERE (:profileId IS NULL OR c.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+            OR LOWER(c.title) LIKE LOWER(CONCAT('%',:search,'%'))
+            OR LOWER(c.issuer) LIKE LOWER(CONCAT('%',:search,'%')))
+            ORDER BY c.order ASC
+    """)
+    Page<CertificationResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
-            Pageable pageable
-    );
+            Pageable pageable);
 
-    @Query("SELECT c FROM Certifications c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(c.issuer) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Certifications> findBySearch(@Param("search") String search, Pageable pageable);
-
-    Page<Certifications> findByProfileId(Long profileId, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Certifications.CertificationResponseDTO(
+                c.id, c.title, c.issuer, c.credentialId, fa.path, c.status, c.order,
+                c.issueDate, c.expiryDate, c.createdAt, c.updatedAt, c.createdBy,
+                c.updatedBy, p1.fullName, p2.fullName
+            ) FROM Certifications c
+            LEFT JOIN FileAsset fa ON fa.resourceId = c.id AND fa.resourceType = 'CERTIFICATION'
+            LEFT JOIN Profile p1 ON p1.id = c.createdBy
+            LEFT JOIN Profile p2 ON p2.id = c.updatedBy
+            WHERE c.id = :id
+    """)
+    Optional<CertificationResponseDTO> findDTOById(@Param("id") Long id);
 
     boolean existsByProfileIdAndOrder(Long profileId, String order);
 

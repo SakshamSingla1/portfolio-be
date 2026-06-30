@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.entities.Achievements;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
@@ -15,17 +16,40 @@ import java.util.Optional;
 @Repository
 public interface AchievementRepository extends JpaRepository<Achievements, Long> {
 
-    @Query("SELECT a FROM Achievements a WHERE a.profileId = :profileId AND (LOWER(a.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(a.issuer) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Achievements> findByProfileIdWithSearch(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Achievements.AchievementResponseDTO(
+                a.id, a.title, a.description, a.issuer, a.achievedAt,
+                fa.path, fa.publicId, a.order, a.status, a.createdAt,
+                a.updatedAt, a.createdBy, a.updatedBy, p1.fullName, p2.fullName
+            ) FROM Achievements a
+              LEFT JOIN FileAsset fa ON fa.resourceId = a.id AND fa.resourceType = 'ACHIEVEMENT'
+              LEFT JOIN Profile p1 ON p1.id = a.createdBy
+              LEFT JOIN Profile p2 ON p2.id = a.updatedBy
+            WHERE (:profileId IS NULL OR a.profileId = :profileId)
+             AND (:search IS NULL OR :search = ''
+                 OR LOWER(a.title) LIKE LOWER(CONCAT('%',:search,'%'))
+                 OR LOWER(a.description) LIKE LOWER(CONCAT('%',:search,'%'))
+                 OR LOWER(a.issuer) LIKE LOWER(CONCAT('%',:search,'%')))
+             ORDER BY a.order ASC
+    """)
+    Page<AchievementResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("SELECT a FROM Achievements a WHERE LOWER(a.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(a.issuer) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Achievements> findBySearch(@Param("search") String search, Pageable pageable);
-
-    Page<Achievements> findByProfileId(Long profileId, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Achievements.AchievementResponseDTO(
+                a.id, a.title, a.description, a.issuer, a.achievedAt,
+                fa.path, fa.publicId, a.order, a.status, a.createdAt,
+                a.updatedAt, a.createdBy, a.updatedBy, p1.fullName, p2.fullName
+            ) FROM Achievements a
+              LEFT JOIN FileAsset fa ON fa.resourceId = a.id AND fa.resourceType = 'ACHIEVEMENT'
+              LEFT JOIN Profile p1 ON p1.id = a.createdBy
+              LEFT JOIN Profile p2 ON p2.id = a.updatedBy
+            WHERE a.id = :id
+    """)
+    Optional<AchievementResponseDTO> findDTOById(@Param("id") Long id);
 
     boolean existsByProfileIdAndOrder(Long profileId, String order);
 

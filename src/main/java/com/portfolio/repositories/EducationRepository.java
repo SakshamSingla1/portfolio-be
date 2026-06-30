@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.entities.Education;
 import com.portfolio.enums.DegreeEnum;
 import org.springframework.data.domain.Page;
@@ -15,21 +16,41 @@ import java.util.Optional;
 @Repository
 public interface EducationRepository extends JpaRepository<Education, Long> {
 
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Education.EducationResponse(
+                e.id, e.degree, e.institution, e.fieldOfStudy, e.startYear, e.location,
+                e.endYear, e.description, e.grade, e.createdAt,
+                e.updatedAt, e.createdBy, e.updatedBy, p1.fullName, p2.fullName
+            ) FROM Education e
+            LEFT JOIN Profile p1 ON p1.id = e.createdBy
+            LEFT JOIN Profile p2 ON p2.id = e.updatedBy
+            WHERE e.id = :id AND e.profileId = :profileId
+    """)
+    Optional<EducationResponse> findDTOByIdAndProfileId(@Param("id") Long id, @Param("profileId") Long profileId);
+
     boolean existsByDegreeAndProfileId(DegreeEnum degree, Long profileId);
 
     List<Education> findByProfileId(Long profileId);
 
-    @Query("SELECT e FROM Education e WHERE e.profileId = :profileId AND (LOWER(e.institution) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.fieldOfStudy) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Education> findByProfileIdWithSearch(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Education.EducationResponse(
+                e.id, e.degree, e.institution, e.fieldOfStudy, e.startYear,
+                e.location, e.endYear, e.description, e.grade, e.createdAt,
+                e.updatedAt, e.createdBy, e.updatedBy, p1.fullName, p2.fullName
+            ) FROM Education e
+            LEFT JOIN Profile p1 ON p1.id = e.createdBy
+            LEFT JOIN Profile p2 ON p2.id = e.updatedBy
+            WHERE( :profileId is NULL OR e.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(e.institution) LIKE LOWER(CONCAT('%',:search,'%'))
+                OR LOWER(e.fieldOfStudy) LIKE LOWER(CONCAT('%',:search,'%'))   
+                OR LOWER(e.degree) LIKE LOWER(CONCAT('%',:search,'%')))
+    """)
+    Page<EducationResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
             Pageable pageable
     );
-
-    @Query("SELECT e FROM Education e WHERE LOWER(e.institution) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.fieldOfStudy) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Education> findBySearch(@Param("search") String search, Pageable pageable);
-
-    Page<Education> findByProfileId(Long profileId, Pageable pageable);
 
     long countByProfileId(Long profileId);
 

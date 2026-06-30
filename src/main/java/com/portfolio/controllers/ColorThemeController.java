@@ -57,13 +57,9 @@ public class ColorThemeController {
         @GetMapping
         public ResponseEntity<ResponseModel<Page<ColorThemeResponseDTO>>> getAllThemes(Pageable pageable,
                         @RequestParam(required = false) String search,
-                        @RequestParam(required = false) String sortBy,
-                        @RequestParam(required = false) String sortDir,
                         @RequestParam(required = false) StatusEnum status) {
                 Page<ColorThemeResponseDTO> response = colorThemeService.getAllThemes(
                                 search,
-                                sortBy,
-                                sortDir,
                                 status,
                                 pageable);
                 return ApiResponse.respond(

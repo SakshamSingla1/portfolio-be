@@ -1,17 +1,17 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.resume.ResumeDownloadDao;
+import com.portfolio.dao.resume.ResumeDao;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
 import com.portfolio.entities.Resume;
 import com.portfolio.entities.ResumeDownload;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.ResourceTypeEnum;
-import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.ResumeDownloadRepository;
-import com.portfolio.repositories.ResumeRepository;
 import com.portfolio.services.ResumePublicService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -25,15 +25,15 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ResumePublicServiceImpl implements ResumePublicService {
 
-    private final ProfileRepository profileRepository;
-    private final ResumeRepository resumeRepository;
-    private final ResumeDownloadRepository resumeDownloadRepository;
-    private final FileAssetRepository fileAssetRepository;
+    private final ProfileDao profileDao;
+    private final ResumeDao resumeDao;
+    private final ResumeDownloadDao resumeDownloadDao;
+    private final FileAssetDao fileAssetDao;
 
     @Override
     public void viewResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(resume.getId()), ResourceTypeEnum.RESUME)
+        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId().intValue(), ResourceTypeEnum.RESUME)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
         streamPdf(asset.getPath(), response, false);
     }
@@ -41,14 +41,14 @@ public class ResumePublicServiceImpl implements ResumePublicService {
     @Override
     public void downloadResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(resume.getId()), ResourceTypeEnum.RESUME)
+        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId().intValue(), ResourceTypeEnum.RESUME)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
         String fileName = asset.getMetaData();
         if (fileName == null || fileName.isBlank()) {
             fileName = "resume";
         }
         streamPdf(asset.getPath(), response, true, fileName);
-        resumeDownloadRepository.save(ResumeDownload.builder()
+        resumeDownloadDao.save(ResumeDownload.builder()
                 .profileId(resume.getProfileId())
                 .resumeId(resume.getId())
                 .downloadedAt(LocalDateTime.now())
@@ -58,13 +58,13 @@ public class ResumePublicServiceImpl implements ResumePublicService {
     // ================= PRIVATE =================
 
     private Resume getActiveResume(String username) throws GenericException {
-        Profile profile = profileRepository.findByUserName(username)
+        Profile profile = profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.PROFILE_NOT_FOUND,
                         "Profile not found"
                 ));
 
-        return resumeRepository
+        return resumeDao
                 .findByProfileIdAndStatus(profile.getId(), StatusEnum.ACTIVE)
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.RESUME_NOT_FOUND,

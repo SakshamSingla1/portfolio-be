@@ -1,17 +1,15 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.education.EducationDao;
 import com.portfolio.dtos.Education.EducationRequest;
 import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.entities.Education;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.EducationRepository;
 import com.portfolio.services.EducationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +20,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EducationServiceImpl implements EducationService {
 
-    private final EducationRepository educationRepository;
+    private final EducationDao educationDao;
 
     @Override
     public EducationResponse createEducation(EducationRequest request) throws GenericException {
-        if (educationRepository.existsByDegreeAndProfileId(request.getDegree(), request.getProfileId())) {
+        if (educationDao.existsByDegreeAndProfileId(request.getDegree(), request.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_DEGREE, "Education already exists for this degree");
         }
         Education education = Education.builder()
@@ -41,12 +39,12 @@ public class EducationServiceImpl implements EducationService {
                 .profileId(request.getProfileId())
                 .build();
 
-        return mapToResponse(educationRepository.save(education));
+        return mapToResponse(educationDao.save(education));
     }
 
     @Override
     public EducationResponse updateEducation(Long id, EducationRequest request) throws GenericException {
-        Education education = educationRepository.findById(id)
+        Education education = educationDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
         if (!education.getProfileId().equals(request.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
@@ -60,60 +58,35 @@ public class EducationServiceImpl implements EducationService {
         education.setDescription(request.getDescription());
         education.setGrade(request.getGrade());
         education.setUpdatedAt(LocalDateTime.now());
-        return mapToResponse(educationRepository.save(education));
+        return mapToResponse(educationDao.save(education));
     }
 
     @Override
     public EducationResponse findById(Long id, Long profileId) throws GenericException {
-        Education education = educationRepository.findById(id)
+        return educationDao.findDTOByIdAndProfileId(id, profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
-        if (!education.getProfileId().equals(profileId)) {
-            throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
-        }
-        return mapToResponse(education);
     }
 
     @Transactional
     @Override
     public String delete(Long id, Long profileId) throws GenericException {
-        Education education = educationRepository.findById(id)
+        Education education = educationDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EDUCATION_NOT_FOUND, "Education not found"));
         if (!education.getProfileId().equals(profileId)) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile mismatch");
         }
-        educationRepository.delete(education);
+        educationDao.delete(education);
         return "Education deleted successfully";
     }
 
     @Override
-    public Page<EducationResponse> getByProfile(Long profileId, String search, String sortDir, String sortBy ,Pageable pageable) {
-        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-        boolean hasProfileId = profileId != null;
-        boolean hasSearch = search != null && !search.isBlank();
-
-        Page<Education> educations;
-        if( hasSearch && hasProfileId){
-            educations = educationRepository.findByProfileIdWithSearch(profileId,search,sortedPageable);
-        }else if(hasSearch){
-            educations = educationRepository.findBySearch(search,sortedPageable);
-        }else if(hasProfileId) {
-            educations = educationRepository.findByProfileId(profileId, sortedPageable);
-        }else{
-            educations = educationRepository.findAll(sortedPageable);
-        }
-        return educations.map(this::mapToResponse);
+    public Page<EducationResponse> getByProfile(Long profileId, String search, Pageable pageable) {
+        return educationDao.findByCriteria(profileId,search, pageable);
     }
 
     @Override
     public List<EducationResponse> getByProfile(Long profileId) {
-        return educationRepository.findByProfileId(profileId)
+        return educationDao.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();

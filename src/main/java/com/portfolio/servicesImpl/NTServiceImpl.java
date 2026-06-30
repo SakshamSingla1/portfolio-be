@@ -1,5 +1,7 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.notification_template.NTDao;
+import com.portfolio.dao.notification_template.NTVariablesDao;
 import com.portfolio.dtos.NotificationTemplates.NTRequestDTO;
 import com.portfolio.dtos.NotificationTemplates.NTResponseDTO;
 import com.portfolio.dtos.NotificationTemplates.NotificationTemplateListResponseDTO;
@@ -7,10 +9,10 @@ import com.portfolio.dtos.NotificationTemplates.NotificationTemplateVariablesLis
 import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.NTRepository;
-import com.portfolio.repositories.NTVariablesRepository;
 import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
+import com.portfolio.utils.Helper;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,9 +28,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NTServiceImpl implements NTService {
 
-    private final NTRepository ntRepository;
-    private final NTVariablesRepository ntVariablesRepository;
+    private final NTDao ntDao;
+    private final NTVariablesDao ntVariablesDao;
     private final EmailService emailService;
+    private final Helper helper;
 
     @Override
     @Transactional
@@ -52,13 +55,13 @@ public class NTServiceImpl implements NTService {
                 .dltTemplateId(dto.getDltTemplateId())
                 .templateGroupId(dto.getTemplateGroupId())
                 .build();
-        return ntRepository.save(template);
+        return ntDao.save(template);
     }
 
     @Override
     @Transactional
     public NotificationTemplate updateNT(Long id, NTRequestDTO dto) throws GenericException {
-        NotificationTemplate existing = ntRepository.findById(id)
+        NotificationTemplate existing = ntDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));
 
         existing.setMessage(dto.getMessage());
@@ -78,12 +81,12 @@ public class NTServiceImpl implements NTService {
         existing.setAdditionalData(dto.getAdditionalData());
         existing.setDltTemplateId(dto.getDltTemplateId());
         existing.setTemplateGroupId(dto.getTemplateGroupId());
-        return ntRepository.save(existing);
+        return ntDao.save(existing);
     }
 
     @Override
     public NTResponseDTO findNTById(Long id) throws GenericException {
-        NotificationTemplate nt = ntRepository.findById(id)
+        NotificationTemplate nt = ntDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));
         return mapToResponse(nt);
     }
@@ -91,23 +94,23 @@ public class NTServiceImpl implements NTService {
     @Override
     public Page<NotificationTemplateListResponseDTO> getAllByCriteria(
             String search, String templateGroupIdString, Pageable pageable) {
-        List<Long> groupIds = parseGroupIds(templateGroupIdString);
+        List<Long> groupIds = helper.parseIds(templateGroupIdString);
         String searchValue = (search == null || search.isBlank()) ? "" : search.trim();
         if (groupIds == null) {
-            return ntRepository.findByCriteria(searchValue, pageable);
+            return ntDao.findByCriteria(searchValue, pageable);
         }
-        return ntRepository.findByCriteriaWithGroups(searchValue, groupIds, pageable);
+        return ntDao.findByCriteriaWithGroups(searchValue, groupIds, pageable);
     }
 
     @Override
     public Page<NotificationTemplateVariablesListResponseDTO> getVariablesByCriteria(String search, Pageable pageable) {
         String searchValue = (search == null || search.isBlank()) ? "" : search.trim();
-        return ntVariablesRepository.findByCriteria(searchValue, pageable);
+        return ntVariablesDao.findByCriteria(searchValue, pageable);
     }
 
     @Override
     public void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException {
-        NotificationTemplate nt = ntRepository.findByTemplate(templateName)
+        NotificationTemplate nt = ntDao.findByTemplate(templateName)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found: " + templateName));
         String subject = nt.getSubject() != null ? nt.getSubject() : "";
         String body    = nt.getMessageBody() != null ? nt.getMessageBody() : "";
@@ -118,18 +121,6 @@ public class NTServiceImpl implements NTService {
             body    = body.replace(placeholder, value);
         }
         emailService.sendEmail(toEmail, subject, body);
-    }
-
-    private List<Long> parseGroupIds(String templateGroupIdString) {
-        if (templateGroupIdString == null || templateGroupIdString.isBlank()) return null;
-        try {
-            return Arrays.stream(templateGroupIdString.split(","))
-                    .map(String::trim)
-                    .map(Long::parseLong)
-                    .collect(Collectors.toList());
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private NTResponseDTO mapToResponse(NotificationTemplate nt) {

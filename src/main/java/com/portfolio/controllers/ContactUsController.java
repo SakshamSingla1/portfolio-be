@@ -26,16 +26,15 @@ public class ContactUsController {
     private final Helper helper;
 
     @Operation(summary = "Get contact messages by profile", description = "Fetches paginated contact messages for a profile with optional search.")
-    @GetMapping("/profile/{profileId}")
+    @GetMapping
     public ResponseEntity<ResponseModel<Page<ContactUsResponse>>> getByProfile(
             @RequestHeader("Authorization") String auth,
-            Pageable pageable,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir
+            @RequestParam(required = false) ContactUsStatusEnum status,
+            Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, pageable, search,sortBy,sortDir);
+        Page<ContactUsResponse> page = contactUsService.getContactUsByProfileId(profileId, search, status, pageable);
         return ApiResponse.respond(page, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 

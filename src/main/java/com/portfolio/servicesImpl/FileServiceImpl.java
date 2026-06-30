@@ -1,12 +1,12 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.services.CloudinaryService;
 import com.portfolio.services.FileService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetDao fileAssetDao;
     private final CloudinaryService cloudinaryService;
 
     private static final String FOLDER_PREFIX = "portfolio/assets/";
@@ -36,14 +36,14 @@ public class FileServiceImpl implements FileService {
 
         // If this asset is primary, delete the existing primary for the same resource to avoid orphaned assets
         if (request.isPrimary()) {
-            fileAssetRepository
+            fileAssetDao
                     .findByResourceIdAndResourceTypeAndIsPrimaryTrue(request.getResourceId(), request.getResourceType())
                     .ifPresent(existing -> {
                         try {
                             if (existing.getPublicId() != null && !existing.getPublicId().isBlank()) {
                                 cloudinaryService.deleteFile(existing.getPublicId());
                             }
-                            fileAssetRepository.delete(existing);
+                            fileAssetDao.delete(existing);
                         } catch (Exception ignored) {}
                     });
         }
@@ -60,14 +60,14 @@ public class FileServiceImpl implements FileService {
         asset.setSortOrder(request.getSortOrder());
         asset.setPlatform(request.getPlatform());
 
-        fileAssetRepository.save(asset);
+        fileAssetDao.save(asset);
         return toDTO(asset);
     }
 
     @Override
-    public List<FileAssetDTO> getByResource(String resourceId, String resourceType) {
+    public List<FileAssetDTO> getByResource(Integer resourceId, String resourceType) {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
-        return fileAssetRepository
+        return fileAssetDao
                 .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type)
                 .stream()
                 .map(this::toDTO)
@@ -76,55 +76,55 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public FileAssetDTO getById(Long id) throws Exception {
-        return fileAssetRepository.findById(id)
+        return fileAssetDao.findById(id)
                 .map(this::toDTO)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "File not found"));
     }
 
     @Override
     public void delete(Long id) throws Exception {
-        FileAsset asset = fileAssetRepository.findById(id)
+        FileAsset asset = fileAssetDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "File not found"));
         if (asset.getPublicId() != null && !asset.getPublicId().isBlank()) {
             cloudinaryService.deleteFile(asset.getPublicId());
         }
-        fileAssetRepository.deleteById(id);
+        fileAssetDao.deleteById(id);
     }
 
     @Override
-    public void deleteByResource(String resourceId, String resourceType) throws Exception {
+    public void deleteByResource(Integer resourceId, String resourceType) throws Exception {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
-        List<FileAsset> assets = fileAssetRepository
+        List<FileAsset> assets = fileAssetDao
                 .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type);
         for (FileAsset asset : assets) {
             if (asset.getPublicId() != null && !asset.getPublicId().isBlank()) {
                 try { cloudinaryService.deleteFile(asset.getPublicId()); } catch (Exception ignored) {}
             }
         }
-        fileAssetRepository.deleteByResourceIdAndResourceType(resourceId, type);
+        fileAssetDao.deleteByResourceIdAndResourceType(resourceId, type);
     }
 
     @Override
-    public FileAssetDTO getPrimaryFile(String resourceId, ResourceTypeEnum resourceType) {
-        return fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType)
+    public FileAssetDTO getPrimaryFile(Integer resourceId, ResourceTypeEnum resourceType) {
+        return fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType)
                 .map(this::toDTO)
                 .orElse(null);
     }
 
     @Override
-    public List<FileAssetDTO> getFiles(String resourceId, ResourceTypeEnum resourceType) {
-        return fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, resourceType)
+    public List<FileAssetDTO> getFiles(Integer resourceId, ResourceTypeEnum resourceType) {
+        return fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, resourceType)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Map<String, FileAssetDTO> getPrimaryFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType) {
+    public Map<Integer, FileAssetDTO> getPrimaryFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
         if (resourceIds == null || resourceIds.isEmpty()) {
             return Map.of();
         }
-        return fileAssetRepository.findByResourceIdInAndResourceTypeAndIsPrimaryTrue(resourceIds, resourceType)
+        return fileAssetDao.findByResourceIdInAndResourceTypeAndIsPrimaryTrue(resourceIds, resourceType)
                 .stream()
                 .collect(Collectors.toMap(
                         FileAsset::getResourceId,
@@ -134,11 +134,11 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Map<String, List<FileAssetDTO>> getFilesForResources(List<String> resourceIds, ResourceTypeEnum resourceType) {
+    public Map<Integer, List<FileAssetDTO>> getFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
         if (resourceIds == null || resourceIds.isEmpty()) {
             return Map.of();
         }
-        return fileAssetRepository.findByResourceIdInAndResourceType(resourceIds, resourceType)
+        return fileAssetDao.findByResourceIdInAndResourceType(resourceIds, resourceType)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.groupingBy(FileAssetDTO::getResourceId));

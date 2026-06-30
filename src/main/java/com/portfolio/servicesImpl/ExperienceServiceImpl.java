@@ -1,13 +1,13 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.experience.ExperienceDao;
+import com.portfolio.dao.skill.SkillDao;
 import com.portfolio.dtos.Experience.ExperienceRequest;
 import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Experience;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ExperienceRepository;
-import com.portfolio.repositories.SkillRepository;
 import com.portfolio.services.ExperienceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,8 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExperienceServiceImpl implements ExperienceService {
 
-    private final ExperienceRepository experienceRepository;
-    private final SkillRepository skillRepository;
+    private final ExperienceDao experienceDao;
+    private final SkillDao skillDao;
 
     private static final DateTimeFormatter FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -34,7 +34,7 @@ public class ExperienceServiceImpl implements ExperienceService {
     @Override
     public ExperienceResponse create(ExperienceRequest req) throws GenericException {
         LocalDate startDate = parseDate(req.getStartDate());
-        if (experienceRepository.existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(req.getProfileId(), req.getCompanyName(), req.getJobTitle(), startDate)) {
+        if (experienceDao.existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(req.getProfileId(), req.getCompanyName(), req.getJobTitle(), startDate)) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Duplicate experience exists");
         }
         Experience experience = Experience.builder()
@@ -48,15 +48,15 @@ public class ExperienceServiceImpl implements ExperienceService {
                 .description(req.getDescription())
                 .skillIds(req.getSkillIds())
                 .build();
-        return mapToResponse(experienceRepository.save(experience));
+        return mapToResponse(experienceDao.save(experience));
     }
 
     @Override
     public ExperienceResponse update(Long id, ExperienceRequest req) throws GenericException {
-        Experience experience = experienceRepository.findById(id)
+        Experience experience = experienceDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
         LocalDate startDate = parseDate(req.getStartDate());
-        if (experienceRepository.existsByProfileIdAndCompanyNameAndJobTitleAndStartDateAndIdNot(req.getProfileId(), req.getCompanyName(), req.getJobTitle(), startDate, id)) {
+        if (experienceDao.existsByProfileIdAndCompanyNameAndJobTitleAndStartDateAndIdNot(req.getProfileId(), req.getCompanyName(), req.getJobTitle(), startDate, id)) {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Duplicate experience exists");
         }
         experience.setCompanyName(req.getCompanyName());
@@ -68,51 +68,30 @@ public class ExperienceServiceImpl implements ExperienceService {
         experience.setDescription(req.getDescription());
         experience.setSkillIds(req.getSkillIds());
         experience.setUpdatedAt(LocalDateTime.now());
-        return mapToResponse(experienceRepository.save(experience));
+        return mapToResponse(experienceDao.save(experience));
     }
 
     @Override
     public ExperienceResponse getById(Long id) throws GenericException {
-        Experience experience = experienceRepository.findById(id)
+        Experience experience = experienceDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
         return mapToResponse(experience);
     }
 
     @Override
     public String delete(Long id) {
-        experienceRepository.deleteById(id);
+        experienceDao.deleteById(id);
         return "Experience deleted successfully";
     }
 
     @Override
-    public Page<ExperienceResponse> getByProfile(Long profileId, String search, String sortDir, String sortBy,Pageable pageable) {
-        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-        boolean hasProfileId = profileId != null;
-        boolean hasSearch = search != null && !search.isBlank();
-
-        Page<Experience> experiences;
-        if( hasSearch && hasProfileId){
-            experiences = experienceRepository.findByProfileIdWithSearch(profileId,search,sortedPageable);
-        }else if(hasSearch){
-            experiences = experienceRepository.findBySearch(search,sortedPageable);
-        }else if(hasProfileId) {
-            experiences = experienceRepository.findByProfileId(profileId, sortedPageable);
-        }else{
-            experiences = experienceRepository.findAll(sortedPageable);
-        }
-        return experiences.map(this::mapToResponse);
+    public Page<ExperienceResponse> getByProfile(Long profileId, String search, Pageable pageable) {
+        return experienceDao.findByCriteria(profileId,search,pageable);
     }
 
     @Override
     public List<ExperienceResponse> getByProfile(Long profileId) {
-        return experienceRepository.findByProfileId(profileId)
+        return experienceDao.findByProfileId(profileId)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -143,7 +122,7 @@ public class ExperienceServiceImpl implements ExperienceService {
         List<SkillDropdown> skills =
                 skillIdLongs.isEmpty()
                         ? List.of()
-                        : skillRepository.findAllById(skillIdLongs)
+                        : skillDao.findAllById(skillIdLongs)
                         .stream()
                         .map(skill -> new SkillDropdown(
                                 skill.getId(),

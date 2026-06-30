@@ -64,11 +64,9 @@ public class ExperienceController {
     public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getAll(
             @RequestHeader("Authorization") String auth,
             Pageable pageable,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
+            @RequestParam(required = false) String search) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<ExperienceResponse> response = experienceService.getByProfile(profileId, search, sortDir, sortBy, pageable);
+        Page<ExperienceResponse> response = experienceService.getByProfile(profileId, search, pageable);
         return ApiResponse.respond(response, "Experiences fetched successfully", "Failed to fetch experiences");
     }
 }

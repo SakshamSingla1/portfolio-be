@@ -16,13 +16,13 @@ public interface ColorThemeRepository extends JpaRepository<ColorTheme, Long> {
 
     Optional<ColorTheme> findByThemeName(String themeName);
 
-    Page<ColorTheme> findByStatus(StatusEnum status, Pageable pageable);
-
-    @Query("SELECT c FROM ColorTheme c WHERE LOWER(c.themeName) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<ColorTheme> searchByThemeName(@Param("search") String search, Pageable pageable);
-
-    @Query("SELECT c FROM ColorTheme c WHERE LOWER(c.themeName) LIKE LOWER(CONCAT('%', :search, '%')) AND c.status = :status")
-    Page<ColorTheme> searchByThemeNameAndStatus(
+    @Query("""
+            SELECT ct FROM ColorTheme ct
+            WHERE (:search IS NULL OR :search = ''
+                  OR LOWER(ct.themeName) LIKE LOWER(CONCAT('%',:search,'%')))
+            AND (:status IS NULL OR ct.status = :status)
+    """)
+    Page<ColorTheme> findByCriteria(
             @Param("search") String search,
             @Param("status") StatusEnum status,
             Pageable pageable

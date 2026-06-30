@@ -1,14 +1,13 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.social_links.SocialLinksDao;
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
-import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.SocialLinkRepository;
 import com.portfolio.services.SocialLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,30 +19,29 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SocialLinkServiceImpl implements SocialLinkService {
-    private final SocialLinkRepository socialLinkRepository;
-    private final ProfileRepository profileRepository;
+    private final SocialLinksDao socialLinksDao;
+    private final ProfileDao profileDao;
 
     @Override
     public SocialLinkResponseDTO createLink(SocialLinkRequestDTO requestDTO) throws GenericException {
-        if (!profileRepository.existsById(requestDTO.getProfileId())) {
+        if (!profileDao.existsById(requestDTO.getProfileId())) {
             throw new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found");
         }
-        Optional<SocialLinks> deletedLink = socialLinkRepository
+        Optional<SocialLinks> deletedLink = socialLinksDao
                 .findByProfileIdAndPlatformAndStatus(requestDTO.getProfileId(), requestDTO.getPlatform(), StatusEnum.DELETED);
         if (deletedLink.isPresent()) {
             SocialLinks link = deletedLink.get();
             link.setStatus(StatusEnum.ACTIVE);
             link.setUrl(requestDTO.getUrl());
             link.setOrder(requestDTO.getOrder());
-            SocialLinks saved = socialLinkRepository.save(link);
+            SocialLinks saved = socialLinksDao.save(link);
             return mapToResponse(saved);
         }
-        if (socialLinkRepository.existsByProfileIdAndPlatformAndStatusNot(
+        if (socialLinksDao.existsByProfileIdAndPlatformAndStatusNot(
                 requestDTO.getProfileId(),
                 requestDTO.getPlatform(),
                 StatusEnum.DELETED)) {
@@ -57,25 +55,25 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : StatusEnum.ACTIVE)
                 .build();
 
-        SocialLinks saved = socialLinkRepository.save(socialLinks);
+        SocialLinks saved = socialLinksDao.save(socialLinks);
         return mapToResponse(saved);
     }
 
     @Override
     public SocialLinkResponseDTO updateLink(Long id, SocialLinkRequestDTO requestDTO) throws GenericException {
-        SocialLinks socialLinks = socialLinkRepository.findById(id)
+        SocialLinks socialLinks = socialLinksDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND,"Social link not found"));
         socialLinks.setUrl(requestDTO.getUrl());
         socialLinks.setOrder(requestDTO.getOrder());
         socialLinks.setStatus(requestDTO.getStatus());
         socialLinks.setUpdatedAt(LocalDateTime.now());
-        SocialLinks updated = socialLinkRepository.save(socialLinks);
+        SocialLinks updated = socialLinksDao.save(socialLinks);
         return mapToResponse(updated);
     }
 
     @Override
     public List<SocialLinkResponseDTO> getByProfile(Long profileId) {
-        return socialLinkRepository
+        return socialLinksDao
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()
                 .map(this::mapToResponse)
@@ -92,46 +90,23 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 pageable.getPageSize(),
                 sort
         );
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasStatus = status != null;
-        boolean hasProfileId = profileId != null;
-        Page<SocialLinks> socialLinks;
-        if(hasStatus && hasSearch && hasProfileId){
-            socialLinks = socialLinkRepository.searchByProfileIdAndStatus(search,status,profileId,sortedPageable);
-        }else if(hasStatus && hasSearch){
-            socialLinks = socialLinkRepository.searchByStatus(search,status,sortedPageable);
-        }else if(hasSearch && hasProfileId){
-            socialLinks = socialLinkRepository.searchByProfileId(search,profileId,sortedPageable);
-        }else if(hasStatus && hasProfileId){
-            socialLinks = socialLinkRepository.findByStatusAndProfileId(status,profileId,sortedPageable);
-        }else if(hasStatus){
-            socialLinks = socialLinkRepository.findByStatus(status,sortedPageable);
-        }else if(hasProfileId){
-            socialLinks = socialLinkRepository.findByProfileId(profileId,sortedPageable);
-        }else if(hasSearch){
-            socialLinks = socialLinkRepository.search(search,sortedPageable);
-        }else{
-            socialLinks = socialLinkRepository.findAll(sortedPageable);
-        }
-        return socialLinks.map(this::mapToResponse);
+        return socialLinksDao.findByCriteria(profileId, status, search, sortedPageable);
     }
 
     @Override
     public SocialLinkResponseDTO get(Long id) throws GenericException {
-        SocialLinks socialLinks = socialLinkRepository
-                .findById(id)
+        return socialLinksDao.findDTOById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social link not found"));
-        return mapToResponse(socialLinks);
     }
 
     @Override
     public void delete(Long id) throws GenericException {
-        SocialLinks socialLinks = socialLinkRepository
+        SocialLinks socialLinks = socialLinksDao
                 .findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social link not found"));
         socialLinks.setStatus(StatusEnum.DELETED);
         socialLinks.setUpdatedAt(LocalDateTime.now());
-        socialLinkRepository.save(socialLinks);
+        socialLinksDao.save(socialLinks);
     }
 
     private SocialLinkResponseDTO mapToResponse(SocialLinks socialLinks) {

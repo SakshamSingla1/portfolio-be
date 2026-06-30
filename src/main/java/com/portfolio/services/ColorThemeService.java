@@ -17,8 +17,6 @@ public interface ColorThemeService {
 
     Page<ColorThemeResponseDTO> getAllThemes(
             String search,
-            String sortBy,
-            String sortDir,
             StatusEnum status,
             Pageable pageable);
 

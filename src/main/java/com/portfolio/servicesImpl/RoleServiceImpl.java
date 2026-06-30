@@ -1,5 +1,9 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.nav_link.NavLinkDao;
+import com.portfolio.dao.permission.PermissionDao;
+import com.portfolio.dao.role.RoleDao;
+import com.portfolio.dao.role.RolePermissionDao;
 import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.Role.*;
 import com.portfolio.entities.NavLink;
@@ -9,10 +13,6 @@ import com.portfolio.entities.Role;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.RoleStatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.NavLinkRepository;
-import com.portfolio.repositories.PermissionRepository;
-import com.portfolio.repositories.RolePermissionRepository;
-import com.portfolio.repositories.RoleRepository;
 import com.portfolio.services.RoleService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
@@ -22,19 +22,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
-import java.util.Arrays;
+
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl implements RoleService {
 
-    private final RoleRepository roleRepository;
-    private final RolePermissionRepository rolePermissionRepository;
-    private final PermissionRepository permissionRepository;
-    private final NavLinkRepository navLinkRepository;
+    private final RoleDao roleDao;
+    private final RolePermissionDao rolePermissionDao;
+    private final PermissionDao permissionDao;
+    private final NavLinkDao navLinkDao;
     private final Helper helper;
 
     @Override
@@ -45,10 +45,10 @@ public class RoleServiceImpl implements RoleService {
         }
         Role role;
         if (id != null) {
-            role = roleRepository.findById(id)
+            role = roleDao.findById(id)
                     .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         } else {
-            if (roleRepository.existsByName(roleRequestBodyDTO.getName())) {
+            if (roleDao.existsByName(roleRequestBodyDTO.getName())) {
                 throw new GenericException(ExceptionCodeEnum.DUPLICATE_ROLE, "Role with this name already exists");
             }
             role = Role.builder().build();
@@ -56,9 +56,9 @@ public class RoleServiceImpl implements RoleService {
         role.setName(roleRequestBodyDTO.getName());
         role.setDescription(roleRequestBodyDTO.getDescription());
         role.setStatus(roleRequestBodyDTO.getStatus() != null ? roleRequestBodyDTO.getStatus() : RoleStatusEnum.ACTIVE);
-        Role savedRole = roleRepository.save(role);
+        Role savedRole = roleDao.save(role);
         if (roleRequestBodyDTO.getRolePermissions() != null) {
-            rolePermissionRepository.deleteByRoleId(savedRole.getId());
+            rolePermissionDao.deleteByRoleId(savedRole.getId());
 
             List<RolePermission> permissions = roleRequestBodyDTO.getRolePermissions().stream()
                     .map(rp -> RolePermission.builder()
@@ -68,7 +68,7 @@ public class RoleServiceImpl implements RoleService {
                             .build())
                     .collect(Collectors.toList());
 
-            rolePermissionRepository.saveAll(permissions);
+            rolePermissionDao.saveAll(permissions);
         }
 
         return mapToRoleListResponseDTO(savedRole);
@@ -76,23 +76,23 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public RolePermissionResponseDTO getRolePermissionsByRoleId(Long id) throws GenericException {
-        Role role = roleRepository.findById(id)
+        Role role = roleDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
 
-        List<RolePermission> rolePermissions = rolePermissionRepository.findByRoleId(id);
-        
+        List<RolePermission> rolePermissions = rolePermissionDao.findByRoleId(id);
+
         List<ModulePermissionDTO> navLinkDTOs = rolePermissions.stream()
                 .filter(rp -> rp.getNavLinkId() != null)
                 .collect(Collectors.groupingBy(RolePermission::getNavLinkId))
                 .entrySet().stream()
                 .map(entry -> {
                     try {
-                        NavLink navlink = navLinkRepository.findById(entry.getKey())
+                        NavLink navlink = navLinkDao.findById(entry.getKey())
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND,"Navlink not found"));
-                        
+
                         List<PermissionDTO> permissions = entry.getValue().stream()
                                 .map(rp -> {
-                                    Permission permission = permissionRepository.findById(rp.getPermissionId()).orElse(null);
+                                    Permission permission = permissionDao.findById(rp.getPermissionId()).orElse(null);
                                     if (permission != null) {
                                         return PermissionDTO.builder()
                                                 .id(permission.getId())
@@ -103,7 +103,7 @@ public class RoleServiceImpl implements RoleService {
                                 })
                                 .filter(dto -> dto != null)
                                 .collect(Collectors.toList());
-                        
+
                         return ModulePermissionDTO.builder()
                                 .navLinkId(navlink.getId())
                                 .name(navlink.getName())
@@ -125,95 +125,43 @@ public class RoleServiceImpl implements RoleService {
                 .status(role.getStatus())
                 .navLinks(navLinkDTOs)
                 .build();
-        
+
         helper.setAudit(role, responseDTO);
         return responseDTO;
     }
 
     @Override
-    public Page<RoleListResponseDTO> getAllRolesByCriteria(
-            String search, String roleIds,
-            String navLinkIds, String permissionIds, String status,
-            String startDate, String endDate, Pageable pageable
+    public Page<RoleListResponseDTO> getAllRolesByCriteria(String search,String roleIds,String navLinkIds,String permissionIds,
+            String status,String startDate, String endDate,Pageable pageable
     ) throws GenericException {
-        Sort sort = Sort.by(
-                "desc".equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (search == null || search.isBlank()) ? "createdAt" : "name"
-        );
-        
-        Page<Role> roles;
-        if (search != null && !search.isBlank()) {
-            if (status != null && !status.isBlank()) {
-                roles = roleRepository.searchByNameAndStatus(search, status, pageable);
-            } else {
-                roles = roleRepository.searchActiveByName(search, pageable);
-            }
-        } else if (status != null && !status.isBlank()) {
-            roles = roleRepository.findByStatus(status, pageable);
-        } else if (roleIds != null && !roleIds.isBlank()) {
-            List<Long> roleIdList = Arrays.stream(roleIds.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(Long::valueOf)
-                    .toList();
-            roles = roleRepository.findByIdIn(roleIdList, pageable);
-        } else {
-            roles = roleRepository.findAllActive(pageable);
+        List<Long> navLinksList = helper.parseIds(navLinkIds);
+        Page<RoleListResponseDTO> roleListResponseDTOS = roleDao.findByCriteria(search, navLinksList,
+                (status != null && !status.trim().isEmpty()) ? RoleStatusEnum.valueOf(status) : null, pageable);
+        List<Long> pageRoleIds = roleListResponseDTOS.getContent().stream().map(RoleListResponseDTO::getId).toList();
+        if (!pageRoleIds.isEmpty()) {
+            Map<Long, List<RoleMappedModule>> modulesMap = roleDao.findDistinctModulesByRoleIds(pageRoleIds);
+            roleListResponseDTOS.forEach(dto -> dto.setRoleMappedModules(modulesMap.getOrDefault(dto.getId(), List.of())));
         }
-        
-        return roles.map(this::mapToRoleListResponseDTO);
-    }
-
-    @Override
-    public Page<RoleListResponseDTO> getAllRolesByLogin(
-            String search, String role,
-            String status,
-            String sortBy,
-            String sortDir,
-            Pageable pageable
-    ) throws GenericException {
-        Sort sort = Sort.by(
-                "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (search == null || search.isBlank()) ? "createdAt" : "name"
-        );
-        
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-        
-        Page<Role> roles;
-        
-        if (search != null && !search.isBlank()) {
-            if (status != null && !status.isBlank()) {
-                roles = roleRepository.searchByNameAndStatus(search, status, sortedPageable);
-            } else {
-                roles = roleRepository.searchActiveByName(search, sortedPageable);
-            }
-        } else if (status != null && !status.isBlank()) {
-            roles = roleRepository.findByStatus(status, sortedPageable);
-        } else if (role != null && !role.isBlank()) {
-            roles = roleRepository.searchByNameAndStatus(search, role, sortedPageable);
-        } else {
-            roles = roleRepository.findAllActive(sortedPageable);
-        }
-        
-        return roles.map(this::mapToRoleListResponseDTO);
+        return roleListResponseDTOS;
     }
 
     @Override
     public RoleListResponseDTO getRoleByName(String name) throws GenericException {
-        Role role = roleRepository.findByName(name)
+        Role role = roleDao.findByName(name)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         return mapToRoleListResponseDTO(role);
     }
 
     @Override
     public RoleListResponseDTO getRoleById(Long id) throws GenericException {
-        Role role = roleRepository.findById(id)
+        Role role = roleDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         return mapToRoleListResponseDTO(role);
+    }
+
+    @Override
+    public List<RoleMappedModule> findDistinctModulesByRoleId(Long roleId){
+        return roleDao.findDistinctModulesByRoleId(roleId);
     }
 
     private RoleListResponseDTO mapToRoleListResponseDTO(Role role) {
@@ -223,7 +171,7 @@ public class RoleServiceImpl implements RoleService {
                 .description(role.getDescription())
                 .status(role.getStatus())
                 .build();
-        
+
         helper.setAudit(role, responseDTO);
         return responseDTO;
     }

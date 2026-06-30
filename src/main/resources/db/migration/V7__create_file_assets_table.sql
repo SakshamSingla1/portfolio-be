@@ -3,7 +3,7 @@
 -- ============================================================
 CREATE TABLE file_assets (
     id            BIGSERIAL    PRIMARY KEY,
-    resource_id   VARCHAR(255),
+    resource_id   BIGINT NOT NULL,
     resource_type VARCHAR(255) CHECK (resource_type IN (
                       'PROFILE','PROJECT','ACHIEVEMENT','TESTIMONIAL',
                       'CERTIFICATION','PLATFORM','LOGO','RESUME','BANNER'

@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.enums.StatusEnum;
 import org.springframework.data.domain.Page;
@@ -15,15 +16,33 @@ import java.util.Optional;
 @Repository
 public interface TestimonialRepository extends JpaRepository<Testimonial, Long> {
 
-    @Query("SELECT t FROM Testimonial t WHERE t.profileId = :profileId AND (LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(t.company) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(t.role) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<Testimonial> findByProfileIdWithSearch(
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Testimonial.TestimonialResponseDTO(
+                t.id, t.name, t.role, t.company, t.message,
+                fa.path, fa.id, t.linkedInUrl, t.order, t.status, t.createdAt, t.updatedAt
+            ) FROM Testimonial t
+            LEFT JOIN FileAsset fa ON fa.resourceId = t.id AND fa.resourceType = 'TESTIMONIAL'
+            WHERE (:profileId IS NULL OR t.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(t.company) LIKE LOWER(CONCAT('%', :search, '%'))
+                OR LOWER(t.role) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    Page<TestimonialResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
             Pageable pageable
     );
 
-    @Query("SELECT t FROM Testimonial t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(t.company) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(t.role) LIKE LOWER(CONCAT('%', :search, '%'))")
-    Page<Testimonial> findBySearch(@Param("search") String search, Pageable pageable);
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Testimonial.TestimonialResponseDTO(
+                t.id, t.name, t.role, t.company, t.message,
+                fa.path, fa.id, t.linkedInUrl, t.order, t.status, t.createdAt, t.updatedAt
+            ) FROM Testimonial t
+            LEFT JOIN FileAsset fa ON fa.resourceId = t.id AND fa.resourceType = 'TESTIMONIAL'
+            WHERE t.id = :id
+    """)
+    Optional<TestimonialResponseDTO> findDTOById(@Param("id") Long id);
 
     Page<Testimonial> findByProfileId(Long profileId, Pageable pageable);
 

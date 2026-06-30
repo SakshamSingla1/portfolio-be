@@ -1,5 +1,7 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.contact_us.ContactUsDao;
+import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.entities.ContactUs;
@@ -7,8 +9,6 @@ import com.portfolio.entities.Profile;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.ContactUsRepository;
-import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
 import com.portfolio.utils.Helper;
@@ -27,14 +27,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ContactUsService {
 
-    private final ContactUsRepository contactUsRepository;
-    private final ProfileRepository profileRepository;
+    private final ContactUsDao contactUsDao;
+    private final ProfileDao profileDao;
     private final NTService ntService;
     private final EmailService emailService;
     private final Helper helper;
 
     public ContactUsResponse create(ContactUsRequest request) throws GenericException {
-        Profile profile = profileRepository.findById(request.getProfileId())
+        Profile profile = profileDao.findById(request.getProfileId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
         ContactUs contact = ContactUs.builder()
                 .name(request.getName())
@@ -44,7 +44,7 @@ public class ContactUsService {
                 .status(ContactUsStatusEnum.UNREAD)
                 .profileId(request.getProfileId())
                 .build();
-        ContactUs saved = contactUsRepository.save(contact);
+        ContactUs saved = contactUsDao.save(contact);
         if (profile.getEmail() != null) {
             try {
                 ntService.sendNotification(
@@ -69,48 +69,28 @@ public class ContactUsService {
         return value == null ? "" : value;
     }
 
-    public Page<ContactUsResponse> getContactUsByProfileId(Long profileId, Pageable pageable, String search,String sortBy, String sortDir) throws GenericException {
-        Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
-                        ? Sort.Direction.DESC : Sort.Direction.ASC,
-                (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
-        Pageable sortedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                sort
-        );
-        boolean hasSearch = search != null && !search.isBlank();
-        boolean hasProfileId = profileId != null;
-        Page<ContactUs> contactUses;
-        if( hasSearch && hasProfileId){
-            contactUses = contactUsRepository.findByProfileIdWithSearch(profileId,search,sortedPageable);
-        }else if(hasSearch){
-            contactUses = contactUsRepository.findBySearch(search,sortedPageable);
-        }else if(hasProfileId) {
-            contactUses = contactUsRepository.findByProfileId(profileId, sortedPageable);
-        }else{
-            contactUses = contactUsRepository.findAll(sortedPageable);
-        }
-        return contactUses.map(this::toDto);
+    public Page<ContactUsResponse> getContactUsByProfileId(Long profileId, String search, ContactUsStatusEnum status,Pageable pageable) throws GenericException {
+        return contactUsDao.findByCriteria(profileId,search,status,pageable);
     }
 
     @Transactional
     public void updateStatus(Long id, ContactUsStatusEnum status)
             throws GenericException {
 
-        if (!contactUsRepository.existsById(id)) {
+        if (!contactUsDao.existsById(id)) {
             throw new GenericException(
                     ExceptionCodeEnum.CONTACT_US_NOT_FOUND,
                     "Message not found"
             );
         }
 
-        contactUsRepository.updateStatusById(id, status);
+        contactUsDao.updateStatusById(id, status);
     }
 
     @Transactional
     public ContactUsResponse reply(Long id, String replyMessage, String authHeader) throws GenericException {
         Profile profile = helper.getProfileFromHeader(authHeader);
-        ContactUs contact = contactUsRepository.findById(id)
+        ContactUs contact = contactUsDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Message not found"));
         if (!contact.getProfileId().equals(profile.getId())) {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Not authorized to reply to this message");
@@ -121,7 +101,7 @@ public class ContactUsService {
         contact.setReplyMessage(replyMessage);
         contact.setRepliedAt(LocalDateTime.now());
         contact.setStatus(ContactUsStatusEnum.REPLIED);
-        return toDto(contactUsRepository.save(contact));
+        return toDto(contactUsDao.save(contact));
     }
 
     private String buildReplyHtml(String profileName, String contactName, String originalMessage, String replyMessage) {

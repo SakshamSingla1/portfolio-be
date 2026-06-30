@@ -1,8 +1,8 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
 import com.portfolio.dtos.Platform.PlatformSettingsDTO;
 import com.portfolio.enums.ResourceTypeEnum;
-import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.services.PlatformSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PlatformSettingsServiceImpl implements PlatformSettingsService {
 
-    private static final String BANNER_RESOURCE_ID = "singleton";
+    private static final Integer BANNER_RESOURCE_ID = -1;
 
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetDao fileAssetDao;
 
     @Override
     public PlatformSettingsDTO getSettings() {
-        return fileAssetRepository
+        return fileAssetDao
                 .findByResourceIdAndResourceTypeAndIsPrimaryTrue(BANNER_RESOURCE_ID, ResourceTypeEnum.BANNER)
                 .map(asset -> PlatformSettingsDTO.builder()
                         .bannerImageUrl(asset.getPath())

@@ -1,5 +1,8 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.file.FileAssetDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.testimonial.TestimonialDao;
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.dtos.Image.ImageUploadResponse;
@@ -11,9 +14,6 @@ import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.repositories.TestimonialRepository;
-import com.portfolio.repositories.ProfileRepository;
-import com.portfolio.repositories.FileAssetRepository;
 import com.portfolio.services.TestimonialService;
 import com.portfolio.services.FileService;
 import lombok.RequiredArgsConstructor;
@@ -24,21 +24,20 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class TestimonialServiceImpl implements TestimonialService {
 
-    private final TestimonialRepository testimonialRepository;
-    private final ProfileRepository profileRepository;
+    private final TestimonialDao testimonialDao;
+    private final ProfileDao profileDao;
     private final FileService fileService;
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetDao fileAssetDao;
 
     @Override
     public TestimonialResponseDTO createTestimonial(TestimonialRequestDTO dto) throws GenericException {
-        if (testimonialRepository.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
+        if (testimonialDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_TESTIMONIAL, "Testimonial already exists with same order for the profile");
         }
         Testimonial testimonial = Testimonial.builder()
@@ -51,16 +50,16 @@ public class TestimonialServiceImpl implements TestimonialService {
                 .status(dto.getStatus())
                 .order(dto.getOrder())
                 .build();
-        Testimonial saved = testimonialRepository.save(testimonial);
+        Testimonial saved = testimonialDao.save(testimonial);
         linkFileAsset(saved.getId(), dto.getImageUrl(), dto.getImageId());
         return mapToResponse(saved);
     }
- 
+
     @Override
     public TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO dto) throws GenericException {
-        Testimonial existing = testimonialRepository.findById(id)
+        Testimonial existing = testimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
-        if (dto.getOrder() != null && testimonialRepository.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
+        if (dto.getOrder() != null && testimonialDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_TESTIMONIAL, "Testimonial already exists with same order for the profile");
         }
         existing.setName(dto.getName());
@@ -71,18 +70,17 @@ public class TestimonialServiceImpl implements TestimonialService {
         existing.setStatus(dto.getStatus());
         existing.setOrder(dto.getOrder());
         existing.setUpdatedAt(LocalDateTime.now());
-        Testimonial saved = testimonialRepository.save(existing);
+        Testimonial saved = testimonialDao.save(existing);
         linkFileAsset(id, dto.getImageUrl(), dto.getImageId());
         return mapToResponse(saved);
     }
- 
+
     @Override
     public TestimonialResponseDTO getTestimonialById(Long id) throws GenericException {
-        Testimonial Testimonial = testimonialRepository.findById(id)
+        return testimonialDao.findDTOById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
-        return mapToResponse(Testimonial);
     }
- 
+
     @Override
     public Page<TestimonialResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
@@ -96,48 +94,38 @@ public class TestimonialServiceImpl implements TestimonialService {
                 pageable.getPageSize(),
                 sort
         );
-        Page<Testimonial> page;
-        if (profileId != null && search != null && !search.isBlank()) {
-            page = testimonialRepository.findByProfileIdWithSearch(profileId, search, sortedPageable);
-        } else if (profileId != null) {
-            page = testimonialRepository.findByProfileId(profileId, sortedPageable);
-        } else if (search != null && !search.isBlank()) {
-            page = testimonialRepository.findBySearch(search, sortedPageable);
-        } else {
-            page = testimonialRepository.findAll(sortedPageable);
-        }
-        return page.map(this::mapToResponse);
+        return testimonialDao.findByCriteria(profileId, search, sortedPageable);
     }
- 
+
     @Override
     public Void deleteById(Long id) throws GenericException {
-        if (!testimonialRepository.existsById(id)) {
+        if (!testimonialDao.existsById(id)) {
             throw new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found");
         }
         try {
-            fileService.deleteByResource(String.valueOf(id), ResourceTypeEnum.TESTIMONIAL.name());
+            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.TESTIMONIAL.name());
         } catch (Exception ignored) {}
-        testimonialRepository.deleteById(id);
+        testimonialDao.deleteById(id);
         return null;
     }
- 
+
     public List<TestimonialResponseDTO> getByProfile(Long profileId) {
-        return testimonialRepository
+        return testimonialDao
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
- 
+
     @Override
     public ImageUploadResponse uploadImage(
             Long profileId,
             MultipartFile file
     ) throws GenericException, IOException {
-        profileRepository.findById(profileId)
+        profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId("TEMP_" + profileId);
+        uploadReq.setResourceId(profileId.intValue());
         uploadReq.setResourceType(ResourceTypeEnum.TESTIMONIAL);
         uploadReq.setPrimary(true);
         try {
@@ -147,35 +135,35 @@ public class TestimonialServiceImpl implements TestimonialService {
             throw new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Failed to upload testimonial image: " + e.getMessage());
         }
     }
- 
+
     private void linkFileAsset(Long resourceId, String url, Long imageAssetId) {
-        List<FileAsset> existing = fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(String.valueOf(resourceId), ResourceTypeEnum.TESTIMONIAL);
-        
+        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.TESTIMONIAL);
+
         Long targetAssetId = imageAssetId;
         if (targetAssetId == null && url != null && !url.isBlank()) {
-            targetAssetId = fileAssetRepository.findByPath(url).map(FileAsset::getId).orElse(null);
+            targetAssetId = fileAssetDao.findByPath(url).map(FileAsset::getId).orElse(null);
         }
- 
+
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
             }
         }
- 
+
         if (targetAssetId != null) {
-            fileAssetRepository.findById(targetAssetId)
+            fileAssetDao.findById(targetAssetId)
                     .ifPresent(asset -> {
-                        asset.setResourceId(String.valueOf(resourceId));
+                        asset.setResourceId(resourceId.intValue());
                         asset.setPrimary(true);
-                        fileAssetRepository.save(asset);
+                        fileAssetDao.save(asset);
                     });
         }
     }
- 
+
     private TestimonialResponseDTO mapToResponse(Testimonial c) {
         String imageUrl = null;
         Long imageId = null;
-        Optional<FileAsset> assetOpt = fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(String.valueOf(c.getId()), ResourceTypeEnum.TESTIMONIAL);
+        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId().intValue(), ResourceTypeEnum.TESTIMONIAL);
         if (assetOpt.isPresent()) {
             imageUrl = assetOpt.get().getPath();
             imageId = assetOpt.get().getId();
