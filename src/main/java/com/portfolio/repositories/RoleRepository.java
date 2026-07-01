@@ -35,10 +35,10 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     LEFT JOIN Profile p2 ON p2.id = r.updatedBy
     WHERE (
         :search IS NULL OR :search = ''
-        OR LOWER(r.name) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(r.description) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(nav.name) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(r.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(r.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(nav.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
     )
     AND ( :navLinkIds IS NULL OR nav.id IN :navLinkIds )
     AND ( :status IS NULL OR r.status = :status )

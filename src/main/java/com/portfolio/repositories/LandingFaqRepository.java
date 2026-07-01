@@ -49,8 +49,8 @@ public interface LandingFaqRepository extends JpaRepository<LandingFaq, Long> {
             LEFT JOIN Profile p1 ON p1.id = f.createdBy
             LEFT JOIN Profile p2 ON p2.id = f.updatedBy
             WHERE (:search IS NULL OR :search = ''
-                OR LOWER(f.question) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(f.answer) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(f.question) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(f.answer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:isActive IS NULL OR f.isActive = :isActive)
             """)
     Page<LandingFaqResponse> findByCriteria(

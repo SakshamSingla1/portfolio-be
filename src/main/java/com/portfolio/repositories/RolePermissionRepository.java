@@ -1,7 +1,10 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Role.NavLinkPermissionRow;
 import com.portfolio.entities.RolePermission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,4 +29,18 @@ public interface RolePermissionRepository extends JpaRepository<RolePermission, 
     List<RolePermission> findByNavLinkIdIn(List<Long> navLinkIds);
 
     List<RolePermission> findByPermissionIdIn(List<Long> permissionIds);
+
+    @Query("""
+            SELECT new com.portfolio.dtos.Role.NavLinkPermissionRow(
+                rp.navLinkId, n.name, n.path, n.navGroup, n.index,
+                rp.permissionId, p.name
+            )
+            FROM RolePermission rp
+            JOIN NavLink n ON n.id = rp.navLinkId
+            LEFT JOIN Permission p ON p.id = rp.permissionId
+            WHERE rp.roleId = :roleId
+              AND rp.navLinkId IS NOT NULL
+            ORDER BY n.index ASC
+            """)
+    List<NavLinkPermissionRow> findNavLinksWithPermissionsByRoleId(@Param("roleId") Long roleId);
 }

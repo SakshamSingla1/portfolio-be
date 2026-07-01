@@ -27,8 +27,8 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
             LEFT JOIN Profile p2 ON p2.id = c.updatedBy
             WHERE (:profileId IS NULL OR c.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-            OR LOWER(c.title) LIKE LOWER(CONCAT('%',:search,'%'))
-            OR LOWER(c.issuer) LIKE LOWER(CONCAT('%',:search,'%')))
+            OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+            OR LOWER(c.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             ORDER BY c.order ASC
     """)
     Page<CertificationResponseDTO> findByCriteria(

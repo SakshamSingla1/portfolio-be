@@ -49,8 +49,8 @@ public interface LandingAudienceCardRepository extends JpaRepository<LandingAudi
             LEFT JOIN Profile p1 ON p1.id = c.createdBy
             LEFT JOIN Profile p2 ON p2.id = c.updatedBy
             WHERE (:search IS NULL OR :search = ''
-                OR LOWER(c.title) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(c.description) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(c.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:isActive IS NULL OR c.isActive = :isActive)
             """)
     Page<LandingAudienceCardResponse> findByCriteria(

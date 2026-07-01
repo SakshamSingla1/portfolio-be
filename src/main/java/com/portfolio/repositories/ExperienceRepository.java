@@ -38,9 +38,9 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
             LEFT JOIN Profile p2 ON p2.id = ex.updatedBy
             WHERE (:profileId IS NULL OR ex.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(ex.companyName) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(ex.jobTitle) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(ex.location) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(ex.companyName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(ex.jobTitle) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(ex.location) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<ExperienceResponse> findByCriteria(
             @Param("profileId") Long profileId,

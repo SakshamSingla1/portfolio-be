@@ -25,9 +25,9 @@ public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
             ) FROM ContactUs cu
             WHERE (:profileId IS NULL OR cu.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(cu.name) LIKE LOWER(CONCAT('%',:search,'%'))
-                OR LOWER(cu.email) LIKE LOWER(CONCAT('%',:search,'%'))
-                OR LOWER(cu.phone) LIKE LOWER(CONCAT('%',:search,'%')))
+                OR LOWER(cu.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(cu.email) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(cu.phone) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:status IS NULL OR cu.status = :status)
     """)
     Page<ContactUsResponse> findByCriteria(

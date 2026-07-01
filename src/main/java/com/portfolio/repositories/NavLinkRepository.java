@@ -34,7 +34,7 @@ public interface NavLinkRepository extends JpaRepository<NavLink, Long> {
             FROM NavLink n
             LEFT JOIN Profile p1 ON n.createdBy = p1.id
             LEFT JOIN Profile p2 ON n.updatedBy = p2.id
-            WHERE (CAST(:search AS string) IS NULL OR LOWER(n.name) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (CAST(:search AS string) IS NULL OR LOWER(n.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (CAST(:status AS string) IS NULL OR n.status = :status)
             """)
     Page<NavLinkResponseDTO> findByCriteria(

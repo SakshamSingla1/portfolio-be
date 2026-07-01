@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -55,20 +56,36 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
     @Override
     public ViewStatsDTO getViewStats(Long profileId) {
-        LocalDateTime now        = LocalDateTime.now(ZoneOffset.UTC);
-        LocalDateTime startDay   = now.toLocalDate().atStartOfDay();
-        LocalDateTime startWeek  = now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();
-        LocalDateTime startMonth = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
-
+        LocalDateTime now         = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime startDay    = now.toLocalDate().atStartOfDay();
+        LocalDateTime startWeek   = now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();
+        LocalDateTime startMonth  = now.toLocalDate().withDayOfMonth(1).atStartOfDay();
         LocalDateTime startLastWeek = startWeek.minusDays(7);
 
-        long totalViews     = portfolioViewDao.countByProfileId(profileId);
-        long viewsToday     = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startDay, now);
-        long viewsThisWeek  = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startWeek, now);
-        long viewsLastWeek  = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startLastWeek, startWeek);
-        long viewsThisMonth = portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, startMonth, now);
+        // 3 queries in parallel instead of 8 sequential queries.
+        // minusDays(32) covers startLastWeek (up to 13 days ago) and startMonth (up to 31 days ago).
+        CompletableFuture<Long> totalViewsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.countByProfileId(profileId));
+        CompletableFuture<Long> resumeDownloadsFuture = CompletableFuture.supplyAsync(
+                () -> resumeDownloadDao.countByProfileId(profileId));
+        CompletableFuture<List<PortfolioView>> recentFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(32)));
 
-        List<PortfolioView> last30 = portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(30));
+        CompletableFuture.allOf(totalViewsFuture, resumeDownloadsFuture, recentFuture).join();
+
+        long totalViews      = totalViewsFuture.join();
+        long resumeDownloads = resumeDownloadsFuture.join();
+        List<PortfolioView> recent = recentFuture.join();
+
+        // Compute date-range counts in Java — no extra DB round trips needed
+        long viewsToday     = recent.stream().filter(v -> v.getTimestamp() != null && !v.getTimestamp().isBefore(startDay)).count();
+        long viewsThisWeek  = recent.stream().filter(v -> v.getTimestamp() != null && !v.getTimestamp().isBefore(startWeek)).count();
+        long viewsLastWeek  = recent.stream().filter(v -> v.getTimestamp() != null && !v.getTimestamp().isBefore(startLastWeek) && v.getTimestamp().isBefore(startWeek)).count();
+        long viewsThisMonth = recent.stream().filter(v -> v.getTimestamp() != null && !v.getTimestamp().isBefore(startMonth)).count();
+
+        List<PortfolioView> last30 = recent.stream()
+                .filter(v -> v.getTimestamp() != null && v.getTimestamp().isAfter(now.minusDays(30)))
+                .toList();
 
         long uniqueVisitors = last30.stream()
                 .map(PortfolioView::getSessionId)
@@ -94,16 +111,15 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .collect(Collectors.groupingBy(PortfolioView::getCountry, Collectors.counting()));
 
         List<PortfolioView> last7 = last30.stream()
-                .filter(v -> v.getTimestamp() != null && v.getTimestamp().isAfter(now.minusDays(7)))
+                .filter(v -> v.getTimestamp().isAfter(now.minusDays(7)))
                 .toList();
 
         List<DailyViewDTO> weeklyTrend = buildWeeklyTrend(last7, now);
 
-        long resumeDownloads = resumeDownloadDao.countByProfileId(profileId);
-
-        List<PortfolioViewDTO> recentViews = portfolioViewDao
-                .findTop30ByProfileIdOrderByTimestampDesc(profileId)
-                .stream()
+        List<PortfolioViewDTO> recentViews = recent.stream()
+                .filter(v -> v.getTimestamp() != null)
+                .sorted(Comparator.comparing(PortfolioView::getTimestamp).reversed())
+                .limit(30)
                 .map(this::mapToViewDTO)
                 .toList();
 

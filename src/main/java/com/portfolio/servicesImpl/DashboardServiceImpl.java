@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -32,14 +33,30 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardSummaryDTO getDashboardSummary(Long profileId) {
+        // All 6 data fetches are independent — run them in parallel
+        CompletableFuture<Profile> profileFuture = CompletableFuture.supplyAsync(
+                () -> profileDao.findById(profileId).orElse(null));
+        CompletableFuture<StatsDTO> statsFuture = CompletableFuture.supplyAsync(
+                () -> profileDao.getDashboardStats(profileId));
+        CompletableFuture<ViewStatsDTO> viewStatsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewService.getViewStats(profileId));
+        CompletableFuture<List<ContactUsResponse>> messagesFuture = CompletableFuture.supplyAsync(
+                () -> contactUsDao.findTop5DTOByProfileIdOrderByCreatedAtDesc(profileId));
+        CompletableFuture<List<ActivityDTO>> activitiesFuture = CompletableFuture.supplyAsync(
+                () -> profileDao.getLatestActivities(profileId));
+        CompletableFuture<List<FileAsset>> assetsFuture = CompletableFuture.supplyAsync(
+                () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId.intValue(), ResourceTypeEnum.PROFILE));
 
-        Profile profile = profileDao.findById(profileId).orElse(null);
+        CompletableFuture.allOf(profileFuture, statsFuture, viewStatsFuture, messagesFuture, activitiesFuture, assetsFuture).join();
 
-        StatsDTO stats = profileDao.getDashboardStats(profileId);
+        Profile profile             = profileFuture.join();
+        StatsDTO stats              = statsFuture.join();
+        ViewStatsDTO viewStats      = viewStatsFuture.join();
+        List<ContactUsResponse> recentMessages  = messagesFuture.join();
+        List<ActivityDTO> recentActivities      = activitiesFuture.join();
+        List<FileAsset> assets      = assetsFuture.join();
 
-        ProfileSummaryDTO profileSummary = buildProfileSummary(profile);
-        ViewStatsDTO viewStats = portfolioViewService.getViewStats(profileId);
-
+        ProfileSummaryDTO profileSummary = buildProfileSummary(profile, assets);
         ProfileCompletionDTO profileCompletion = calculateProfileCompletion(
                 profile,
                 stats.getTotalProjects(),
@@ -52,9 +69,6 @@ public class DashboardServiceImpl implements DashboardService {
                 stats.getTotalSocialLinks()
         );
 
-        List<ContactUsResponse> recentMessages = contactUsDao.findTop5DTOByProfileIdOrderByCreatedAtDesc(profileId);
-        List<ActivityDTO> recentActivities = profileDao.getLatestActivities(profileId);
-
         return DashboardSummaryDTO.builder()
                 .profileSummary(profileSummary)
                 .viewStats(viewStats)
@@ -65,10 +79,9 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    private ProfileSummaryDTO buildProfileSummary(Profile profile) {
+    private ProfileSummaryDTO buildProfileSummary(Profile profile, List<FileAsset> profileAssets) {
         if (profile == null) return ProfileSummaryDTO.builder().build();
         String profileImageUrl = null;
-        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId().intValue(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : profileAssets) {
             if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
                 profileImageUrl = asset.getPath();

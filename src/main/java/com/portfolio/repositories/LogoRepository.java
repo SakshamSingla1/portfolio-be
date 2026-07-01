@@ -31,7 +31,7 @@ public interface LogoRepository extends JpaRepository<Logo, Long> {
                 l.id, l.name, fa.path, l.createdAt, l.updatedAt
             ) FROM Logo l
             LEFT JOIN FileAsset fa ON fa.resourceId = l.id AND fa.resourceType = 'LOGO'
-            WHERE (:search IS NULL OR :search = '' OR LOWER(l.name) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (:search IS NULL OR :search = '' OR LOWER(l.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<LogoDropdown> findByCriteria(@Param("search") String search, Pageable pageable);
 }

@@ -19,7 +19,7 @@ public interface ColorThemeRepository extends JpaRepository<ColorTheme, Long> {
     @Query("""
             SELECT ct FROM ColorTheme ct
             WHERE (:search IS NULL OR :search = ''
-                  OR LOWER(ct.themeName) LIKE LOWER(CONCAT('%',:search,'%')))
+                  OR LOWER(ct.themeName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:status IS NULL OR ct.status = :status)
     """)
     Page<ColorTheme> findByCriteria(
