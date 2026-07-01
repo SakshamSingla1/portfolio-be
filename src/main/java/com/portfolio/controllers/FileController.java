@@ -3,9 +3,11 @@ package com.portfolio.controllers;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.enums.ResourceTypeEnum;
+import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.FileService;
+import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
+    private final Helper helper;
 
     @Operation(summary = "Upload a file and link it to a resource", description = "Uploads a file and links it to a resource (project, achievement, etc.) by resource ID and type. Supports metadata, sort order, and platform context.")
     @PostMapping("/upload")
@@ -42,6 +45,18 @@ public class FileController {
 
         FileAssetDTO result = fileService.upload(file, request);
         return ApiResponse.respond(result, "File uploaded successfully", "Failed to upload file");
+    }
+
+    @Operation(summary = "Get primary file for authenticated user by resource type", description = "Returns the primary file asset for the authenticated user's profile for a given resource type (e.g. BANNER).")
+    @GetMapping("/{resourceType}/singleton")
+    public ResponseEntity<ResponseModel<FileAssetDTO>> getSingleton(
+            @PathVariable String resourceType,
+            @RequestHeader("Authorization") String auth
+    ) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
+        FileAssetDTO result = fileService.getPrimaryFile(profileId.intValue(), type);
+        return ApiResponse.respond(result, "File fetched successfully", "Failed to fetch file");
     }
 
     @Operation(summary = "Get all files for a resource", description = "Returns all file assets associated with a specific resource type and ID.")
