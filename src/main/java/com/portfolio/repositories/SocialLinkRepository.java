@@ -29,7 +29,7 @@ public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
             ) FROM SocialLinks s
             WHERE (:profileId IS NULL OR s.profileId = :profileId)
             AND (:status IS NULL OR s.status = :status)
-            AND (:search IS NULL OR :search = '' OR LOWER(CAST(s.platform AS String)) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (:search IS NULL OR :search = '' OR LOWER(CAST(s.platform AS String)) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<SocialLinkResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
@@ -56,7 +56,7 @@ public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
             @Param("status") StatusEnum status
     );
 
-    @Query("SELECT s FROM SocialLinks s WHERE s.platform = :platform AND LOWER(s.url) LIKE LOWER(CONCAT('%', :host, '%'))")
+    @Query("SELECT s FROM SocialLinks s WHERE s.platform = :platform AND LOWER(s.url) LIKE CONCAT('%', LOWER(CAST(:host AS string)), '%')")
     Optional<SocialLinks> findByPlatformAndUrlContainingHost(
             @Param("platform") PlatformEnum platform,
             @Param("host") String host

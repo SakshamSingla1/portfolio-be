@@ -24,9 +24,9 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
             LEFT JOIN FileAsset fa ON fa.resourceId = t.id AND fa.resourceType = 'TESTIMONIAL'
             WHERE (:profileId IS NULL OR t.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(t.company) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(t.role) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(t.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.company) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.role) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<TestimonialResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,

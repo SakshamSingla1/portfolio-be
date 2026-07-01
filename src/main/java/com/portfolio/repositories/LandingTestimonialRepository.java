@@ -52,8 +52,8 @@ public interface LandingTestimonialRepository extends JpaRepository<LandingTesti
             LEFT JOIN Profile p1 ON p1.id = t.createdBy
             LEFT JOIN Profile p2 ON p2.id = t.updatedBy
             WHERE (:search IS NULL OR :search = ''
-                OR LOWER(t.authorName) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(t.content) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(t.authorName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.content) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:isActive IS NULL OR t.isActive = :isActive)
             """)
     Page<LandingTestimonialResponse> findByCriteria(

@@ -22,7 +22,7 @@ public interface NTRepository extends JpaRepository<NotificationTemplate, Long> 
                 nt.id, nt.subject, nt.template, nt.isSms, nt.isEmail, nt.isWhatsapp,
                 nt.whatsappTemplateName, nt.templateGroupId, nt.createdAt, nt.updatedAt)
             FROM NotificationTemplate nt
-            WHERE (:search = '' OR LOWER(nt.template) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (:search = '' OR LOWER(nt.template) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             """)
     Page<NotificationTemplateListResponseDTO> findByCriteria(
             @Param("search") String search,
@@ -33,7 +33,7 @@ public interface NTRepository extends JpaRepository<NotificationTemplate, Long> 
                 nt.id, nt.subject, nt.template, nt.isSms, nt.isEmail, nt.isWhatsapp,
                 nt.whatsappTemplateName, nt.templateGroupId, nt.createdAt, nt.updatedAt)
             FROM NotificationTemplate nt
-            WHERE (:search = '' OR LOWER(nt.template) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (:search = '' OR LOWER(nt.template) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
               AND nt.templateGroupId IN :templateGroupIds
             """)
     Page<NotificationTemplateListResponseDTO> findByCriteriaWithGroups(

@@ -23,7 +23,7 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             ) FROM Skill s
             LEFT JOIN FileAsset fa ON fa.resourceId = s.logoId AND fa.resourceType = 'LOGO'
             WHERE (:profileId IS NULL OR s.profileId = :profileId)
-            AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE LOWER(CONCAT('%', :search, '%')))
+            AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<SkillResponse> findByCriteria(
             @Param("profileId") Long profileId,

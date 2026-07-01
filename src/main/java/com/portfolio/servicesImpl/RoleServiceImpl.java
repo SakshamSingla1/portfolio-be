@@ -1,13 +1,8 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dao.nav_link.NavLinkDao;
-import com.portfolio.dao.permission.PermissionDao;
 import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dao.role.RolePermissionDao;
-import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.Role.*;
-import com.portfolio.entities.NavLink;
-import com.portfolio.entities.Permission;
 import com.portfolio.entities.RolePermission;
 import com.portfolio.entities.Role;
 import com.portfolio.enums.ExceptionCodeEnum;
@@ -23,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,8 +29,6 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleDao roleDao;
     private final RolePermissionDao rolePermissionDao;
-    private final PermissionDao permissionDao;
-    private final NavLinkDao navLinkDao;
     private final Helper helper;
 
     @Override
@@ -79,42 +73,34 @@ public class RoleServiceImpl implements RoleService {
         Role role = roleDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
 
-        List<RolePermission> rolePermissions = rolePermissionDao.findByRoleId(id);
+        List<NavLinkPermissionRow> rows = rolePermissionDao.findNavLinksWithPermissionsByRoleId(id);
 
-        List<ModulePermissionDTO> navLinkDTOs = rolePermissions.stream()
-                .filter(rp -> rp.getNavLinkId() != null)
-                .collect(Collectors.groupingBy(RolePermission::getNavLinkId))
-                .entrySet().stream()
+        Map<Long, List<NavLinkPermissionRow>> byNavLink = rows.stream()
+                .collect(Collectors.groupingBy(
+                        NavLinkPermissionRow::getNavLinkId,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        List<ModulePermissionDTO> navLinkDTOs = byNavLink.entrySet().stream()
                 .map(entry -> {
-                    try {
-                        NavLink navlink = navLinkDao.findById(entry.getKey())
-                                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NAV_LINK_NOT_FOUND,"Navlink not found"));
+                    NavLinkPermissionRow first = entry.getValue().get(0);
+                    List<PermissionDTO> permissions = entry.getValue().stream()
+                            .filter(row -> row.getPermissionId() != null)
+                            .map(row -> PermissionDTO.builder()
+                                    .id(row.getPermissionId())
+                                    .name(row.getPermissionName())
+                                    .build())
+                            .collect(Collectors.toList());
 
-                        List<PermissionDTO> permissions = entry.getValue().stream()
-                                .map(rp -> {
-                                    Permission permission = permissionDao.findById(rp.getPermissionId()).orElse(null);
-                                    if (permission != null) {
-                                        return PermissionDTO.builder()
-                                                .id(permission.getId())
-                                                .name(permission.getName())
-                                                .build();
-                                    }
-                                    return null;
-                                })
-                                .filter(dto -> dto != null)
-                                .collect(Collectors.toList());
-
-                        return ModulePermissionDTO.builder()
-                                .navLinkId(navlink.getId())
-                                .name(navlink.getName())
-                                .path(navlink.getPath())
-                                .navGroup(navlink.getNavGroup())
-                                .index(navlink.getIndex())
-                                .permissions(permissions)
-                                .build();
-                    } catch (GenericException e) {
-                        throw new RuntimeException(e);
-                    }
+                    return ModulePermissionDTO.builder()
+                            .navLinkId(first.getNavLinkId())
+                            .name(first.getNavLinkName())
+                            .path(first.getPath())
+                            .navGroup(first.getNavGroup())
+                            .index(first.getIndex())
+                            .permissions(permissions)
+                            .build();
                 })
                 .collect(Collectors.toList());
 

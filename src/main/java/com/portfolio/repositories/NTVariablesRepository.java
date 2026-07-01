@@ -22,7 +22,7 @@ public interface NTVariablesRepository extends JpaRepository<NotificationTemplat
             FROM NotificationTemplateVariables sub
             WHERE sub.variableName = ntv.variableName
         )
-        AND (:search = '' OR LOWER(ntv.variableName) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:search = '' OR LOWER(ntv.variableName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
         """,
         countQuery = """
         SELECT COUNT(ntv)
@@ -32,7 +32,7 @@ public interface NTVariablesRepository extends JpaRepository<NotificationTemplat
             FROM NotificationTemplateVariables sub
             WHERE sub.variableName = ntv.variableName
         )
-        AND (:search = '' OR LOWER(ntv.variableName) LIKE LOWER(CONCAT('%', :search, '%')))
+        AND (:search = '' OR LOWER(ntv.variableName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
         """)
     Page<NotificationTemplateVariablesListResponseDTO> findByCriteria(
             @Param("search") String search,

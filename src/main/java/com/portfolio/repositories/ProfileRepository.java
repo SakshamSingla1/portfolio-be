@@ -24,6 +24,10 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     boolean existsByEmail(String newEmail);
 
+    boolean existsByUserName(String userName);
+
+    boolean existsByPhone(String phone);
+
     @Query("""
                 SELECT NEW com.portfolio.dtos.User.UserResponse(
                     p.id, p.fullName, p.userName, p.email, p.roleId,
@@ -36,9 +40,9 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
                     LEFT JOIN Profile p2 ON p.updatedBy = p2.id
                     LEFT JOIN FileAsset fa ON fa.resourceId = p.id AND fa.resourceType = 'PROFILE'
                 WHERE (:search IS NULL OR :search = '' OR 
-                       LOWER(p.fullName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-                       LOWER(p.userName) LIKE LOWER(CONCAT('%', :search, '%')) OR
-                       LOWER(p.email) LIKE LOWER(CONCAT('%', :search, '%')))
+                       LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
+                       LOWER(p.userName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
+                       LOWER(p.email) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
                   AND (:statuses IS NULL OR p.status IN :statuses)
                   AND (:roleIds IS NULL OR p.roleId IN :roleIds)
                     """)

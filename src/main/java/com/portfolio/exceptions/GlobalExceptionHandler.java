@@ -3,8 +3,11 @@ package com.portfolio.exceptions;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.payload.ResponseModel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -90,6 +93,31 @@ public class GlobalExceptionHandler {
         ResponseModel<Void> body = new ResponseModel<>(message, null, code != null ? code.getValue() : "ERROR");
         body.toFailure();
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<ResponseModel<Void>> handleInvalidDataAccess(InvalidDataAccessApiUsageException ex) {
+        log.warn("InvalidDataAccessApiUsageException: {}", ex.getMessage());
+        ResponseModel<Void> body = new ResponseModel<>("Invalid query parameter. Check your sort or filter values.", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ResponseModel<Void>> handleMissingHeader(MissingRequestHeaderException ex) {
+        String message = "Authorization header is required";
+        log.warn("MissingRequestHeaderException: {}", ex.getHeaderName());
+        ResponseModel<Void> body = new ResponseModel<>(message, null, ExceptionCodeEnum.UNAUTHORIZED.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<ResponseModel<Void>> handleInvalidDataAccessResource(InvalidDataAccessResourceUsageException ex) {
+        log.warn("InvalidDataAccessResourceUsageException: {}", ex.getMessage());
+        ResponseModel<Void> body = new ResponseModel<>("Invalid query. Check your search or filter values.", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(Exception.class)

@@ -29,7 +29,7 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
             WHERE (:profileId IS NULL OR r.profileId = :profileId)
             AND (:status IS NULL OR r.status = :status)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(fa.metaData) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(fa.metaData) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             """)
     Page<ResumeUploadResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,

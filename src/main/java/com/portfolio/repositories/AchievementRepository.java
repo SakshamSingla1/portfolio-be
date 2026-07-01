@@ -27,9 +27,9 @@ public interface AchievementRepository extends JpaRepository<Achievements, Long>
               LEFT JOIN Profile p2 ON p2.id = a.updatedBy
             WHERE (:profileId IS NULL OR a.profileId = :profileId)
              AND (:search IS NULL OR :search = ''
-                 OR LOWER(a.title) LIKE LOWER(CONCAT('%',:search,'%'))
-                 OR LOWER(a.description) LIKE LOWER(CONCAT('%',:search,'%'))
-                 OR LOWER(a.issuer) LIKE LOWER(CONCAT('%',:search,'%')))
+                 OR LOWER(a.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                 OR LOWER(a.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                 OR LOWER(a.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
              ORDER BY a.order ASC
     """)
     Page<AchievementResponseDTO> findByCriteria(

@@ -22,8 +22,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             SELECT p FROM Project p
             WHERE (:profileId IS NULL OR p.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(p.projectName) LIKE LOWER(CONCAT('%', :search, '%'))
-                OR LOWER(p.projectDescription) LIKE LOWER(CONCAT('%', :search, '%')))
+                OR LOWER(p.projectName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(p.projectDescription) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<Project> findByCriteria(
             @Param("profileId") Long profileId,

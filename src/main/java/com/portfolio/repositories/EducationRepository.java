@@ -42,9 +42,9 @@ public interface EducationRepository extends JpaRepository<Education, Long> {
             LEFT JOIN Profile p2 ON p2.id = e.updatedBy
             WHERE( :profileId is NULL OR e.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
-                OR LOWER(e.institution) LIKE LOWER(CONCAT('%',:search,'%'))
-                OR LOWER(e.fieldOfStudy) LIKE LOWER(CONCAT('%',:search,'%'))   
-                OR LOWER(e.degree) LIKE LOWER(CONCAT('%',:search,'%')))
+                OR LOWER(e.institution) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')   
+                OR LOWER(e.degree) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
     """)
     Page<EducationResponse> findByCriteria(
             @Param("profileId") Long profileId,

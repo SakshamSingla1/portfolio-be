@@ -1,5 +1,6 @@
 package com.portfolio.dao.role;
 
+import com.portfolio.dtos.Role.NavLinkPermissionRow;
 import com.portfolio.entities.RolePermission;
 import com.portfolio.repositories.RolePermissionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -65,5 +66,9 @@ public class RolePermissionDao {
 
     public List<RolePermission> findAll() {
         return rolePermissionRepository.findAll();
+    }
+
+    public List<NavLinkPermissionRow> findNavLinksWithPermissionsByRoleId(Long roleId) {
+        return rolePermissionRepository.findNavLinksWithPermissionsByRoleId(roleId);
     }
 }

@@ -25,7 +25,7 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
             ) FROM Permission p
             LEFT JOIN Profile p1 ON p1.id = p.createdBy
             LEFT JOIN Profile p2 ON p2.id = p.updatedBy
-            WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))
+            WHERE LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%')
     """)
     List<PermissionResponseDTO> searchByName(@Param("name") String name);
 
@@ -49,7 +49,7 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
             ) FROM Permission p
             LEFT JOIN Profile p1 ON p1.id = p.createdBy
             LEFT JOIN Profile p2 ON p2.id = p.updatedBy
-            WHERE (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')))
+            WHERE (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:permissionIds IS NULL OR p.id IN :permissionIds)
     """)
     Page<PermissionResponseDTO> findByCriteria(
