@@ -36,7 +36,7 @@ public class LandingPageController {
 
     // ── Public (no role check — URL is whitelisted in SecurityConfig) ─────
 
-    @Operation(summary = "Get public landing page — no auth required")
+    @Operation(summary = "Get public landing page — no auth required", description = "Returns the complete public landing page data including config, features, FAQs, how-to-use steps, audience cards, and testimonials. No authentication required.")
     @GetMapping("/page")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseModel<LandingPageResponse>> getPublicLandingPage() {
@@ -49,7 +49,7 @@ public class LandingPageController {
 
     // ── Config ────────────────────────────────────────────────────────────
 
-    @Operation(summary = "Get landing config")
+    @Operation(summary = "Get landing config", description = "Returns the current landing page configuration (hero section, CTA section). Requires SUPER_ADMIN role.")
     @GetMapping("/config")
     public ResponseEntity<ResponseModel<LandingConfigResponse>> getConfig() {
         try {
@@ -59,7 +59,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update landing config")
+    @Operation(summary = "Update landing config", description = "Creates or updates the singleton landing page configuration with hero and CTA content. Requires SUPER_ADMIN role.")
     @PutMapping("/config")
     public ResponseEntity<ResponseModel<LandingConfigResponse>> updateConfig(@RequestBody LandingConfigRequest request) {
         try {
@@ -71,7 +71,7 @@ public class LandingPageController {
 
     // ── Features ──────────────────────────────────────────────────────────
 
-    @Operation(summary = "Get all features")
+    @Operation(summary = "Get all features", description = "Returns all landing page feature cards. Requires SUPER_ADMIN role.")
     @GetMapping("/features")
     public ResponseEntity<ResponseModel<List<LandingFeatureResponse>>> getFeatures() {
         try {
@@ -81,7 +81,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Create a feature")
+    @Operation(summary = "Create a feature", description = "Creates a new feature card for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/features")
     public ResponseEntity<ResponseModel<LandingFeatureResponse>> createFeature(@RequestBody LandingFeatureRequest request) {
         try {
@@ -91,7 +91,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update a feature")
+    @Operation(summary = "Update a feature", description = "Updates an existing landing page feature card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/features/{id}")
     public ResponseEntity<ResponseModel<LandingFeatureResponse>> updateFeature(
             @PathVariable Long id, @RequestBody LandingFeatureRequest request) {
@@ -102,7 +102,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Delete a feature")
+    @Operation(summary = "Delete a feature", description = "Permanently deletes a landing page feature card by ID. Requires SUPER_ADMIN role.")
     @DeleteMapping("/features/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteFeature(@PathVariable Long id) {
         try {
@@ -115,7 +115,7 @@ public class LandingPageController {
 
     // ── FAQs ──────────────────────────────────────────────────────────────
 
-    @Operation(summary = "Get all FAQs")
+    @Operation(summary = "Get all FAQs", description = "Returns all FAQ entries for the landing page. Requires SUPER_ADMIN role.")
     @GetMapping("/faqs")
     public ResponseEntity<ResponseModel<List<LandingFaqResponse>>> getFaqs() {
         try {
@@ -125,7 +125,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Create a FAQ")
+    @Operation(summary = "Create a FAQ", description = "Creates a new FAQ entry for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/faqs")
     public ResponseEntity<ResponseModel<LandingFaqResponse>> createFaq(@RequestBody LandingFaqRequest request) {
         try {
@@ -135,7 +135,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update a FAQ")
+    @Operation(summary = "Update a FAQ", description = "Updates an existing FAQ entry by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/faqs/{id}")
     public ResponseEntity<ResponseModel<LandingFaqResponse>> updateFaq(
             @PathVariable Long id, @RequestBody LandingFaqRequest request) {
@@ -146,7 +146,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Delete a FAQ")
+    @Operation(summary = "Delete a FAQ", description = "Permanently deletes a FAQ entry by ID. Requires SUPER_ADMIN role.")
     @DeleteMapping("/faqs/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteFaq(@PathVariable Long id) {
         try {
@@ -159,7 +159,7 @@ public class LandingPageController {
 
     // ── How-To-Use Steps ─────────────────────────────────────────────────
 
-    @Operation(summary = "Get all steps")
+    @Operation(summary = "Get all steps", description = "Returns all how-to-use step cards for the landing page. Requires SUPER_ADMIN role.")
     @GetMapping("/steps")
     public ResponseEntity<ResponseModel<List<LandingHowToUseStepResponse>>> getSteps() {
         try {
@@ -169,7 +169,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Create a step")
+    @Operation(summary = "Create a step", description = "Creates a new how-to-use step card with bullets. Requires SUPER_ADMIN role.")
     @PostMapping("/steps")
     public ResponseEntity<ResponseModel<LandingHowToUseStepResponse>> createStep(@RequestBody LandingHowToUseStepRequest request) {
         try {
@@ -179,7 +179,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update a step")
+    @Operation(summary = "Update a step", description = "Updates an existing how-to-use step card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/steps/{id}")
     public ResponseEntity<ResponseModel<LandingHowToUseStepResponse>> updateStep(
             @PathVariable Long id, @RequestBody LandingHowToUseStepRequest request) {
@@ -190,7 +190,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Delete a step")
+    @Operation(summary = "Delete a step", description = "Permanently deletes a how-to-use step card by ID. Requires SUPER_ADMIN role.")
     @DeleteMapping("/steps/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteStep(@PathVariable Long id) {
         try {
@@ -203,7 +203,7 @@ public class LandingPageController {
 
     // ── Audience Cards ───────────────────────────────────────────────────
 
-    @Operation(summary = "Get all audience cards")
+    @Operation(summary = "Get all audience cards", description = "Returns all audience target cards for the landing page. Requires SUPER_ADMIN role.")
     @GetMapping("/audience")
     public ResponseEntity<ResponseModel<List<LandingAudienceCardResponse>>> getAudienceCards() {
         try {
@@ -213,7 +213,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Create an audience card")
+    @Operation(summary = "Create an audience card", description = "Creates a new audience target card for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/audience")
     public ResponseEntity<ResponseModel<LandingAudienceCardResponse>> createAudienceCard(@RequestBody LandingAudienceCardRequest request) {
         try {
@@ -223,7 +223,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update an audience card")
+    @Operation(summary = "Update an audience card", description = "Updates an existing audience target card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/audience/{id}")
     public ResponseEntity<ResponseModel<LandingAudienceCardResponse>> updateAudienceCard(
             @PathVariable Long id, @RequestBody LandingAudienceCardRequest request) {
@@ -234,7 +234,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Delete an audience card")
+    @Operation(summary = "Delete an audience card", description = "Permanently deletes an audience target card by ID. Requires SUPER_ADMIN role.")
     @DeleteMapping("/audience/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteAudienceCard(@PathVariable Long id) {
         try {
@@ -247,7 +247,7 @@ public class LandingPageController {
 
     // ── Testimonials ──────────────────────────────────────────────────────
 
-    @Operation(summary = "Get all testimonials")
+    @Operation(summary = "Get all testimonials", description = "Returns all landing page testimonials. Requires SUPER_ADMIN role.")
     @GetMapping("/testimonials")
     public ResponseEntity<ResponseModel<List<LandingTestimonialResponse>>> getTestimonials() {
         try {
@@ -257,7 +257,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Create a testimonial")
+    @Operation(summary = "Create a testimonial", description = "Creates a new testimonial entry for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/testimonials")
     public ResponseEntity<ResponseModel<LandingTestimonialResponse>> createTestimonial(@RequestBody LandingTestimonialRequest request) {
         try {
@@ -267,7 +267,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Update a testimonial")
+    @Operation(summary = "Update a testimonial", description = "Updates an existing landing page testimonial by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/testimonials/{id}")
     public ResponseEntity<ResponseModel<LandingTestimonialResponse>> updateTestimonial(
             @PathVariable Long id, @RequestBody LandingTestimonialRequest request) {
@@ -278,7 +278,7 @@ public class LandingPageController {
         }
     }
 
-    @Operation(summary = "Delete a testimonial")
+    @Operation(summary = "Delete a testimonial", description = "Permanently deletes a landing page testimonial by ID. Requires SUPER_ADMIN role.")
     @DeleteMapping("/testimonials/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteTestimonial(@PathVariable Long id) {
         try {

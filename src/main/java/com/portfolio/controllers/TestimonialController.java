@@ -26,6 +26,7 @@ public class TestimonialController {
     private final TestimonialService testimonialService;
     private final Helper helper;
 
+    @Operation(summary = "Create testimonial", description = "Creates a new testimonial record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> createTestimonial(
             @RequestHeader("Authorization") String auth,
@@ -35,6 +36,7 @@ public class TestimonialController {
         return ApiResponse.respond(response, "Testimonial created successfully", "Failed to create Testimonial");
     }
 
+    @Operation(summary = "Update testimonial", description = "Updates an existing testimonial record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(
             @RequestHeader("Authorization") String auth,
@@ -45,12 +47,14 @@ public class TestimonialController {
         return ApiResponse.respond(response, "Testimonial updated successfully", "Failed to update Testimonial");
     }
 
+    @Operation(summary = "Get testimonial by ID", description = "Retrieves a single testimonial record by its ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> getTestimonialById(@PathVariable Long id) throws GenericException {
         TestimonialResponseDTO response = testimonialService.getTestimonialById(id);
         return ApiResponse.respond(response, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
 
+    @Operation(summary = "Get all testimonials", description = "Returns a paginated list of testimonial records for the authenticated user's profile, with optional keyword search and configurable sort field and direction.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
@@ -64,13 +68,14 @@ public class TestimonialController {
         return ApiResponse.respond(page, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
 
+    @Operation(summary = "Delete testimonial", description = "Permanently deletes the testimonial record identified by its ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteTestimonial(@PathVariable Long id) throws GenericException {
         testimonialService.deleteById(id);
         return ApiResponse.respond(null, "Testimonial deleted successfully", "Failed to delete Testimonial");
     }
 
-    @Operation(summary = "Upload Image")
+    @Operation(summary = "Upload testimonial author image", description = "Uploads an author image file for a testimonial and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
             @RequestHeader("Authorization") String auth,

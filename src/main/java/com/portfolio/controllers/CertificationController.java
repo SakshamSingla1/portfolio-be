@@ -26,6 +26,7 @@ public class CertificationController {
     private final CertificationService certificationService;
     private final Helper helper;
 
+    @Operation(summary = "Create certification", description = "Creates a new certification record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> createCertification(
             @RequestHeader("Authorization") String auth,
@@ -35,6 +36,7 @@ public class CertificationController {
         return ApiResponse.respond(response, "Certification created successfully", "Failed to create certification");
     }
 
+    @Operation(summary = "Update certification", description = "Updates an existing certification record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(
             @RequestHeader("Authorization") String auth,
@@ -45,12 +47,14 @@ public class CertificationController {
         return ApiResponse.respond(response, "Certification updated successfully", "Failed to update certification");
     }
 
+    @Operation(summary = "Get certification by ID", description = "Retrieves a single certification record by its ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> getCertificationById(@PathVariable Long id) throws GenericException {
         CertificationResponseDTO response = certificationService.getCertificationById(id);
         return ApiResponse.respond(response, "Certification fetched successfully", "Failed to fetch certification");
     }
 
+    @Operation(summary = "Get all certifications", description = "Returns a paginated list of certification records for the authenticated user's profile, with optional keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
@@ -63,13 +67,14 @@ public class CertificationController {
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
 
+    @Operation(summary = "Delete certification", description = "Permanently deletes the certification record identified by its ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteCertification(@PathVariable Long id) throws GenericException {
         certificationService.deleteById(id);
         return ApiResponse.respond(null, "Certification deleted successfully", "Failed to delete certification");
     }
 
-    @Operation(summary = "Upload Credential Image")
+    @Operation(summary = "Upload certification credential image", description = "Uploads a credential image file for a certification and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadCredentialImage(
             @RequestHeader("Authorization") String auth,

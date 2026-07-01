@@ -45,7 +45,14 @@ public class Helper {
     }
 
     public Long getProfileIdFromHeader(String header) throws GenericException {
-        return getProfileFromHeader(header).getId();
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid authorization header");
+        }
+        String userId = jwtUtil.extractUserId(header.substring(7));
+        if (userId == null) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid token");
+        }
+        return Long.parseLong(userId);
     }
 
     public String generateRawOtp() {

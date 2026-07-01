@@ -5,6 +5,7 @@ import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.repositories.FileAssetRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class FileAssetDao {
         return fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType);
     }
 
+    @Transactional
     public void deleteByResourceIdAndResourceType(Integer resourceId, ResourceTypeEnum resourceType) {
         fileAssetRepository.deleteByResourceIdAndResourceType(resourceId, resourceType);
     }

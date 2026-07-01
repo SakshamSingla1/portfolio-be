@@ -28,7 +28,7 @@ public class PermissionController {
 
         private final PermissionService permissionService;
 
-        @Operation(summary = "Create a new permission")
+        @Operation(summary = "Create a new permission", description = "Creates a new permission entry. Requires SUPER_ADMIN role.")
         @PostMapping
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> createPermission(
                         @RequestBody PermissionRequestDTO request) throws GenericException {
@@ -39,7 +39,7 @@ public class PermissionController {
                                 "Failed to create permission");
         }
 
-        @Operation(summary = "Update an existing permission")
+        @Operation(summary = "Update an existing permission", description = "Updates an existing permission by ID. Requires SUPER_ADMIN role.")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> updatePermission(
                         @PathVariable Long id,
@@ -51,7 +51,7 @@ public class PermissionController {
                                 "Failed to update permission");
         }
 
-        @Operation(summary = "Delete a permission")
+        @Operation(summary = "Delete a permission", description = "Deletes a permission by ID. Requires SUPER_ADMIN role.")
         @DeleteMapping("/{id}")
         public ResponseEntity<ResponseModel<String>> deletePermission(@PathVariable Long id) throws GenericException {
                 permissionService.deletePermission(id);
@@ -61,7 +61,7 @@ public class PermissionController {
                                 "Failed to delete permission");
         }
 
-        @Operation(summary = "Get permission by ID")
+        @Operation(summary = "Get permission by ID", description = "Fetches a single permission record by its ID.")
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> getPermissionById(@PathVariable Long id)
                         throws GenericException {
@@ -72,7 +72,7 @@ public class PermissionController {
                                 "Failed to fetch permission");
         }
 
-        @Operation(summary = "Get all permissions with pagination")
+        @Operation(summary = "Get all permissions with pagination", description = "Returns a paginated list of permissions with optional search and ID filter.")
         @GetMapping
         public ResponseEntity<ResponseModel<Page<PermissionResponseDTO>>> getAllPermissions(
                         Pageable pageable,
@@ -86,7 +86,7 @@ public class PermissionController {
                                 "Failed to fetch permissions");
         }
 
-        @Operation(summary = "Get all permissions (legacy endpoint)")
+        @Operation(summary = "Get all permissions (legacy endpoint)", description = "Returns the full list of all permissions without pagination. Legacy endpoint.")
         @GetMapping("/all")
         public ResponseEntity<ResponseModel<List<Permission>>> getModulesWithChildren() {
                 return ApiResponse.successResponse(permissionService.getAllPermissions(), ApiResponse.SUCCESS);

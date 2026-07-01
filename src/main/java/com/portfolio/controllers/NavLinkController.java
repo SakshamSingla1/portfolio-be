@@ -8,6 +8,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.NavLinkService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ public class NavLinkController {
         @Autowired
         private NavLinkService navLinkService;
 
+        @Operation(summary = "Create nav link", description = "Creates a new navigation link. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PostMapping
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> createNavLink(
@@ -37,6 +39,7 @@ public class NavLinkController {
                                 "Failed to create nav link");
         }
 
+        @Operation(summary = "Update nav link", description = "Updates an existing navigation link by ID. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> updateNavLink(
@@ -51,6 +54,7 @@ public class NavLinkController {
                                 "Failed to update nav link");
         }
 
+        @Operation(summary = "Delete nav link", description = "Deletes a navigation link by ID. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @DeleteMapping("/{id}")
         public ResponseEntity<ResponseModel<String>> deleteNavLink(
@@ -64,6 +68,7 @@ public class NavLinkController {
                                 "Failed to delete nav link");
         }
 
+        @Operation(summary = "Get all nav links", description = "Returns a paginated list of navigation links with optional search and status filter.")
         @GetMapping
         public ResponseEntity<ResponseModel<Page<NavLinkResponseDTO>>> getAllNavLinks(
                         Pageable pageable,
@@ -81,6 +86,7 @@ public class NavLinkController {
                                 "Failed to fetch nav links");
         }
 
+        @Operation(summary = "Get nav link by ID", description = "Fetches a single navigation link by its ID.")
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> getNavLink(
                         @PathVariable Long id) throws GenericException {
@@ -93,6 +99,7 @@ public class NavLinkController {
                                 "Failed to fetch nav link");
         }
 
+        @Operation(summary = "Get grouped nav links", description = "Returns all navigation links grouped by their navGroup field.")
         @GetMapping("/grouped")
         public ResponseEntity<ResponseModel<List<GroupedNavLinkResponseDTO>>> getGroupedNavLinks() {
 

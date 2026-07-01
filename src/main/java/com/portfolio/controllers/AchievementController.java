@@ -26,6 +26,7 @@ public class AchievementController {
     private final AchievementService achievementService;
     private final Helper helper;
 
+    @Operation(summary = "Create achievement", description = "Creates a new achievement record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> createAchievement(
             @RequestHeader("Authorization") String auth,
@@ -35,6 +36,7 @@ public class AchievementController {
         return ApiResponse.respond(response, "Achievement created successfully", "Failed to create Achievement");
     }
 
+    @Operation(summary = "Update achievement", description = "Updates an existing achievement record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(
             @RequestHeader("Authorization") String auth,
@@ -45,12 +47,14 @@ public class AchievementController {
         return ApiResponse.respond(response, "Achievement updated successfully", "Failed to update Achievement");
     }
 
+    @Operation(summary = "Get achievement by ID", description = "Retrieves a single achievement record by its ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> getAchievementById(@PathVariable Long id) throws GenericException {
         AchievementResponseDTO response = achievementService.getAchievementById(id);
         return ApiResponse.respond(response, "Achievement fetched successfully", "Failed to fetch Achievement");
     }
 
+    @Operation(summary = "Get all achievements", description = "Returns a paginated list of achievement records for the authenticated user's profile, with optional keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
@@ -62,13 +66,14 @@ public class AchievementController {
         return ApiResponse.respond(page, "Achievements fetched successfully", "Failed to fetch Achievements");
     }
 
+    @Operation(summary = "Delete achievement", description = "Permanently deletes the achievement record identified by its ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteAchievement(@PathVariable Long id) throws GenericException {
         achievementService.deleteById(id);
         return ApiResponse.respond(null, "Achievement deleted successfully", "Failed to delete Achievement");
     }
 
-    @Operation(summary = "Upload Image")
+    @Operation(summary = "Upload achievement image", description = "Uploads an image file for an achievement and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
             @RequestHeader("Authorization") String auth,
