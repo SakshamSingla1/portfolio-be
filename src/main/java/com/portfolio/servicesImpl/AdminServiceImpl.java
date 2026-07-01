@@ -4,7 +4,6 @@ import com.portfolio.dao.authentication.OtpStoreDao;
 import com.portfolio.dao.authentication.PasswordResetTokenDao;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.profile_theme.ProfileThemeMappingDao;
-import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
@@ -51,20 +50,20 @@ public class AdminServiceImpl implements AdminService {
     private final NTService ntService;
     private final ColorThemeService colorThemeService;
     private final RoleService roleService;
-    private final RoleDao roleDao;
     private final ProfileThemeMappingDao profileThemeMappingDao;
     private final SocialLinkService socialLinkService;
 
     @Override
+    @Transactional
     public AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException {
 
-        if (profileDao.findByEmail(registerDTO.getEmail()).isPresent())
+        if (profileDao.existsByEmail(registerDTO.getEmail()))
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_EMAIL, "User with same email already exists");
 
-        if (profileDao.findByUserName(registerDTO.getUserName()).isPresent())
+        if (profileDao.existsByUserName(registerDTO.getUserName()))
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same username already exists");
 
-        if (profileDao.findByPhone(registerDTO.getPhone()).isPresent())
+        if (profileDao.existsByPhone(registerDTO.getPhone()))
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same phone number already exists");
 
         Profile user = Profile.builder()
@@ -116,6 +115,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String sendOtp(PhoneOtpRequestDTO dto) throws GenericException {
 
         Profile user = profileDao.findByPhone(dto.getPhone())
@@ -197,6 +197,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String resendOtp(String email) throws GenericException {
         Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
@@ -223,6 +224,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String forgotPassword(PasswordResetRequestDTO dto) throws GenericException {
 
         Profile user = profileDao.findByEmail(dto.getEmail())
@@ -256,6 +258,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public String resetPassword(PasswordResetConfirmDTO dto) throws GenericException {
         PasswordResetToken token = passwordResetTokenDao.findByToken(dto.getToken())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid token"));
@@ -278,6 +281,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Transactional
     public LoginResponseDTO login(AuthLoginDTO dto) throws GenericException {
 
         Profile user;
@@ -343,8 +347,6 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
-        Role role = roleDao.findById(user.getRoleId())
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND,"Role not found"));
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -352,8 +354,8 @@ public class AdminServiceImpl implements AdminService {
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .roleId(role.getId())
-                .roleName(role.getName())
+                .roleId(user.getRoleId())
+                .roleName(rolePermissionResponse.getName())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
@@ -367,9 +369,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public String changePassword(String authorizationHeader, ChangePasswordDTO dto) throws GenericException {
-        String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileDao.findByEmail(email)
-                .orElseThrow(() -> new GenericException( ExceptionCodeEnum.PROFILE_NOT_FOUND,"User not found" ));
+        Long profileId = helper.getProfileIdFromHeader(authorizationHeader);
+        Profile user = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Incorrect current password");
         }
@@ -388,14 +390,9 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     @Override
     public String requestEmailChange(String authorizationHeader, ChangeEmailRequestDTO dto)throws GenericException {
-        String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileDao.findByEmail(email)
-                .orElseThrow(() ->
-                        new GenericException(
-                                ExceptionCodeEnum.PROFILE_NOT_FOUND,
-                                "User not found"
-                        )
-                );
+        Long profileId = helper.getProfileIdFromHeader(authorizationHeader);
+        Profile user = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         if (dto.getNewEmail().equalsIgnoreCase(user.getEmail())) {
             throw new GenericException(
                     ExceptionCodeEnum.BAD_REQUEST,
@@ -427,14 +424,9 @@ public class AdminServiceImpl implements AdminService {
     @Transactional
     @Override
     public String verifyEmailChangeOtp(String authorizationHeader, VerifyEmailChangeDTO dto) throws GenericException {
-        String email = helper.extractEmailFromHeader(authorizationHeader);
-        Profile user = profileDao.findByEmail(email)
-                .orElseThrow(() ->
-                        new GenericException(
-                                ExceptionCodeEnum.PROFILE_NOT_FOUND,
-                                "User not found"
-                        )
-                );
+        Long profileId = helper.getProfileIdFromHeader(authorizationHeader);
+        Profile user = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
 
         OtpStore otpStore = otpStoreDao.findByProfileId(user.getId())
                 .orElseThrow(() ->
@@ -472,7 +464,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public TwoFactorSetupResponseDTO generate2FaSecret(String authorizationHeader) throws GenericException {
-        Profile profile = helper.getProfileFromHeader(authorizationHeader);
+        Long profileId = helper.getProfileIdFromHeader(authorizationHeader);
+        Profile profile = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         String secret = new DefaultSecretGenerator().generate();
         profile.setTotpSecret(secret);
         profileDao.save(profile);
@@ -515,16 +509,14 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
-        Role role = roleDao.findById(user.getRoleId())
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
         return LoginResponseDTO.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .roleId(role.getId())
-                .roleName(role.getName())
+                .roleId(user.getRoleId())
+                .roleName(rolePermissionResponse.getName())
                 .status(user.getStatus())
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
@@ -538,7 +530,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public String toggle2Fa(String authHeader, String totpCode) throws GenericException {
-        Profile profile = helper.getProfileFromHeader(authHeader);
+        Long profileId = helper.getProfileIdFromHeader(authHeader);
+        Profile profile = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         if (profile.getTotpSecret() == null) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "2FA not set up. Call /2fa/setup first.");
         }

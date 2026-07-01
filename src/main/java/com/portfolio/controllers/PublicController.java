@@ -28,6 +28,7 @@ public class PublicController {
     private final ResumePublicService resumePublicService;
     private final PortfolioViewService portfolioViewService;
 
+    @Operation(summary = "View resume", description = "Streams the active resume PDF for the given username directly in the browser.")
     @GetMapping("/resume/view/{username}")
     public void viewResume(
             @PathVariable String username,
@@ -36,6 +37,7 @@ public class PublicController {
         resumePublicService.viewResume(username, response);
     }
 
+    @Operation(summary = "Download resume", description = "Downloads the active resume PDF for the given username as a file attachment.")
     @GetMapping("/resume/download/{username}")
     public void downloadResume(
             @PathVariable String username,
@@ -44,6 +46,7 @@ public class PublicController {
         resumePublicService.downloadResume(username, response);
     }
 
+    @Operation(summary = "Get profile master data", description = "Returns the complete public portfolio data (profile, experience, education, skills, projects, etc.) for the domain in the Referer header.")
     @GetMapping("/profile-master")
     public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterByDomain(HttpServletRequest request) throws GenericException {
         String domain = request.getHeader("Referer");

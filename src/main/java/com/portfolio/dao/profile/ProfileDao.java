@@ -53,6 +53,14 @@ public class ProfileDao {
         return profileRepository.existsByEmail(email);
     }
 
+    public boolean existsByUserName(String userName) {
+        return profileRepository.existsByUserName(userName);
+    }
+
+    public boolean existsByPhone(String phone) {
+        return profileRepository.existsByPhone(phone);
+    }
+
     public Page<UserResponse> findByCriteria(
             String search, List<StatusEnum> statuses, List<Long> roleIds, Pageable pageable) {
         return profileRepository.findByCriteria(search, statuses, roleIds, pageable);

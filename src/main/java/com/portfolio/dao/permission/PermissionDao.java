@@ -9,7 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -55,6 +57,11 @@ public class PermissionDao {
 
     public boolean existsByNameAndIdNot(String name, Long id) {
         return permissionRepository.existsByNameAndIdNot(name, id);
+    }
+
+    public Map<Long, Permission> findAllByIdAsMap(List<Long> ids) {
+        return permissionRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Permission::getId, p -> p));
     }
 
     public void delete(Permission permission) {

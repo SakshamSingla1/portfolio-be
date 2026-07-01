@@ -10,7 +10,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -40,6 +42,11 @@ public class NavLinkDao {
 
     public List<NavLink> findAll() {
         return navLinkRepository.findAll();
+    }
+
+    public Map<Long, NavLink> findAllByIdAsMap(List<Long> ids) {
+        return navLinkRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(NavLink::getId, n -> n));
     }
 
     public Optional<NavLinkResponseDTO> findDTOById(Long id) {

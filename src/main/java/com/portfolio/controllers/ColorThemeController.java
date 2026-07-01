@@ -7,6 +7,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.*;
 import com.portfolio.services.ColorThemeService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ public class ColorThemeController {
 
         private final ColorThemeService colorThemeService;
 
+        @Operation(summary = "Create color theme", description = "Creates a new color theme. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PostMapping
         public ResponseEntity<ResponseModel<ColorThemeResponseDTO>> createTheme(
@@ -32,6 +34,7 @@ public class ColorThemeController {
                                 "Failed to create color theme");
         }
 
+        @Operation(summary = "Update color theme", description = "Updates an existing color theme by ID. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<ColorThemeResponseDTO>> updateTheme(
@@ -44,6 +47,7 @@ public class ColorThemeController {
                                 "Failed to update color theme");
         }
 
+        @Operation(summary = "Get color theme by ID", description = "Fetches a single color theme by its ID.")
         @GetMapping("/{id}")
         public ResponseEntity<ResponseModel<ColorThemeResponseDTO>> getThemeById(
                         @PathVariable Long id) throws GenericException {
@@ -54,6 +58,7 @@ public class ColorThemeController {
                                 "Failed to fetch theme");
         }
 
+        @Operation(summary = "Get all color themes", description = "Returns a paginated list of color themes with optional search and status filter.")
         @GetMapping
         public ResponseEntity<ResponseModel<Page<ColorThemeResponseDTO>>> getAllThemes(Pageable pageable,
                         @RequestParam(required = false) String search,
@@ -68,6 +73,7 @@ public class ColorThemeController {
                                 "Failed to fetch color themes");
         }
 
+        @Operation(summary = "Delete color theme", description = "Deletes a color theme by ID. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @DeleteMapping("/{id}")
         public ResponseEntity<ResponseModel<String>> deleteTheme(

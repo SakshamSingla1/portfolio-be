@@ -10,6 +10,7 @@ import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.SocialLinkService;
 import com.portfolio.utils.Helper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ public class SocialLinkController {
     private final SocialLinkService socialLinkService;
     private final Helper helper;
 
+    @Operation(summary = "Create social link", description = "Creates a new social media link for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> createLink(
             @RequestHeader("Authorization") String auth,
@@ -35,6 +37,7 @@ public class SocialLinkController {
         return ApiResponse.respond(responseDTO,"Social Link created successfully","Failed to create social link");
     }
 
+    @Operation(summary = "Update social link", description = "Updates an existing social link by ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> updateLink(
             @RequestHeader("Authorization") String auth,
@@ -45,12 +48,14 @@ public class SocialLinkController {
         return ApiResponse.respond(responseDTO,"Social Link updated successfully","Failed to update social link");
     }
 
+    @Operation(summary = "Get social link by ID", description = "Fetches a single social link record by its ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> get(@PathVariable Long id) throws GenericException {
         SocialLinkResponseDTO responseDTO = socialLinkService.get(id);
         return ApiResponse.respond(responseDTO,"Social Link fetched successfully","Failed to fetch social link");
     }
 
+    @Operation(summary = "Get all social links", description = "Returns a paginated list of social links for the authenticated user with optional status filter and search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>> getAll(
             @RequestHeader("Authorization") String auth,
@@ -64,6 +69,7 @@ public class SocialLinkController {
         return ApiResponse.respond(responseDTOS, "Social Links fetched successfully","failed to fetch social links");
     }
 
+    @Operation(summary = "Delete social link", description = "Deletes a social link record by ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> deleteSocialLink(
             @PathVariable Long id

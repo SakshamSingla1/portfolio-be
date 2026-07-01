@@ -16,7 +16,7 @@ public class PlatformSettingsController {
 
     private final PlatformSettingsService platformSettingsService;
 
-    @Operation(summary = "Get platform settings (public)")
+    @Operation(summary = "Get platform settings (public)", description = "Returns platform-level configuration such as registration settings, feature flags, and branding info. No authentication required.")
     @GetMapping("api/v1/public/platform-settings")
     public ResponseEntity<ResponseModel<PlatformSettingsDTO>> getSettings() {
         return ApiResponse.respond(

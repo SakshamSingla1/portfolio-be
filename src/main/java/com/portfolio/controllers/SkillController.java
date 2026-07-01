@@ -91,6 +91,7 @@ public class SkillController {
         }
     }
 
+    @Operation(summary = "Get skill statistics", description = "Returns aggregated skill statistics such as counts by category and level for the authenticated profile.")
     @GetMapping("/stats")
     public ResponseEntity<ResponseModel<SkillStat>> getStats() {
         SkillStat statsResponse = skillService.getStats();

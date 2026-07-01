@@ -29,6 +29,6 @@ public class AuditorAwareImpl implements AuditorAware<Long> {
         } catch (Exception e) {
             log.debug("Failed to get user ID from request: {}", e.getMessage());
         }
-        return Optional.of(2L);
+        return Optional.of(1L);
     }
 }

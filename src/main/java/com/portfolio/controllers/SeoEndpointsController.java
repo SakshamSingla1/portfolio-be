@@ -6,6 +6,7 @@ import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.repositories.SeoMetaRepository;
 import com.portfolio.repositories.SocialLinkRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ public class SeoEndpointsController {
     private final SocialLinkRepository socialLinkRepository;
     private final SeoMetaRepository seoMetaRepository;
 
+    @Operation(summary = "Get sitemap", description = "Generates and returns an XML sitemap for the portfolio site associated with the request's host. Returns 404 if no matching portfolio is found.")
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap(HttpServletRequest request) {
         try {
@@ -44,6 +46,7 @@ public class SeoEndpointsController {
         }
     }
 
+    @Operation(summary = "Get robots.txt", description = "Returns the robots.txt file for the portfolio site associated with the request's host, respecting the SEO indexable setting.")
     @GetMapping(value = "/robots.txt", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> robots(HttpServletRequest request) {
         try {

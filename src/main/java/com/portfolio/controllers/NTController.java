@@ -9,6 +9,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.NTService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ public class NTController {
 
     // ── Notification Templates ────────────────────────────────────────────
 
+    @Operation(summary = "Create notification template", description = "Creates a new notification template for email, SMS, or WhatsApp messaging.")
     @PostMapping("/api/v1/notification-templates")
     public ResponseEntity<ResponseModel<NotificationTemplate>> create(
             @RequestBody NTRequestDTO dto) throws GenericException {
@@ -31,6 +33,7 @@ public class NTController {
                 "Notification template created", "Failed to create notification template");
     }
 
+    @Operation(summary = "Get notification template by ID", description = "Fetches a single notification template by its ID.")
     @GetMapping("/api/v1/notification-templates/{id}")
     public ResponseEntity<ResponseModel<NTResponseDTO>> findById(
             @PathVariable Long id) throws GenericException {
@@ -38,6 +41,7 @@ public class NTController {
                 "Notification template fetched", "Failed to fetch notification template");
     }
 
+    @Operation(summary = "Get all notification templates", description = "Returns a paginated list of notification templates with optional search and template group filter.")
     @GetMapping("/api/v1/notification-templates")
     public ResponseEntity<ResponseModel<Page<NotificationTemplateListResponseDTO>>> getAll(
             @RequestParam(required = false) String search,
@@ -48,6 +52,7 @@ public class NTController {
                 "Notification templates fetched", "Failed to fetch notification templates");
     }
 
+    @Operation(summary = "Update notification template", description = "Updates an existing notification template by ID.")
     @PutMapping("/api/v1/notification-templates/{id}")
     public ResponseEntity<ResponseModel<NotificationTemplate>> update(
             @PathVariable Long id,
@@ -58,6 +63,7 @@ public class NTController {
 
     // ── Notification Template Variables ──────────────────────────────────
 
+    @Operation(summary = "Get template variables", description = "Returns a paginated list of available template variables that can be used in notification template bodies.")
     @GetMapping("/api/v1/notification-template-variables")
     public ResponseEntity<ResponseModel<Page<NotificationTemplateVariablesListResponseDTO>>> getVariables(
             @RequestParam(required = false) String search,

@@ -4,6 +4,7 @@ import com.portfolio.entities.ProfileThemeMapping;
 import com.portfolio.repositories.ProfileThemeMappingRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,7 @@ public class ProfileThemeMappingDao {
         return profileThemeMappingRepository.existsByProfileId(profileId);
     }
 
+    @Transactional
     public void deleteByProfileId(Long profileId) {
         profileThemeMappingRepository.deleteByProfileId(profileId);
     }
