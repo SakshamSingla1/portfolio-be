@@ -56,7 +56,7 @@ public class FileController {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
         FileAssetDTO result = fileService.getPrimaryFile(profileId.intValue(), type);
-        return ApiResponse.respond(result, "File fetched successfully", "Failed to fetch file");
+        return ApiResponse.successResponse(result, "File fetched successfully");
     }
 
     @Operation(summary = "Get all files for a resource", description = "Returns all file assets associated with a specific resource type and ID.")

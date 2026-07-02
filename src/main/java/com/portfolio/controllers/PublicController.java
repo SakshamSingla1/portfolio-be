@@ -3,10 +3,13 @@ package com.portfolio.controllers;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
+import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
+import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.services.FileService;
 import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
@@ -27,6 +30,18 @@ public class PublicController {
     private final ProfileMasterService profileMasterService;
     private final ResumePublicService resumePublicService;
     private final PortfolioViewService portfolioViewService;
+    private final FileService fileService;
+
+    // Platform-level resource ID used for singleton assets (e.g. landing page banner)
+    private static final int PLATFORM_RESOURCE_ID = 1;
+
+    @Operation(summary = "Get platform singleton file", description = "Returns the primary file asset for a platform-level resource type (e.g. BANNER). No auth required.")
+    @GetMapping("/files/{resourceType}/singleton")
+    public ResponseEntity<ResponseModel<FileAssetDTO>> getPlatformSingleton(@PathVariable String resourceType) {
+        ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
+        FileAssetDTO result = fileService.getPrimaryFile(PLATFORM_RESOURCE_ID, type);
+        return ApiResponse.successResponse(result, "File fetched successfully");
+    }
 
     @Operation(summary = "View resume", description = "Streams the active resume PDF for the given username directly in the browser.")
     @GetMapping("/resume/view/{username}")
