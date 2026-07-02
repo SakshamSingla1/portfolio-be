@@ -1,5 +1,6 @@
 package com.portfolio.dao.skill;
 
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.SkillLevelEnum;
@@ -68,5 +69,9 @@ public class SkillDao {
 
     public List<Skill> findAllById(List<Long> ids) {
         return skillRepository.findAllById(ids);
+    }
+
+    public List<SkillDropdown> findDropdownByIds(List<Long> ids) {
+        return skillRepository.findDropdownByIds(ids);
     }
 }

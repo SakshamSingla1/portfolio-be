@@ -122,13 +122,7 @@ public class ExperienceServiceImpl implements ExperienceService {
         List<SkillDropdown> skills =
                 skillIdLongs.isEmpty()
                         ? List.of()
-                        : skillDao.findAllById(skillIdLongs)
-                        .stream()
-                        .map(skill -> new SkillDropdown(
-                                skill.getId(),
-                                skill.getLogo().getName(),
-                                skill.getLogo().getUrl()))
-                        .toList();
+                        : skillDao.findDropdownByIds(skillIdLongs);
 
         return ExperienceResponse.builder()
                 .id(exp.getId())

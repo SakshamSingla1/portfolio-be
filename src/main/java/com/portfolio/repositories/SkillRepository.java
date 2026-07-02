@@ -1,5 +1,6 @@
 package com.portfolio.repositories;
 
+import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.SkillLevelEnum;
@@ -45,6 +46,15 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             WHERE s.id = :id
     """)
     Optional<SkillResponse> findDTOById(@Param("id") Long id);
+
+    @Query("""
+            SELECT NEW com.portfolio.dtos.Skill.SkillDropdown(
+                s.id, s.logoName, fa.path
+            ) FROM Skill s
+            LEFT JOIN FileAsset fa ON fa.resourceId = s.logoId AND fa.resourceType = 'LOGO'
+            WHERE s.id IN :ids
+    """)
+    List<SkillDropdown> findDropdownByIds(@Param("ids") List<Long> ids);
 
     Page<Skill> findByProfileId(Long profileId, Pageable pageable);
 
