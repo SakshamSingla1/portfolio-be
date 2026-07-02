@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface SkillRepository extends JpaRepository<Skill, Long> {
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Skill.SkillResponse(
                 s.id, s.logoId, s.logoName, fa.path,
                 s.category, s.level, s.createdAt, s.updatedAt
@@ -24,7 +24,12 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             LEFT JOIN FileAsset fa ON fa.resourceId = s.logoId AND fa.resourceType = 'LOGO'
             WHERE (:profileId IS NULL OR s.profileId = :profileId)
             AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(s) FROM Skill s
+            WHERE (:profileId IS NULL OR s.profileId = :profileId)
+            AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<SkillResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

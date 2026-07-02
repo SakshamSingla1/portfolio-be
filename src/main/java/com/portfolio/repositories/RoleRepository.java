@@ -22,7 +22,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
     boolean existsByName(String name);
 
-    @Query("""
+    @Query(value = """
     SELECT NEW com.portfolio.dtos.Role.RoleListResponseDTO(
         r.id, r.name, r.status, r.description, r.createdAt,
         r.createdBy, r.updatedAt, r.updatedBy, p1.fullName, p2.fullName
@@ -45,6 +45,22 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     GROUP BY
         r.id, r.name, r.status, r.description, r.createdAt,
         r.createdBy, r.updatedAt, r.updatedBy, p1.fullName, p2.fullName
+    """,
+    countQuery = """
+    SELECT COUNT(DISTINCT r.id)
+    FROM Role r
+    LEFT JOIN RolePermission rp ON rp.roleId = r.id
+    LEFT JOIN Permission p ON p.id = rp.permissionId
+    LEFT JOIN NavLink nav ON nav.id = rp.navLinkId
+    WHERE (
+        :search IS NULL OR :search = ''
+        OR LOWER(r.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(r.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+        OR LOWER(nav.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+    )
+    AND ( :navLinkIds IS NULL OR nav.id IN :navLinkIds )
+    AND ( :status IS NULL OR r.status = :status )
     """)
     Page<RoleListResponseDTO> findByCriteria(
             @Param("search") String search,

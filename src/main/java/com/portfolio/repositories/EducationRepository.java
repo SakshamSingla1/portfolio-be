@@ -32,7 +32,7 @@ public interface EducationRepository extends JpaRepository<Education, Long> {
 
     List<Education> findByProfileId(Long profileId);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Education.EducationResponse(
                 e.id, e.degree, e.institution, e.fieldOfStudy, e.startYear,
                 e.location, e.endYear, e.description, e.grade, e.createdAt,
@@ -45,7 +45,15 @@ public interface EducationRepository extends JpaRepository<Education, Long> {
                 OR LOWER(e.institution) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')   
                 OR LOWER(e.degree) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(e) FROM Education e
+            WHERE (:profileId IS NULL OR e.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(e.institution) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(e.degree) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<EducationResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

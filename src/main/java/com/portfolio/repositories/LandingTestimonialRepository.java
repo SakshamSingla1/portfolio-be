@@ -43,7 +43,7 @@ public interface LandingTestimonialRepository extends JpaRepository<LandingTesti
             """)
     Optional<LandingTestimonialResponse> findDTOById(@Param("id") Long id);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.LandingPage.LandingTestimonialResponse(
                 t.id, t.authorName, t.authorRole, t.authorCompany, t.avatarUrl, t.content, t.linkedinUrl,
                 t.sortOrder, t.isActive,
@@ -51,6 +51,13 @@ public interface LandingTestimonialRepository extends JpaRepository<LandingTesti
             ) FROM LandingTestimonial t
             LEFT JOIN Profile p1 ON p1.id = t.createdBy
             LEFT JOIN Profile p2 ON p2.id = t.updatedBy
+            WHERE (:search IS NULL OR :search = ''
+                OR LOWER(t.authorName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.content) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:isActive IS NULL OR t.isActive = :isActive)
+            """,
+            countQuery = """
+            SELECT COUNT(t) FROM LandingTestimonial t
             WHERE (:search IS NULL OR :search = ''
                 OR LOWER(t.authorName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(t.content) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))

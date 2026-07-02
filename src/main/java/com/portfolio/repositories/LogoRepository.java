@@ -26,12 +26,16 @@ public interface LogoRepository extends JpaRepository<Logo, Long> {
     """)
     Optional<LogoResponse> findDTOById(@Param("id") Long id);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Logos.LogoDropdown(
                 l.id, l.name, fa.path, l.createdAt, l.updatedAt
             ) FROM Logo l
             LEFT JOIN FileAsset fa ON fa.resourceId = l.id AND fa.resourceType = 'LOGO'
             WHERE (:search IS NULL OR :search = '' OR LOWER(l.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(l) FROM Logo l
+            WHERE (:search IS NULL OR :search = '' OR LOWER(l.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<LogoDropdown> findByCriteria(@Param("search") String search, Pageable pageable);
 }

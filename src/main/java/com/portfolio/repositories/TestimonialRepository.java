@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface TestimonialRepository extends JpaRepository<Testimonial, Long> {
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Testimonial.TestimonialResponseDTO(
                 t.id, t.name, t.role, t.company, t.message,
                 fa.path, fa.id, t.linkedInUrl, t.order, t.status, t.createdAt, t.updatedAt
@@ -27,7 +27,15 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
                 OR LOWER(t.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(t.company) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(t.role) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(t) FROM Testimonial t
+            WHERE (:profileId IS NULL OR t.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(t.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.company) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(t.role) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<TestimonialResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

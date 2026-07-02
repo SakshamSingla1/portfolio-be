@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface AchievementRepository extends JpaRepository<Achievements, Long> {
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Achievements.AchievementResponseDTO(
                 a.id, a.title, a.description, a.issuer, a.achievedAt,
                 fa.path, fa.publicId, a.order, a.status, a.createdAt,
@@ -31,7 +31,15 @@ public interface AchievementRepository extends JpaRepository<Achievements, Long>
                  OR LOWER(a.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                  OR LOWER(a.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
              ORDER BY a.order ASC
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(a) FROM Achievements a
+            WHERE (:profileId IS NULL OR a.profileId = :profileId)
+             AND (:search IS NULL OR :search = ''
+                 OR LOWER(a.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                 OR LOWER(a.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                 OR LOWER(a.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<AchievementResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

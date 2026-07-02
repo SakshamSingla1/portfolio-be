@@ -16,7 +16,7 @@ import java.util.Optional;
 @Repository
 public interface CertificationsRepository extends JpaRepository<Certifications, Long> {
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Certifications.CertificationResponseDTO(
                 c.id, c.title, c.issuer, c.credentialId, fa.path, c.status, c.order,
                 c.issueDate, c.expiryDate, c.createdAt, c.updatedAt, c.createdBy,
@@ -30,7 +30,14 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
             OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
             OR LOWER(c.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             ORDER BY c.order ASC
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(c) FROM Certifications c
+            WHERE (:profileId IS NULL OR c.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+            OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+            OR LOWER(c.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<CertificationResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

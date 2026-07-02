@@ -43,7 +43,7 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
     """)
     Optional<PermissionResponseDTO> findDTOById(@Param("id") Long id);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Permission.PermissionResponseDTO(
                 p.id, p.name, p.createdAt, p.updatedAt, p.createdBy, p.updatedBy, p1.fullName, p2.fullName
             ) FROM Permission p
@@ -51,7 +51,12 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
             LEFT JOIN Profile p2 ON p2.id = p.updatedBy
             WHERE (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             AND (:permissionIds IS NULL OR p.id IN :permissionIds)
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(p) FROM Permission p
+            WHERE (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:permissionIds IS NULL OR p.id IN :permissionIds)
+            """)
     Page<PermissionResponseDTO> findByCriteria(
             @Param("search") String search,
             @Param("permissionIds") List<Long> permissionIds,

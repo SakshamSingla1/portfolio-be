@@ -28,7 +28,7 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
 
     Optional<Experience> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Experience.ExperienceResponse(
                 ex.id, ex.companyName, ex.jobTitle, ex.location,
                 ex.startDate, ex.endDate, ex.employmentStatus, ex.description,
@@ -41,7 +41,15 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
                 OR LOWER(ex.companyName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.jobTitle) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.location) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
-    """)
+    """,
+            countQuery = """
+            SELECT COUNT(ex) FROM Experience ex
+            WHERE (:profileId IS NULL OR ex.profileId = :profileId)
+            AND (:search IS NULL OR :search = ''
+                OR LOWER(ex.companyName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(ex.jobTitle) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(ex.location) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """)
     Page<ExperienceResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,

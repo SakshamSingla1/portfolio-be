@@ -41,13 +41,20 @@ public interface LandingAudienceCardRepository extends JpaRepository<LandingAudi
             """)
     Optional<LandingAudienceCardResponse> findDTOById(@Param("id") Long id);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.LandingPage.LandingAudienceCardResponse(
                 c.id, c.iconName, c.colorKey, c.title, c.description, c.sortOrder, c.isActive,
                 c.createdAt, c.updatedAt, c.createdBy, c.updatedBy, p1.fullName, p2.fullName
             ) FROM LandingAudienceCard c
             LEFT JOIN Profile p1 ON p1.id = c.createdBy
             LEFT JOIN Profile p2 ON p2.id = c.updatedBy
+            WHERE (:search IS NULL OR :search = ''
+                OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(c.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:isActive IS NULL OR c.isActive = :isActive)
+            """,
+            countQuery = """
+            SELECT COUNT(c) FROM LandingAudienceCard c
             WHERE (:search IS NULL OR :search = ''
                 OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(c.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))

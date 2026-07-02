@@ -41,13 +41,20 @@ public interface LandingFaqRepository extends JpaRepository<LandingFaq, Long> {
             """)
     Optional<LandingFaqResponse> findDTOById(@Param("id") Long id);
 
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.LandingPage.LandingFaqResponse(
                 f.id, f.question, f.answer, f.sortOrder, f.isActive,
                 f.createdAt, f.updatedAt, f.createdBy, f.updatedBy, p1.fullName, p2.fullName
             ) FROM LandingFaq f
             LEFT JOIN Profile p1 ON p1.id = f.createdBy
             LEFT JOIN Profile p2 ON p2.id = f.updatedBy
+            WHERE (:search IS NULL OR :search = ''
+                OR LOWER(f.question) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
+                OR LOWER(f.answer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:isActive IS NULL OR f.isActive = :isActive)
+            """,
+            countQuery = """
+            SELECT COUNT(f) FROM LandingFaq f
             WHERE (:search IS NULL OR :search = ''
                 OR LOWER(f.question) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(f.answer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))

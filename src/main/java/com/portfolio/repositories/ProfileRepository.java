@@ -28,7 +28,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     boolean existsByPhone(String phone);
 
-    @Query("""
+    @Query(value = """
                 SELECT NEW com.portfolio.dtos.User.UserResponse(
                     p.id, p.fullName, p.userName, p.email, p.roleId,
                     r.name, p.status, p.emailVerified, p.phoneVerified, 
@@ -45,7 +45,16 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
                        LOWER(p.email) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
                   AND (:statuses IS NULL OR p.status IN :statuses)
                   AND (:roleIds IS NULL OR p.roleId IN :roleIds)
-                    """)
+                    """,
+            countQuery = """
+            SELECT COUNT(p) FROM Profile p
+            WHERE (:search IS NULL OR :search = '' OR
+                       LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
+                       LOWER(p.userName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
+                       LOWER(p.email) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+                  AND (:statuses IS NULL OR p.status IN :statuses)
+                  AND (:roleIds IS NULL OR p.roleId IN :roleIds)
+            """)
     Page<UserResponse> findByCriteria(
             @Param("search") String search,
             @Param("statuses") List<StatusEnum> statuses,
