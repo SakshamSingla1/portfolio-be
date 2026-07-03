@@ -13,7 +13,7 @@ import com.portfolio.services.FileService;
 import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
-import com.portfolio.servicesImpl.ContactUsService;
+import com.portfolio.services.ContactUsService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

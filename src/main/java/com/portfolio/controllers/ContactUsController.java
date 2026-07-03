@@ -6,7 +6,7 @@ import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
-import com.portfolio.servicesImpl.ContactUsService;
+import com.portfolio.services.ContactUsService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

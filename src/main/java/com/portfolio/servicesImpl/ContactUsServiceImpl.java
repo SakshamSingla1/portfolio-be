@@ -9,14 +9,13 @@ import com.portfolio.entities.Profile;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.services.ContactUsService;
 import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class ContactUsService {
+public class ContactUsServiceImpl implements ContactUsService{
 
     private final ContactUsDao contactUsDao;
     private final ProfileDao profileDao;
@@ -33,6 +32,7 @@ public class ContactUsService {
     private final EmailService emailService;
     private final Helper helper;
 
+    @Override
     public ContactUsResponse create(ContactUsRequest request) throws GenericException {
         Profile profile = profileDao.findById(request.getProfileId())
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.INVALID_ARGUMENT, "Profile not found"));
@@ -69,10 +69,12 @@ public class ContactUsService {
         return value == null ? "" : value;
     }
 
+    @Override
     public Page<ContactUsResponse> getContactUsByProfileId(Long profileId, String search, ContactUsStatusEnum status,Pageable pageable) throws GenericException {
         return contactUsDao.findByCriteria(profileId,search,status,pageable);
     }
 
+    @Override
     @Transactional
     public void updateStatus(Long id, ContactUsStatusEnum status)
             throws GenericException {
@@ -87,6 +89,7 @@ public class ContactUsService {
         contactUsDao.updateStatusById(id, status);
     }
 
+    @Override
     @Transactional
     public ContactUsResponse reply(Long id, String replyMessage, String authHeader) throws GenericException {
         Profile profile = helper.getProfileFromHeader(authHeader);
