@@ -8,7 +8,7 @@ ALTER TABLE file_assets ADD CONSTRAINT file_assets_resource_type_check
 -- 2. Fix social_links.platform CHECK to include all current platform enum values
 ALTER TABLE social_links DROP CONSTRAINT IF EXISTS social_links_platform_check;
 ALTER TABLE social_links ADD CONSTRAINT social_links_platform_check
-    CHECK (platform IN ('GITHUB','LINKEDIN','TWITTER','INSTAGRAM','FACEBOOK','YOUTUBE','DRIBBBLE','BEHANCE','MEDIUM','DEV_TO','HASHNODE','WEBSITE','GITLAB','BITBUCKET','LEETCODE','HACKERRANK','CODECHEF','CODEFORCES','RESUME','X'));
+    CHECK (platform IN ('GITHUB','LINKEDIN','TWITTER','INSTAGRAM','FACEBOOK','YOUTUBE','DRIBBBLE','BEHANCE','MEDIUM','DEV_TO','HASHNODE','WEBSITE','GITLAB','BITBUCKET','LEETCODE','HACKERRANK','CODECHEF','CODEFORCES','RESUME','X','STACKOVERFLOW','PORTFOLIO','OTHER'));
 
 -- 3. Fix profiles.email_verified and phone_verified CHECK to include FAILED
 ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_email_verified_check;
