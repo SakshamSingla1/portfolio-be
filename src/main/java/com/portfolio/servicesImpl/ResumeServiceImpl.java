@@ -44,7 +44,7 @@ public class ResumeServiceImpl implements ResumeService {
         Resume saved = resumeDao.save(resume);
 
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(saved.getId().intValue());
+        uploadReq.setResourceId(saved.getId());
         uploadReq.setResourceType(ResourceTypeEnum.RESUME);
         uploadReq.setPrimary(true);
         uploadReq.setMetaData(file.getOriginalFilename());
@@ -89,7 +89,7 @@ public class ResumeServiceImpl implements ResumeService {
                         "Resume not found"
                 ));
         try {
-            fileService.deleteByResource(resumeId.intValue(), ResourceTypeEnum.RESUME.name());
+            fileService.deleteByResource(resumeId, ResourceTypeEnum.RESUME.name());
         } catch (Exception ignored) {}
         resume.setStatus(StatusEnum.DELETED);
         resume.setUpdatedAt(LocalDateTime.now());

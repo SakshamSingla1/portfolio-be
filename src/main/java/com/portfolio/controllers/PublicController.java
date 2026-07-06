@@ -34,7 +34,7 @@ public class PublicController {
     private final FileService fileService;
 
     // Platform-level resource ID used for singleton assets (e.g. landing page banner)
-    private static final int PLATFORM_RESOURCE_ID = 1;
+    private static final long PLATFORM_RESOURCE_ID = 1L;
 
     @Operation(summary = "Get platform singleton file", description = "Returns the primary file asset for a platform-level resource type (e.g. BANNER). No auth required.")
     @GetMapping("/files/{resourceType}/singleton")

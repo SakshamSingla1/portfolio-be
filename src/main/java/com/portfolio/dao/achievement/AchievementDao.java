@@ -34,11 +34,11 @@ public class AchievementDao {
         achievementRepository.deleteById(id);
     }
 
-    public boolean existsByProfileIdAndOrder(Long profileId, String order) {
+    public boolean existsByProfileIdAndOrder(Long profileId, Integer order) {
         return achievementRepository.existsByProfileIdAndOrder(profileId, order);
     }
 
-    public boolean existsByProfileIdAndOrderAndIdNot(Long profileId, String order, Long id) {
+    public boolean existsByProfileIdAndOrderAndIdNot(Long profileId, Integer order, Long id) {
         return achievementRepository.existsByProfileIdAndOrderAndIdNot(profileId, order, id);
     }
 

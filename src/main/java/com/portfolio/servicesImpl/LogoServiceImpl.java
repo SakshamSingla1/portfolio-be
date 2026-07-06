@@ -91,14 +91,14 @@ public class LogoServiceImpl implements LogoService {
                 .orElseThrow(() -> new GenericException(
                         ExceptionCodeEnum.LOGO_NOT_FOUND, "Logo not found"));
         try {
-            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.LOGO.name());
+            fileService.deleteByResource(id, ResourceTypeEnum.LOGO.name());
         } catch (Exception ignored) {}
         logoDao.delete(logo);
     }
 
     private void linkFileAsset(Long resourceId, String url) {
         if (url == null || url.isBlank()) return;
-        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.LOGO);
+        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.LOGO);
         for (FileAsset asset : existing) {
             if (!url.equals(asset.getPath())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
@@ -107,12 +107,12 @@ public class LogoServiceImpl implements LogoService {
         Optional<FileAsset> assetOpt = fileAssetDao.findByPath(url);
         if (assetOpt.isPresent()) {
             FileAsset asset = assetOpt.get();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setPrimary(true);
             fileAssetDao.save(asset);
         } else {
             FileAsset asset = new FileAsset();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setResourceType(ResourceTypeEnum.LOGO);
             asset.setPath(url);
             asset.setPrimary(true);
@@ -121,7 +121,7 @@ public class LogoServiceImpl implements LogoService {
     }
 
     private String getUrlForLogo(Long logoId) {
-        return fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(logoId.intValue(), ResourceTypeEnum.LOGO)
+        return fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(logoId, ResourceTypeEnum.LOGO)
                 .map(FileAsset::getPath)
                 .orElse(null);
     }

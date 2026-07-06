@@ -107,7 +107,7 @@ public class ProjectServiceImpl implements ProjectService {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.PROJECT);
         uploadReq.setPrimary(false);
         try {
@@ -131,7 +131,7 @@ public class ProjectServiceImpl implements ProjectService {
             throw new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found");
         }
         try {
-            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.PROJECT.name());
+            fileService.deleteByResource(id, ResourceTypeEnum.PROJECT.name());
         } catch (Exception ignored) {}
         projectDao.deleteById(id);
         return "Project deleted successfully";
@@ -159,7 +159,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private void saveProjectImages(Long projectId, Long profileId, List<ProjectImageRequest> images) {
-        List<FileAsset> existingAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(projectId.intValue(), ResourceTypeEnum.PROJECT);
+        List<FileAsset> existingAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(projectId, ResourceTypeEnum.PROJECT);
 
         List<Long> targetAssetIds = new java.util.ArrayList<>();
         List<ProjectImageRequest> imagesList = images == null ? List.of() : images;
@@ -207,12 +207,12 @@ public class ProjectServiceImpl implements ProjectService {
 
             if (assetOpt.isPresent()) {
                 FileAsset asset = assetOpt.get();
-                asset.setResourceId(projectId.intValue());
+                asset.setResourceId(projectId);
                 asset.setSortOrder(order++);
                 fileAssetDao.save(asset);
             } else {
                 FileAsset asset = new FileAsset();
-                asset.setResourceId(projectId.intValue());
+                asset.setResourceId(projectId);
                 asset.setResourceType(ResourceTypeEnum.PROJECT);
                 asset.setPath(img.getUrl());
                 asset.setPublicId(img.getPublicId());
@@ -223,14 +223,14 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     private ProjectResponse mapToResponse(Project project) {
-        List<FileAsset> images = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(project.getId().intValue(), ResourceTypeEnum.PROJECT);
+        List<FileAsset> images = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(project.getId(), ResourceTypeEnum.PROJECT);
         List<Long> skillIdLongs = project.getSkillIds() == null ? List.of() : project.getSkillIds().stream()
                 .map(Long::valueOf)
                 .toList();
         List<Skill> skills = skillIdLongs.isEmpty() ? List.of() : skillDao.findAllById(skillIdLongs);
 
         List<SkillDropdown> skillDropdowns = skills.stream().map(skill -> {
-            String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId().intValue(), ResourceTypeEnum.LOGO)
+            String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId(), ResourceTypeEnum.LOGO)
                     .map(FileAsset::getPath)
                     .orElse(null);
             return new SkillDropdown(skill.getId(), skill.getLogoName(), logoUrl);

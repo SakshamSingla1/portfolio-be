@@ -32,16 +32,16 @@ public class FileAssetDao {
         fileAssetRepository.deleteById(id);
     }
 
-    public List<FileAsset> findByResourceIdAndResourceTypeOrderBySortOrderAsc(Integer resourceId, ResourceTypeEnum resourceType) {
+    public List<FileAsset> findByResourceIdAndResourceTypeOrderBySortOrderAsc(Long resourceId, ResourceTypeEnum resourceType) {
         return fileAssetRepository.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, resourceType);
     }
 
-    public Optional<FileAsset> findByResourceIdAndResourceTypeAndIsPrimaryTrue(Integer resourceId, ResourceTypeEnum resourceType) {
+    public Optional<FileAsset> findByResourceIdAndResourceTypeAndIsPrimaryTrue(Long resourceId, ResourceTypeEnum resourceType) {
         return fileAssetRepository.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType);
     }
 
     @Transactional
-    public void deleteByResourceIdAndResourceType(Integer resourceId, ResourceTypeEnum resourceType) {
+    public void deleteByResourceIdAndResourceType(Long resourceId, ResourceTypeEnum resourceType) {
         fileAssetRepository.deleteByResourceIdAndResourceType(resourceId, resourceType);
     }
 
@@ -53,11 +53,11 @@ public class FileAssetDao {
         return fileAssetRepository.findByPath(path);
     }
 
-    public List<FileAsset> findByResourceIdInAndResourceType(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
+    public List<FileAsset> findByResourceIdInAndResourceType(List<Long> resourceIds, ResourceTypeEnum resourceType) {
         return fileAssetRepository.findByResourceIdInAndResourceType(resourceIds, resourceType);
     }
 
-    public List<FileAsset> findByResourceIdInAndResourceTypeAndIsPrimaryTrue(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
+    public List<FileAsset> findByResourceIdInAndResourceTypeAndIsPrimaryTrue(List<Long> resourceIds, ResourceTypeEnum resourceType) {
         return fileAssetRepository.findByResourceIdInAndResourceTypeAndIsPrimaryTrue(resourceIds, resourceType);
     }
 

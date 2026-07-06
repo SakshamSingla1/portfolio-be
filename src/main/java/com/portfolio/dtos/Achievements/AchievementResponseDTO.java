@@ -20,12 +20,12 @@ public class AchievementResponseDTO extends AuditableResponse {
     private LocalDate achievedAt;
     private String proofUrl;
     private String proofPublicId;
-    private String order;
+    private Integer order;
     private StatusEnum status;
 
     public AchievementResponseDTO(Long id, String title,
                                   String description, String issuer, LocalDate achievedAt,
-                                  String proofUrl, String proofPublicId, String order,
+                                  String proofUrl, String proofPublicId, Integer order,
                                   StatusEnum status,LocalDateTime createdAt, LocalDateTime updatedAt,
                                   Long createdBy, Long updatedBy, String createdByName,
                                   String updatedByName) {

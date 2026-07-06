@@ -34,6 +34,10 @@ public class ExperienceDao {
         experienceRepository.deleteById(id);
     }
 
+    public boolean existsById(Long id) {
+        return experienceRepository.existsById(id);
+    }
+
     public boolean existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(
             Long profileId, String companyName, String jobTitle, LocalDate startDate) {
         return experienceRepository.existsByProfileIdAndCompanyNameAndJobTitleAndStartDate(

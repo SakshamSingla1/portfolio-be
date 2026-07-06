@@ -11,17 +11,17 @@ import java.util.Optional;
 @Repository
 public interface FileAssetRepository extends JpaRepository<FileAsset, Long> {
 
-    List<FileAsset> findByResourceIdAndResourceTypeOrderBySortOrderAsc(Integer resourceId, ResourceTypeEnum resourceType);
+    List<FileAsset> findByResourceIdAndResourceTypeOrderBySortOrderAsc(Long resourceId, ResourceTypeEnum resourceType);
 
-    Optional<FileAsset> findByResourceIdAndResourceTypeAndIsPrimaryTrue(Integer resourceId, ResourceTypeEnum resourceType);
+    Optional<FileAsset> findByResourceIdAndResourceTypeAndIsPrimaryTrue(Long resourceId, ResourceTypeEnum resourceType);
 
-    void deleteByResourceIdAndResourceType(Integer resourceId, ResourceTypeEnum resourceType);
+    void deleteByResourceIdAndResourceType(Long resourceId, ResourceTypeEnum resourceType);
 
     Optional<FileAsset> findByPublicId(String publicId);
 
     Optional<FileAsset> findByPath(String path);
 
-    List<FileAsset> findByResourceIdInAndResourceType(List<Integer> resourceIds, ResourceTypeEnum resourceType);
+    List<FileAsset> findByResourceIdInAndResourceType(List<Long> resourceIds, ResourceTypeEnum resourceType);
 
-    List<FileAsset> findByResourceIdInAndResourceTypeAndIsPrimaryTrue(List<Integer> resourceIds, ResourceTypeEnum resourceType);
+    List<FileAsset> findByResourceIdInAndResourceTypeAndIsPrimaryTrue(List<Long> resourceIds, ResourceTypeEnum resourceType);
 }

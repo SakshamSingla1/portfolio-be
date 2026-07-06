@@ -33,7 +33,7 @@ public class ResumePublicServiceImpl implements ResumePublicService {
     @Override
     public void viewResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId().intValue(), ResourceTypeEnum.RESUME)
+        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId(), ResourceTypeEnum.RESUME)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
         streamPdf(asset.getPath(), response, false);
     }
@@ -41,7 +41,7 @@ public class ResumePublicServiceImpl implements ResumePublicService {
     @Override
     public void downloadResume(String username, HttpServletResponse response) throws GenericException {
         Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId().intValue(), ResourceTypeEnum.RESUME)
+        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId(), ResourceTypeEnum.RESUME)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
         String fileName = asset.getMetaData();
         if (fileName == null || fileName.isBlank()) {

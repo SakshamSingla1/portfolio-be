@@ -30,7 +30,7 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<FileAssetDTO>> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("resourceId") Integer resourceId,
+            @RequestParam("resourceId") Long resourceId,
             @RequestParam("resourceType") ResourceTypeEnum resourceType,
             @RequestParam(value = "isPrimary", defaultValue = "false") boolean isPrimary,
             @RequestParam(value = "sortOrder", defaultValue = "0") int sortOrder,
@@ -57,7 +57,7 @@ public class FileController {
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
-        FileAssetDTO result = fileService.getPrimaryFile(profileId.intValue(), type);
+        FileAssetDTO result = fileService.getPrimaryFile(profileId, type);
         return ApiResponse.successResponse(result, "File fetched successfully");
     }
 
@@ -65,7 +65,7 @@ public class FileController {
     @GetMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<List<FileAssetDTO>>> getByResource(
             @PathVariable String resourceType,
-            @PathVariable Integer resourceId
+            @PathVariable Long resourceId
     ) {
         List<FileAssetDTO> result = fileService.getByResource(resourceId, resourceType);
         return ApiResponse.respond(result, "Files fetched successfully", "Failed to fetch files");
@@ -88,7 +88,7 @@ public class FileController {
     @DeleteMapping("/{resourceType}/{resourceId}")
     public ResponseEntity<ResponseModel<Void>> deleteByResource(
             @PathVariable String resourceType,
-            @PathVariable Integer resourceId
+            @PathVariable Long resourceId
     ) throws Exception {
         fileService.deleteByResource(resourceId, resourceType);
         return ApiResponse.respond(null, "Files deleted successfully", "Failed to delete files");

@@ -87,12 +87,12 @@ public class ProfileServiceImpl implements ProfileService {
             MultipartFile file) throws IOException, GenericException {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.PROFILE)
+        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId, ResourceTypeEnum.PROFILE)
                 .ifPresent(existing -> {
                     try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
         uploadReq.setPrimary(true);
         uploadReq.setMetaData("PROFILE_IMAGE");
@@ -110,14 +110,14 @@ public class ProfileServiceImpl implements ProfileService {
             MultipartFile file) throws IOException, GenericException {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        List<FileAsset> existingList = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId.intValue(), ResourceTypeEnum.PROFILE);
+        List<FileAsset> existingList = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE);
         for (FileAsset asset : existingList) {
             if ("ABOUT_ME_IMAGE".equals(asset.getMetaData())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
             }
         }
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.PROFILE);
         uploadReq.setPrimary(false);
         uploadReq.setMetaData("ABOUT_ME_IMAGE");
@@ -135,12 +135,12 @@ public class ProfileServiceImpl implements ProfileService {
             MultipartFile file) throws IOException, GenericException {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.PROFILE_LOGO)
+        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId, ResourceTypeEnum.PROFILE_LOGO)
                 .ifPresent(existing -> {
                     try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.PROFILE_LOGO);
         uploadReq.setPrimary(true);
         try {
@@ -159,7 +159,7 @@ public class ProfileServiceImpl implements ProfileService {
         String logoUrl = null;
         String logoPublicId = null;
 
-        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId().intValue(), ResourceTypeEnum.PROFILE);
+        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : profileAssets) {
             if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
                 profileImageUrl = asset.getPath();
@@ -170,7 +170,7 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
 
-        Optional<FileAsset> logoAsset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profile.getId().intValue(), ResourceTypeEnum.PROFILE_LOGO);
+        Optional<FileAsset> logoAsset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profile.getId(), ResourceTypeEnum.PROFILE_LOGO);
         if (logoAsset.isPresent()) {
             logoUrl = logoAsset.get().getPath();
             logoPublicId = logoAsset.get().getPublicId();
@@ -264,7 +264,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private UserResponse mapToUserResponse(Profile profile) {
         String profileImageUrl = null;
-        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId().intValue(), ResourceTypeEnum.PROFILE);
+        List<FileAsset> profileAssets = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profile.getId(), ResourceTypeEnum.PROFILE);
         for (FileAsset asset : profileAssets) {
             if (asset.isPrimary() || "PROFILE_IMAGE".equals(asset.getMetaData())) {
                 profileImageUrl = asset.getPath();

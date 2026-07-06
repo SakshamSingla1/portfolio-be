@@ -17,7 +17,7 @@ public class SocialLinkResponseDTO {
     private Long id;
     private PlatformEnum platform;
     private String url;
-    private String order;
+    private Integer order;
     private StatusEnum status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

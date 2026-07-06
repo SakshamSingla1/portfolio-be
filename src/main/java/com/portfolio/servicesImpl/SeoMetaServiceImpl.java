@@ -75,8 +75,8 @@ public class SeoMetaServiceImpl implements SeoMetaService {
                 .ogDescription(e.getOgDescription())
                 .ogImageUrl(e.getOgImageUrl())
                 .canonicalUrl(e.getCanonicalUrl())
-                .indexable(e.getIndexable())
-                .followLinks(e.getFollowLinks())
+                .indexable(e.isIndexable())
+                .followLinks(e.isFollowLinks())
                 .build();
     }
 }

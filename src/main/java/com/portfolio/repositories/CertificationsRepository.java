@@ -56,9 +56,9 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
     """)
     Optional<CertificationResponseDTO> findDTOById(@Param("id") Long id);
 
-    boolean existsByProfileIdAndOrder(Long profileId, String order);
+    boolean existsByProfileIdAndOrder(Long profileId, Integer order);
 
-    boolean existsByProfileIdAndOrderAndIdNot(Long profileId, String order, Long id);
+    boolean existsByProfileIdAndOrderAndIdNot(Long profileId, Integer order, Long id);
 
     List<Certifications> findByProfileIdAndStatusOrderByOrderAsc(Long profileId, StatusEnum statusEnum);
 

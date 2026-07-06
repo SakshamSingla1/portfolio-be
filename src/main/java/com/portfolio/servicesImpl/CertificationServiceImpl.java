@@ -41,7 +41,7 @@ public class CertificationServiceImpl implements CertificationService {
     @Transactional
     @Override
     public CertificationResponseDTO createCertification(CertificationRequestDTO dto) throws GenericException {
-        if (certificationDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
+        if (certificationDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_CERTIFICATION, "Certification already exists with same order for the profile");
         }
         Certifications certification = Certifications.builder()
@@ -52,7 +52,7 @@ public class CertificationServiceImpl implements CertificationService {
                 .issueDate(dto.getIssueDate())
                 .expiryDate(dto.getExpiryDate())
                 .status(dto.getStatus())
-                .order(dto.getOrder())
+                .order(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)
                 .build();
         Certifications saved = certificationDao.save(certification);
         linkFileAsset(saved.getId(), dto.getCredentialPublicId(), dto.getCredentialUrl());
@@ -64,7 +64,7 @@ public class CertificationServiceImpl implements CertificationService {
     public CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO dto) throws GenericException {
         Certifications existing = certificationDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found"));
-        if (dto.getOrder() != null && certificationDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
+        if (dto.getOrder() != null && certificationDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), Integer.parseInt(dto.getOrder()), existing.getId())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_CERTIFICATION, "Certification already exists with same order for the profile");
         }
         existing.setTitle(dto.getTitle());
@@ -73,7 +73,7 @@ public class CertificationServiceImpl implements CertificationService {
         existing.setIssueDate(dto.getIssueDate());
         existing.setExpiryDate(dto.getExpiryDate());
         existing.setStatus(dto.getStatus());
-        existing.setOrder(dto.getOrder());
+        existing.setOrder(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null);
         existing.setUpdatedAt(LocalDateTime.now());
         Certifications saved = certificationDao.save(existing);
         linkFileAsset(id, dto.getCredentialPublicId(), dto.getCredentialUrl());
@@ -97,7 +97,7 @@ public class CertificationServiceImpl implements CertificationService {
             throw new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found");
         }
         try {
-            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.CERTIFICATION.name());
+            fileService.deleteByResource(id, ResourceTypeEnum.CERTIFICATION.name());
         } catch (Exception ignored) {}
         certificationDao.deleteById(id);
         return null;
@@ -111,7 +111,7 @@ public class CertificationServiceImpl implements CertificationService {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.CERTIFICATION);
         uploadReq.setPrimary(true);
         try {
@@ -151,7 +151,7 @@ public class CertificationServiceImpl implements CertificationService {
 
         Long targetAssetId = assetOpt.map(FileAsset::getId).orElse(null);
 
-        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.CERTIFICATION);
+        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.CERTIFICATION);
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
@@ -160,12 +160,12 @@ public class CertificationServiceImpl implements CertificationService {
 
         if (assetOpt.isPresent()) {
             FileAsset asset = assetOpt.get();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setPrimary(true);
             fileAssetDao.save(asset);
         } else if (url != null && !url.isBlank()) {
             FileAsset asset = new FileAsset();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setResourceType(ResourceTypeEnum.CERTIFICATION);
             asset.setPath(url);
             asset.setPublicId(publicId);
@@ -177,7 +177,7 @@ public class CertificationServiceImpl implements CertificationService {
     private CertificationResponseDTO mapToResponse(Certifications c) {
         String credentialUrl = null;
         String credentialPublicId = null;
-        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId().intValue(), ResourceTypeEnum.CERTIFICATION);
+        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId(), ResourceTypeEnum.CERTIFICATION);
         if (assetOpt.isPresent()) {
             credentialUrl = assetOpt.get().getPath();
             credentialPublicId = assetOpt.get().getPublicId();

@@ -43,11 +43,11 @@ public class TestimonialDao {
     }
 
 
-    public boolean existsByProfileIdAndOrder(Long profileId, String order) {
+    public boolean existsByProfileIdAndOrder(Long profileId, Integer order) {
         return testimonialRepository.existsByProfileIdAndOrder(profileId, order);
     }
 
-    public boolean existsByProfileIdAndOrderAndIdNot(Long profileId, String order, Long id) {
+    public boolean existsByProfileIdAndOrderAndIdNot(Long profileId, Integer order, Long id) {
         return testimonialRepository.existsByProfileIdAndOrderAndIdNot(profileId, order, id);
     }
 

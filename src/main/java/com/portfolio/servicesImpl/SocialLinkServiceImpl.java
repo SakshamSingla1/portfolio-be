@@ -37,7 +37,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
             SocialLinks link = deletedLink.get();
             link.setStatus(StatusEnum.ACTIVE);
             link.setUrl(requestDTO.getUrl());
-            link.setOrder(requestDTO.getOrder());
+            link.setOrder(requestDTO.getOrder() != null ? Integer.parseInt(requestDTO.getOrder()) : null);
             SocialLinks saved = socialLinksDao.save(link);
             return mapToResponse(saved);
         }
@@ -51,7 +51,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 .profileId(requestDTO.getProfileId())
                 .platform(requestDTO.getPlatform())
                 .url(requestDTO.getUrl())
-                .order(requestDTO.getOrder())
+                .order(requestDTO.getOrder() != null ? Integer.parseInt(requestDTO.getOrder()) : null)
                 .status(requestDTO.getStatus() != null ? requestDTO.getStatus() : StatusEnum.ACTIVE)
                 .build();
 
@@ -64,7 +64,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
         SocialLinks socialLinks = socialLinksDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND,"Social link not found"));
         socialLinks.setUrl(requestDTO.getUrl());
-        socialLinks.setOrder(requestDTO.getOrder());
+        socialLinks.setOrder(requestDTO.getOrder() != null ? Integer.parseInt(requestDTO.getOrder()) : null);
         socialLinks.setStatus(requestDTO.getStatus());
         socialLinks.setUpdatedAt(LocalDateTime.now());
         SocialLinks updated = socialLinksDao.save(socialLinks);

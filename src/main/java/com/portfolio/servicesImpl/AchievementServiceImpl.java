@@ -41,7 +41,7 @@ public class AchievementServiceImpl implements AchievementService {
     @Override
     @Transactional
     public AchievementResponseDTO createAchievement(AchievementRequestDTO dto) throws GenericException {
-        if (achievementDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
+        if (achievementDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_ACHIEVEMENT, "Achievement already exists with same order for the profile");
         }
         Achievements achievement = Achievements.builder()
@@ -51,7 +51,7 @@ public class AchievementServiceImpl implements AchievementService {
                 .description(dto.getDescription())
                 .achievedAt(dto.getAchievedAt())
                 .status(dto.getStatus())
-                .order(dto.getOrder())
+                .order(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)
                 .build();
         Achievements saved = achievementDao.save(achievement);
         linkFileAsset(saved.getId(), dto.getProofPublicId(), dto.getProofUrl());
@@ -63,7 +63,7 @@ public class AchievementServiceImpl implements AchievementService {
     public AchievementResponseDTO updateAchievement(Long id, AchievementRequestDTO dto) throws GenericException {
         Achievements existing = achievementDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found"));
-        if (dto.getOrder() != null && achievementDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
+        if (dto.getOrder() != null && achievementDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), Integer.parseInt(dto.getOrder()), existing.getId())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_ACHIEVEMENT, "Achievement already exists with same order for the profile");
         }
         existing.setTitle(dto.getTitle());
@@ -71,7 +71,7 @@ public class AchievementServiceImpl implements AchievementService {
         existing.setDescription(dto.getDescription());
         existing.setAchievedAt(dto.getAchievedAt());
         existing.setStatus(dto.getStatus());
-        existing.setOrder(dto.getOrder());
+        existing.setOrder(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null);
         Achievements saved = achievementDao.save(existing);
         linkFileAsset(id, dto.getProofPublicId(), dto.getProofUrl());
         return mapToResponse(saved);
@@ -94,7 +94,7 @@ public class AchievementServiceImpl implements AchievementService {
             throw new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found");
         }
         try {
-            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.ACHIEVEMENT.name());
+            fileService.deleteByResource(id, ResourceTypeEnum.ACHIEVEMENT.name());
         } catch (Exception ignored) {}
         achievementDao.deleteById(id);
         return null;
@@ -108,7 +108,7 @@ public class AchievementServiceImpl implements AchievementService {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.ACHIEVEMENT);
         uploadReq.setPrimary(true);
         try {
@@ -145,7 +145,7 @@ public class AchievementServiceImpl implements AchievementService {
 
         Long targetAssetId = assetOpt.map(FileAsset::getId).orElse(null);
 
-        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.ACHIEVEMENT);
+        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.ACHIEVEMENT);
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
@@ -154,12 +154,12 @@ public class AchievementServiceImpl implements AchievementService {
 
         if (assetOpt.isPresent()) {
             FileAsset asset = assetOpt.get();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setPrimary(true);
             fileAssetDao.save(asset);
         } else {
             FileAsset asset = new FileAsset();
-            asset.setResourceId(resourceId.intValue());
+            asset.setResourceId(resourceId);
             asset.setResourceType(ResourceTypeEnum.ACHIEVEMENT);
             asset.setPath(url);
             asset.setPublicId(publicId);
@@ -171,7 +171,7 @@ public class AchievementServiceImpl implements AchievementService {
     private AchievementResponseDTO mapToResponse(Achievements c) {
         String proofUrl = null;
         String proofPublicId = null;
-        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId().intValue(), ResourceTypeEnum.ACHIEVEMENT);
+        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId(), ResourceTypeEnum.ACHIEVEMENT);
         if (assetOpt.isPresent()) {
             proofUrl = assetOpt.get().getPath();
             proofPublicId = assetOpt.get().getPublicId();

@@ -79,7 +79,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<FileAssetDTO> getByResource(Integer resourceId, String resourceType) {
+    public List<FileAssetDTO> getByResource(Long resourceId, String resourceType) {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
         return fileAssetDao
                 .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type)
@@ -106,7 +106,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void deleteByResource(Integer resourceId, String resourceType) throws Exception {
+    public void deleteByResource(Long resourceId, String resourceType) throws Exception {
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());
         List<FileAsset> assets = fileAssetDao
                 .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type);
@@ -119,14 +119,14 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public FileAssetDTO getPrimaryFile(Integer resourceId, ResourceTypeEnum resourceType) {
+    public FileAssetDTO getPrimaryFile(Long resourceId, ResourceTypeEnum resourceType) {
         return fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resourceId, resourceType)
                 .map(this::toDTO)
                 .orElse(null);
     }
 
     @Override
-    public List<FileAssetDTO> getFiles(Integer resourceId, ResourceTypeEnum resourceType) {
+    public List<FileAssetDTO> getFiles(Long resourceId, ResourceTypeEnum resourceType) {
         return fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, resourceType)
                 .stream()
                 .map(this::toDTO)
@@ -134,7 +134,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Map<Integer, FileAssetDTO> getPrimaryFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
+    public Map<Long, FileAssetDTO> getPrimaryFilesForResources(List<Long> resourceIds, ResourceTypeEnum resourceType) {
         if (resourceIds == null || resourceIds.isEmpty()) {
             return Map.of();
         }
@@ -148,7 +148,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Map<Integer, List<FileAssetDTO>> getFilesForResources(List<Integer> resourceIds, ResourceTypeEnum resourceType) {
+    public Map<Long, List<FileAssetDTO>> getFilesForResources(List<Long> resourceIds, ResourceTypeEnum resourceType) {
         if (resourceIds == null || resourceIds.isEmpty()) {
             return Map.of();
         }

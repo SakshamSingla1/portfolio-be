@@ -20,14 +20,14 @@ public class CertificationResponseDTO extends AuditableResponse {
     private String credentialUrl;
     private String credentialPublicId;
     private StatusEnum status;
-    private String order;
+    private Integer order;
     private LocalDate issueDate;
     private LocalDate expiryDate;
 
     public CertificationResponseDTO(Long id, String title, String issuer,
                                     String credentialId, String credentialUrl,
                                     String credentialPublicId,
-                                    StatusEnum status, String order,
+                                    StatusEnum status, Integer order,
                                     LocalDate issueDate, LocalDate expiryDate,
                                     LocalDateTime createdAt, LocalDateTime updatedAt,
                                     Long createdBy, Long updatedBy,

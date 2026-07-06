@@ -45,7 +45,7 @@ public class DashboardServiceImpl implements DashboardService {
         CompletableFuture<List<ActivityDTO>> activitiesFuture = CompletableFuture.supplyAsync(
                 () -> profileDao.getLatestActivities(profileId));
         CompletableFuture<List<FileAsset>> assetsFuture = CompletableFuture.supplyAsync(
-                () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId.intValue(), ResourceTypeEnum.PROFILE));
+                () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE));
 
         CompletableFuture.allOf(profileFuture, statsFuture, viewStatsFuture, messagesFuture, activitiesFuture, assetsFuture).join();
 

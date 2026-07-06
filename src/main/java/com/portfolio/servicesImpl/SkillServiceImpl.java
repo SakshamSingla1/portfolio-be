@@ -108,7 +108,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     private SkillResponse mapToResponse(Skill skill) {
-        String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId().intValue(), ResourceTypeEnum.LOGO)
+        String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId(), ResourceTypeEnum.LOGO)
                 .map(FileAsset::getPath)
                 .orElse(null);
         return SkillResponse.builder()

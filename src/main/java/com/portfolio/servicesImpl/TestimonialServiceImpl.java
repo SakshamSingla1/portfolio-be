@@ -39,7 +39,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     @Transactional
     @Override
     public TestimonialResponseDTO createTestimonial(TestimonialRequestDTO dto) throws GenericException {
-        if (testimonialDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
+        if (testimonialDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_TESTIMONIAL, "Testimonial already exists with same order for the profile");
         }
         Testimonial testimonial = Testimonial.builder()
@@ -50,7 +50,7 @@ public class TestimonialServiceImpl implements TestimonialService {
                 .message(dto.getMessage())
                 .linkedInUrl(dto.getLinkedInUrl())
                 .status(dto.getStatus())
-                .order(dto.getOrder())
+                .order(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null)
                 .build();
         Testimonial saved = testimonialDao.save(testimonial);
         linkFileAsset(saved.getId(), dto.getImageUrl(), dto.getImageId());
@@ -62,7 +62,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     public TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO dto) throws GenericException {
         Testimonial existing = testimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
-        if (dto.getOrder() != null && testimonialDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), dto.getOrder(), existing.getId())) {
+        if (dto.getOrder() != null && testimonialDao.existsByProfileIdAndOrderAndIdNot(existing.getProfileId(), Integer.parseInt(dto.getOrder()), existing.getId())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_TESTIMONIAL, "Testimonial already exists with same order for the profile");
         }
         existing.setName(dto.getName());
@@ -71,7 +71,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         existing.setMessage(dto.getMessage());
         existing.setLinkedInUrl(dto.getLinkedInUrl());
         existing.setStatus(dto.getStatus());
-        existing.setOrder(dto.getOrder());
+        existing.setOrder(dto.getOrder() != null ? Integer.parseInt(dto.getOrder()) : null);
         existing.setUpdatedAt(LocalDateTime.now());
         Testimonial saved = testimonialDao.save(existing);
         linkFileAsset(id, dto.getImageUrl(), dto.getImageId());
@@ -106,7 +106,7 @@ public class TestimonialServiceImpl implements TestimonialService {
             throw new GenericException(ExceptionCodeEnum.TESTIMONIAL_NOT_FOUND, "Testimonial not found");
         }
         try {
-            fileService.deleteByResource(id.intValue(), ResourceTypeEnum.TESTIMONIAL.name());
+            fileService.deleteByResource(id, ResourceTypeEnum.TESTIMONIAL.name());
         } catch (Exception ignored) {}
         testimonialDao.deleteById(id);
         return null;
@@ -129,7 +129,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId.intValue());
+        uploadReq.setResourceId(profileId);
         uploadReq.setResourceType(ResourceTypeEnum.TESTIMONIAL);
         uploadReq.setPrimary(true);
         try {
@@ -141,7 +141,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     }
 
     private void linkFileAsset(Long resourceId, String url, Long imageAssetId) {
-        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.TESTIMONIAL);
+        List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.TESTIMONIAL);
 
         Long targetAssetId = imageAssetId;
         if (targetAssetId == null && url != null && !url.isBlank()) {
@@ -157,7 +157,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         if (targetAssetId != null) {
             fileAssetDao.findById(targetAssetId)
                     .ifPresent(asset -> {
-                        asset.setResourceId(resourceId.intValue());
+                        asset.setResourceId(resourceId);
                         asset.setPrimary(true);
                         fileAssetDao.save(asset);
                     });
@@ -167,7 +167,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     private TestimonialResponseDTO mapToResponse(Testimonial c) {
         String imageUrl = null;
         Long imageId = null;
-        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId().intValue(), ResourceTypeEnum.TESTIMONIAL);
+        Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId(), ResourceTypeEnum.TESTIMONIAL);
         if (assetOpt.isPresent()) {
             imageUrl = assetOpt.get().getPath();
             imageId = assetOpt.get().getId();

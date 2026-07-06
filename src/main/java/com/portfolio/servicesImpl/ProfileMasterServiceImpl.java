@@ -91,8 +91,8 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .ogDescription(e.getOgDescription())
                 .ogImageUrl(e.getOgImageUrl())
                 .canonicalUrl(e.getCanonicalUrl())
-                .indexable(e.getIndexable())
-                .followLinks(e.getFollowLinks())
+                .indexable(e.isIndexable())
+                .followLinks(e.isFollowLinks())
                 .build();
     }
 

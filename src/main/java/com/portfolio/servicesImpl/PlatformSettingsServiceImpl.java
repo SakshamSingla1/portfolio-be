@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PlatformSettingsServiceImpl implements PlatformSettingsService {
 
-    private static final Integer BANNER_RESOURCE_ID = -1;
+    private static final Long BANNER_RESOURCE_ID = -1L;
 
     private final FileAssetDao fileAssetDao;
 

@@ -63,7 +63,7 @@ public class SeoEndpointsController {
                     .findByProfileIdAndPageKey(profileId, PageKeyEnum.HOME)
                     .orElse(null);
 
-            boolean indexable = seoMeta == null || !Boolean.FALSE.equals(seoMeta.getIndexable());
+            boolean indexable = seoMeta == null || seoMeta.isIndexable();
             String siteUrl = resolveSiteUrl(profileId, linkOpt.get().getUrl());
 
             StringBuilder sb = new StringBuilder("User-agent: *\n");

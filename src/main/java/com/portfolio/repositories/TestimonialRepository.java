@@ -54,9 +54,9 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
 
     Page<Testimonial> findByProfileId(Long profileId, Pageable pageable);
 
-    boolean existsByProfileIdAndOrder(Long profileId, String order);
+    boolean existsByProfileIdAndOrder(Long profileId, Integer order);
 
-    boolean existsByProfileIdAndOrderAndIdNot(Long profileId, String order, Long id);
+    boolean existsByProfileIdAndOrderAndIdNot(Long profileId, Integer order, Long id);
 
     List<Testimonial> findByProfileIdAndStatusOrderByOrderAsc(Long profileId, StatusEnum statusEnum);
 
