@@ -24,7 +24,7 @@ public class Certifications extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", nullable = false)
     private Long profileId;
 
     private String title;
@@ -37,5 +37,5 @@ public class Certifications extends Auditable {
     private StatusEnum status;
 
     @Column(name = "sort_order")
-    private String order;
+    private Integer order;
 }

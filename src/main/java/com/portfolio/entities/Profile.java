@@ -45,12 +45,15 @@ public class Profile extends Auditable {
     private Long roleId;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private StatusEnum status;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private VerificationStatusEnum emailVerified;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private VerificationStatusEnum phoneVerified;
 
     private boolean isTwoFactorEnabled;

@@ -18,12 +18,12 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
 
     @Query(value = """
             SELECT NEW com.portfolio.dtos.Certifications.CertificationResponseDTO(
-                c.id, c.title, c.issuer, c.credentialId, fa.path, c.status, c.order,
+                c.id, c.title, c.issuer, c.credentialId, fa.path, fa.publicId, c.status, c.order,
                 c.issueDate, c.expiryDate, c.createdAt, c.updatedAt, c.createdBy,
                 c.updatedBy, p1.fullName, p2.fullName
             ) FROM Certifications c
             LEFT JOIN FileAsset fa ON fa.resourceId = c.id AND fa.resourceType = 'CERTIFICATION'
-            LEFT JOIN Profile p1 ON p1.id = c.createdBy 
+            LEFT JOIN Profile p1 ON p1.id = c.createdBy
             LEFT JOIN Profile p2 ON p2.id = c.updatedBy
             WHERE (:profileId IS NULL OR c.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
@@ -45,7 +45,7 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
 
     @Query("""
             SELECT NEW com.portfolio.dtos.Certifications.CertificationResponseDTO(
-                c.id, c.title, c.issuer, c.credentialId, fa.path, c.status, c.order,
+                c.id, c.title, c.issuer, c.credentialId, fa.path, fa.publicId, c.status, c.order,
                 c.issueDate, c.expiryDate, c.createdAt, c.updatedAt, c.createdBy,
                 c.updatedBy, p1.fullName, p2.fullName
             ) FROM Certifications c

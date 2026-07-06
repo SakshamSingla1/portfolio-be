@@ -13,7 +13,7 @@ public class FileAssetDTO {
     private String location;
     private String path;
     private String publicId;
-    private Integer resourceId;
+    private Long resourceId;
     private ResourceTypeEnum resourceType;
     private String mimeType;
     private String metaData;

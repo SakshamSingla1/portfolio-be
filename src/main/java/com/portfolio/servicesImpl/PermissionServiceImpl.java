@@ -86,7 +86,7 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public Page<PermissionResponseDTO> getAllPermissionsPaginated(Pageable pageable, String search, String permissionIds) throws GenericException {
         Sort sort = Sort.by(
-                "desc".equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC,
+                Sort.Direction.ASC,
                 (search == null || search.isBlank()) ? "createdAt" : "name"
         );
 
@@ -125,8 +125,7 @@ public class PermissionServiceImpl implements PermissionService {
         List<Long> rolePermissionIds = null;
         if (role != null && !role.isBlank()) {
             Long roleId = Long.valueOf(role);
-            rolePermissionIds = rolePermissionDao.findAll().stream()
-                    .filter(rp -> roleId.equals(rp.getRoleId()))
+            rolePermissionIds = rolePermissionDao.findByRoleId(roleId).stream()
                     .map(RolePermission::getPermissionId)
                     .distinct()
                     .toList();

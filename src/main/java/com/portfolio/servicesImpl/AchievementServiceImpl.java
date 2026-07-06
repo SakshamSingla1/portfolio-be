@@ -20,6 +20,7 @@ import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class AchievementServiceImpl implements AchievementService {
     private final Helper helper;
 
     @Override
+    @Transactional
     public AchievementResponseDTO createAchievement(AchievementRequestDTO dto) throws GenericException {
         if (achievementDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_ACHIEVEMENT, "Achievement already exists with same order for the profile");
@@ -57,6 +59,7 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
+    @Transactional
     public AchievementResponseDTO updateAchievement(Long id, AchievementRequestDTO dto) throws GenericException {
         Achievements existing = achievementDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found"));
@@ -116,6 +119,7 @@ public class AchievementServiceImpl implements AchievementService {
         }
     }
 
+    @Override
     public List<AchievementResponseDTO> getByProfile(Long profileId) {
         return achievementDao
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)

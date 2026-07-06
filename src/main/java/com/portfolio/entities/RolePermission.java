@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "role_permissions")
+@Table(name = "role_permissions", uniqueConstraints = @UniqueConstraint(name = "uq_role_nav_permission", columnNames = {"role_id", "nav_link_id", "permission_id"}))
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Builder
@@ -23,12 +23,12 @@ public class RolePermission extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "role_id")
+    @Column(name = "role_id", nullable = false)
     private Long roleId;
 
     @Column(name = "nav_link_id")
     private Long navLinkId;
 
-    @Column(name = "permission_id")
+    @Column(name = "permission_id", nullable = false)
     private Long permissionId;
 }

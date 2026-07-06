@@ -21,7 +21,7 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
     Optional<Resume> findByProfileIdAndStatus(Long profileId, StatusEnum status);
 
     // idx_resumes_profile_id, idx_resumes_status, idx_file_assets_resource
-    @Query("""
+    @Query(value = """
             SELECT NEW com.portfolio.dtos.Resume.ResumeUploadResponseDTO(
                 r.id, fa.metaData, fa.path, fa.publicId, r.status, r.updatedAt
             ) FROM Resume r
@@ -30,6 +30,14 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
             AND (:status IS NULL OR r.status = :status)
             AND (:search IS NULL OR :search = ''
                 OR LOWER(fa.metaData) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            """,
+            countQuery = """
+            SELECT COUNT(r) FROM Resume r
+            WHERE (:profileId IS NULL OR r.profileId = :profileId)
+            AND (:status IS NULL OR r.status = :status)
+            AND (:search IS NULL OR :search = ''
+                OR EXISTS (SELECT fa FROM FileAsset fa WHERE fa.resourceId = r.id
+                    AND LOWER(fa.metaData) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')))
             """)
     Page<ResumeUploadResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,

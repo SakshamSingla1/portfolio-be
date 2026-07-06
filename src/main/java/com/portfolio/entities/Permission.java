@@ -24,4 +24,7 @@ public class Permission extends Auditable {
 
     @Column(unique = true)
     private String name;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
 }

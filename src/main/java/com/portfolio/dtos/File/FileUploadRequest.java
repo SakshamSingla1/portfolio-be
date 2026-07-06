@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class FileUploadRequest {
-    private Integer resourceId;
+    private Long resourceId;
     private ResourceTypeEnum resourceType;
     private boolean isPrimary;
     private int sortOrder;

@@ -49,8 +49,11 @@ public class SeoMeta extends Auditable {
 
     private String ogImageUrl;
     private String canonicalUrl;
-    private Boolean indexable;
-    private Boolean followLinks;
+    @Column(nullable = false)
+    private boolean indexable;
+
+    @Column(nullable = false)
+    private boolean followLinks;
 
     @Enumerated(EnumType.STRING)
     private StatusEnum status;

@@ -16,5 +16,12 @@ public enum PlatformEnum {
     X,
     INSTAGRAM,
     FACEBOOK,
+    YOUTUBE,
+    DRIBBBLE,
+    BEHANCE,
+    MEDIUM,
+    DEV_TO,
+    HASHNODE,
+    WEBSITE,
     OTHER
 }

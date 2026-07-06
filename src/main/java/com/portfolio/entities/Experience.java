@@ -26,7 +26,7 @@ public class Experience extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", nullable = false)
     private Long profileId;
 
     private String companyName;

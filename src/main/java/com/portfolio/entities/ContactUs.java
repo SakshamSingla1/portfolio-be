@@ -31,7 +31,7 @@ public class ContactUs extends Auditable {
 
     private String phone;
 
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", nullable = false)
     private Long profileId;
 
     @Enumerated(EnumType.STRING)

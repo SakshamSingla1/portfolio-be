@@ -18,6 +18,7 @@ import com.portfolio.services.TestimonialService;
 import com.portfolio.services.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +36,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     private final FileService fileService;
     private final FileAssetDao fileAssetDao;
 
+    @Transactional
     @Override
     public TestimonialResponseDTO createTestimonial(TestimonialRequestDTO dto) throws GenericException {
         if (testimonialDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
@@ -55,6 +57,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         return mapToResponse(saved);
     }
 
+    @Transactional
     @Override
     public TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO dto) throws GenericException {
         Testimonial existing = testimonialDao.findById(id)
@@ -109,6 +112,7 @@ public class TestimonialServiceImpl implements TestimonialService {
         return null;
     }
 
+    @Override
     public List<TestimonialResponseDTO> getByProfile(Long profileId) {
         return testimonialDao
                 .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)

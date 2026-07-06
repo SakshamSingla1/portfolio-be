@@ -78,7 +78,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
          WHERE rp.roleId = :roleId
          ORDER BY nav.id ASC
     """)
-    List<RoleMappedModule> findDistinctModulesByRoleId(Long roleId);
+    List<RoleMappedModule> findDistinctModulesByRoleId(@Param("roleId") Long roleId);
 
     // idx_role_permissions_role_id — batch load modules for a page of roles, eliminates N+1
     @Query("""

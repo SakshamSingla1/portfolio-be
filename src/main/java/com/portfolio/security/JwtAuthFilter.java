@@ -48,6 +48,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Reject PENDING_2FA tokens from the normal auth flow.
+        // These are short-lived mid-login tokens issued when 2FA is required
+        // and must only be accepted by the 2FA verification endpoint.
+        if (jwtUtil.isPendingToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String username = jwtUtil.extractEmail(token);
 
         if (username != null &&

@@ -19,6 +19,7 @@ import com.portfolio.services.FileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,6 +38,7 @@ public class CertificationServiceImpl implements CertificationService {
     private final FileAssetDao fileAssetDao;
     private final Helper helper;
 
+    @Transactional
     @Override
     public CertificationResponseDTO createCertification(CertificationRequestDTO dto) throws GenericException {
         if (certificationDao.existsByProfileIdAndOrder(dto.getProfileId(), dto.getOrder())) {
@@ -57,6 +59,7 @@ public class CertificationServiceImpl implements CertificationService {
         return mapToResponse(saved);
     }
 
+    @Transactional
     @Override
     public CertificationResponseDTO updateCertification(Long id, CertificationRequestDTO dto) throws GenericException {
         Certifications existing = certificationDao.findById(id)

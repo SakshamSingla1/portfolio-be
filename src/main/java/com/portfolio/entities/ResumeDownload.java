@@ -30,4 +30,12 @@ public class ResumeDownload extends Auditable {
     private Long resumeId;
 
     private LocalDateTime downloadedAt;
+
+    @Column(name = "ip_address")
+    private String ipAddress;
+
+    @Column(name = "user_agent", columnDefinition = "TEXT")
+    private String userAgent;
+
+    private String country;
 }

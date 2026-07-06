@@ -37,6 +37,6 @@ public class Education extends Auditable {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", nullable = false)
     private Long profileId;
 }

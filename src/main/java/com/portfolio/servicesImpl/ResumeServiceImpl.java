@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final FileService fileService;
 
     @Override
+    @Transactional
     public ResumeUploadResponseDTO uploadResume(Long profileId, MultipartFile file) throws IOException {
         resumeDao.findByProfileIdAndStatus(profileId, StatusEnum.ACTIVE)
                 .ifPresent(existing -> {
@@ -65,6 +67,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
+    @Transactional
     public void activateResume(Long profileId, Long resumeId) throws GenericException {
         resumeDao.findByProfileIdAndStatus(profileId, StatusEnum.ACTIVE)
                 .ifPresent(existing -> {

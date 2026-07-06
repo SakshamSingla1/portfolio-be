@@ -29,6 +29,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileDao profileDao;
@@ -48,6 +50,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final RoleDao roleDao;
 
     @Override
+    @Transactional(readOnly = true)
     public ProfileResponse get(Long id) throws GenericException {
         Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
@@ -59,20 +62,14 @@ public class ProfileServiceImpl implements ProfileService {
 
         Profile existing = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        profileDao.findByEmail(req.getEmail())
-                .ifPresent(owner -> {
-                    if (!owner.getId().equals(id)) {
-                        throw new RuntimeException(
-                                new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use"));
-                    }
-                });
-        profileDao.findByPhone(req.getPhone())
-                .ifPresent(owner -> {
-                    if (!owner.getId().equals(id)) {
-                        throw new RuntimeException(
-                                new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Phone already in use"));
-                    }
-                });
+        Optional<Profile> emailOwner = profileDao.findByEmail(req.getEmail());
+        if (emailOwner.isPresent() && !emailOwner.get().getId().equals(id)) {
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Email already in use");
+        }
+        Optional<Profile> phoneOwner = profileDao.findByPhone(req.getPhone());
+        if (phoneOwner.isPresent() && !phoneOwner.get().getId().equals(id)) {
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "Phone already in use");
+        }
         existing.setFullName(req.getFullName());
         existing.setTitle(req.getTitle());
         existing.setAboutMe(req.getAboutMe());
@@ -202,6 +199,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<UserResponse> getAllProfiles(
             Pageable pageable,
             String search,
@@ -213,6 +211,7 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) throws GenericException {
         Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));

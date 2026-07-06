@@ -11,7 +11,6 @@ import java.util.List;
 @Data
 @SuperBuilder
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class RoleListResponseDTO extends AuditableResponse {
     private Long id;
@@ -30,5 +29,6 @@ public class RoleListResponseDTO extends AuditableResponse {
         this.name = name;
         this.status = status;
         this.description = description;
+        this.roleMappedModules = new java.util.ArrayList<>();
     }
 }

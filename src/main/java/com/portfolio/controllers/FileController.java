@@ -11,6 +11,7 @@ import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @RestController
 @RequestMapping("api/v1/files")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class FileController {
 
     private final FileService fileService;

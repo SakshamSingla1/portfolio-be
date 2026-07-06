@@ -79,7 +79,10 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public String delete(Long id) {
+    public String delete(Long id) throws GenericException {
+        if (!experienceDao.existsById(id)) {
+            throw new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found");
+        }
         experienceDao.deleteById(id);
         return "Experience deleted successfully";
     }

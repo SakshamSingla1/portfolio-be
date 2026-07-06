@@ -22,9 +22,9 @@ public class ProfileThemeMapping extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, name = "profile_id")
+    @Column(unique = true, name = "profile_id", nullable = false)
     private Long profileId;
 
-    @Column(name = "theme_id")
+    @Column(name = "theme_id", nullable = false)
     private Long themeId;
 }

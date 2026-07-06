@@ -92,6 +92,7 @@ public class ProfileController {
         }
 
         @Operation(summary = "Get all profiles with pagination", description = "Returns a paginated list of all user profiles with optional search, status, and role filters.")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
         @GetMapping("/all")
         public ResponseEntity<ResponseModel<Page<UserResponse>>> getAllProfiles(
                         Pageable pageable,

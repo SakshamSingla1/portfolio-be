@@ -81,8 +81,6 @@ public class SecurityConfig {
                                 "/api/v1/public/**",
                                 "/api/v1/landing/page",
                                 "/api/v1/health",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
                                 "/api/v1/auth/2fa/verify"
                         ).permitAll()
                         .anyRequest().authenticated()
@@ -101,14 +99,28 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(3)
+    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**")
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration publicApi = new CorsConfiguration();
-        publicApi.setAllowedOriginPatterns(List.of("*"));
+        publicApi.setAllowedOriginPatterns(List.of(
+                "https://*.portfoliosbuilder.com",
+                "http://localhost:5173",
+                "http://localhost:5174"
+        ));
         publicApi.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
         publicApi.setAllowedHeaders(List.of("*"));
-        publicApi.setAllowCredentials(false);
+        publicApi.setAllowCredentials(true);
 
         CorsConfiguration adminApi = new CorsConfiguration();
         adminApi.setAllowedOriginPatterns(

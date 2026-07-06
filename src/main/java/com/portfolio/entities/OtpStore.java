@@ -22,6 +22,9 @@ public class OtpStore extends Auditable {
     @Column(name = "profile_id")
     private Long profileId;
 
+    @Column(nullable = false)
     private String otp;
+
+    @Column(nullable = false)
     private LocalDateTime expiryDate;
 }

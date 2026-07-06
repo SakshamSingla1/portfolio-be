@@ -1,5 +1,5 @@
 package com.portfolio.enums;
 
 public enum ContactUsStatusEnum {
-    UNREAD, READ, REPLIED
+    UNREAD, READ, REPLIED, ARCHIVED
 }

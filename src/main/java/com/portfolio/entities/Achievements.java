@@ -24,7 +24,7 @@ public class Achievements extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "profile_id")
+    @Column(name = "profile_id", nullable = false)
     private Long profileId;
 
     private String title;
@@ -36,7 +36,7 @@ public class Achievements extends Auditable {
     private LocalDate achievedAt;
 
     @Column(name = "sort_order")
-    private String order;
+    private Integer order;
 
     @Enumerated(EnumType.STRING)
     private StatusEnum status;

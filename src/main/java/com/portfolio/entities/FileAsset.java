@@ -23,7 +23,7 @@ public class FileAsset extends Auditable {
     private String publicId;
 
     @Column(name = "resource_id")
-    private Integer resourceId;
+    private Long resourceId;
 
     @Enumerated(EnumType.STRING)
     private ResourceTypeEnum resourceType;

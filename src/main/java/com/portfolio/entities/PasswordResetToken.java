@@ -23,11 +23,12 @@ public class PasswordResetToken extends Auditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String token;
 
     @Column(name = "profile_id")
     private Long profileId;
 
+    @Column(nullable = false)
     private LocalDateTime expiryDate;
 }
