@@ -23,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -61,7 +62,7 @@ public class LandingPageController {
 
     @Operation(summary = "Update landing config", description = "Creates or updates the singleton landing page configuration with hero and CTA content. Requires SUPER_ADMIN role.")
     @PutMapping("/config")
-    public ResponseEntity<ResponseModel<LandingConfigResponse>> updateConfig(@RequestBody LandingConfigRequest request) {
+    public ResponseEntity<ResponseModel<LandingConfigResponse>> updateConfig(@Valid @RequestBody LandingConfigRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateConfig(request), "Config updated successfully");
         } catch (Exception e) {
@@ -83,7 +84,7 @@ public class LandingPageController {
 
     @Operation(summary = "Create a feature", description = "Creates a new feature card for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/features")
-    public ResponseEntity<ResponseModel<LandingFeatureResponse>> createFeature(@RequestBody LandingFeatureRequest request) {
+    public ResponseEntity<ResponseModel<LandingFeatureResponse>> createFeature(@Valid @RequestBody LandingFeatureRequest request) {
         try {
             return ApiResponse.createSuccess(landingPageService.createFeature(request), "Feature created successfully");
         } catch (Exception e) {
@@ -94,7 +95,7 @@ public class LandingPageController {
     @Operation(summary = "Update a feature", description = "Updates an existing landing page feature card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/features/{id}")
     public ResponseEntity<ResponseModel<LandingFeatureResponse>> updateFeature(
-            @PathVariable Long id, @RequestBody LandingFeatureRequest request) {
+            @PathVariable Long id, @Valid @RequestBody LandingFeatureRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateFeature(id, request), "Feature updated successfully");
         } catch (Exception e) {
@@ -127,7 +128,7 @@ public class LandingPageController {
 
     @Operation(summary = "Create a FAQ", description = "Creates a new FAQ entry for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/faqs")
-    public ResponseEntity<ResponseModel<LandingFaqResponse>> createFaq(@RequestBody LandingFaqRequest request) {
+    public ResponseEntity<ResponseModel<LandingFaqResponse>> createFaq(@Valid @RequestBody LandingFaqRequest request) {
         try {
             return ApiResponse.createSuccess(landingPageService.createFaq(request), "FAQ created successfully");
         } catch (Exception e) {
@@ -138,7 +139,7 @@ public class LandingPageController {
     @Operation(summary = "Update a FAQ", description = "Updates an existing FAQ entry by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/faqs/{id}")
     public ResponseEntity<ResponseModel<LandingFaqResponse>> updateFaq(
-            @PathVariable Long id, @RequestBody LandingFaqRequest request) {
+            @PathVariable Long id, @Valid @RequestBody LandingFaqRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateFaq(id, request), "FAQ updated successfully");
         } catch (Exception e) {
@@ -171,7 +172,7 @@ public class LandingPageController {
 
     @Operation(summary = "Create a step", description = "Creates a new how-to-use step card with bullets. Requires SUPER_ADMIN role.")
     @PostMapping("/steps")
-    public ResponseEntity<ResponseModel<LandingHowToUseStepResponse>> createStep(@RequestBody LandingHowToUseStepRequest request) {
+    public ResponseEntity<ResponseModel<LandingHowToUseStepResponse>> createStep(@Valid @RequestBody LandingHowToUseStepRequest request) {
         try {
             return ApiResponse.createSuccess(landingPageService.createStep(request), "Step created successfully");
         } catch (Exception e) {
@@ -182,7 +183,7 @@ public class LandingPageController {
     @Operation(summary = "Update a step", description = "Updates an existing how-to-use step card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/steps/{id}")
     public ResponseEntity<ResponseModel<LandingHowToUseStepResponse>> updateStep(
-            @PathVariable Long id, @RequestBody LandingHowToUseStepRequest request) {
+            @PathVariable Long id, @Valid @RequestBody LandingHowToUseStepRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateStep(id, request), "Step updated successfully");
         } catch (Exception e) {
@@ -215,7 +216,7 @@ public class LandingPageController {
 
     @Operation(summary = "Create an audience card", description = "Creates a new audience target card for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/audience")
-    public ResponseEntity<ResponseModel<LandingAudienceCardResponse>> createAudienceCard(@RequestBody LandingAudienceCardRequest request) {
+    public ResponseEntity<ResponseModel<LandingAudienceCardResponse>> createAudienceCard(@Valid @RequestBody LandingAudienceCardRequest request) {
         try {
             return ApiResponse.createSuccess(landingPageService.createAudienceCard(request), "Audience card created successfully");
         } catch (Exception e) {
@@ -226,7 +227,7 @@ public class LandingPageController {
     @Operation(summary = "Update an audience card", description = "Updates an existing audience target card by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/audience/{id}")
     public ResponseEntity<ResponseModel<LandingAudienceCardResponse>> updateAudienceCard(
-            @PathVariable Long id, @RequestBody LandingAudienceCardRequest request) {
+            @PathVariable Long id, @Valid @RequestBody LandingAudienceCardRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateAudienceCard(id, request), "Audience card updated successfully");
         } catch (Exception e) {
@@ -259,7 +260,7 @@ public class LandingPageController {
 
     @Operation(summary = "Create a testimonial", description = "Creates a new testimonial entry for the landing page. Requires SUPER_ADMIN role.")
     @PostMapping("/testimonials")
-    public ResponseEntity<ResponseModel<LandingTestimonialResponse>> createTestimonial(@RequestBody LandingTestimonialRequest request) {
+    public ResponseEntity<ResponseModel<LandingTestimonialResponse>> createTestimonial(@Valid @RequestBody LandingTestimonialRequest request) {
         try {
             return ApiResponse.createSuccess(landingPageService.createTestimonial(request), "Testimonial created successfully");
         } catch (Exception e) {
@@ -270,7 +271,7 @@ public class LandingPageController {
     @Operation(summary = "Update a testimonial", description = "Updates an existing landing page testimonial by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/testimonials/{id}")
     public ResponseEntity<ResponseModel<LandingTestimonialResponse>> updateTestimonial(
-            @PathVariable Long id, @RequestBody LandingTestimonialRequest request) {
+            @PathVariable Long id, @Valid @RequestBody LandingTestimonialRequest request) {
         try {
             return ApiResponse.successResponse(landingPageService.updateTestimonial(id, request), "Testimonial updated successfully");
         } catch (Exception e) {

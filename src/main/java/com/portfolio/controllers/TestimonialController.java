@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class TestimonialController {
     @PostMapping
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> createTestimonial(
             @RequestHeader("Authorization") String auth,
-            @RequestBody TestimonialRequestDTO dto) throws GenericException {
+            @Valid @RequestBody TestimonialRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.createTestimonial(dto);
         return ApiResponse.respond(response, "Testimonial created successfully", "Failed to create Testimonial");
@@ -41,7 +42,7 @@ public class TestimonialController {
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id, 
-            @RequestBody TestimonialRequestDTO dto) throws GenericException {
+            @Valid @RequestBody TestimonialRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.updateTestimonial(id, dto);
         return ApiResponse.respond(response, "Testimonial updated successfully", "Failed to update Testimonial");

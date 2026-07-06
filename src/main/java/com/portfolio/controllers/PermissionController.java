@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -31,7 +32,7 @@ public class PermissionController {
         @Operation(summary = "Create a new permission", description = "Creates a new permission entry. Requires SUPER_ADMIN role.")
         @PostMapping
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> createPermission(
-                        @RequestBody PermissionRequestDTO request) throws GenericException {
+                        @Valid @RequestBody PermissionRequestDTO request) throws GenericException {
                 PermissionResponseDTO response = permissionService.createPermission(request);
                 return ApiResponse.respond(
                                 response,
@@ -43,7 +44,7 @@ public class PermissionController {
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<PermissionResponseDTO>> updatePermission(
                         @PathVariable Long id,
-                        @RequestBody PermissionRequestDTO request) throws GenericException {
+                        @Valid @RequestBody PermissionRequestDTO request) throws GenericException {
                 PermissionResponseDTO response = permissionService.updatePermission(id, request);
                 return ApiResponse.respond(
                                 response,

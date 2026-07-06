@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -35,7 +36,7 @@ public class ProfileThemeController {
     @PostMapping
     public ResponseEntity<ResponseModel<ProfileThemeResponse>> setTheme(
             @RequestHeader("Authorization") String auth,
-            @RequestBody ProfileThemeRequest request) throws GenericException {
+            @Valid @RequestBody ProfileThemeRequest request) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.setThemeForProfile(profileId, request);
         return ApiResponse.respond(response, "Theme updated successfully", "Failed to update theme");

@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<ResponseModel<ProjectResponse>> createProject(
             @RequestHeader("Authorization") String auth,
-            @RequestBody ProjectRequest request) {
+            @Valid @RequestBody ProjectRequest request) {
         try {
             request.setProfileId(helper.getProfileIdFromHeader(auth));
             ProjectResponse response = projectService.create(request);
@@ -58,7 +59,7 @@ public class ProjectController {
     public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id, 
-            @RequestBody ProjectRequest request) {
+            @Valid @RequestBody ProjectRequest request) {
         try {
             request.setProfileId(helper.getProfileIdFromHeader(auth));
             ProjectResponse response = projectService.update(id, request);

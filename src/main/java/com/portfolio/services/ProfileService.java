@@ -35,4 +35,6 @@ public interface ProfileService {
     UserResponse updateUserRole(Long id, RoleUpdateRequest request) throws GenericException;
     
     UserResponse toggleUserVerification(Long id) throws GenericException;
+
+    void deleteUser(Long id) throws GenericException;
 }

@@ -9,6 +9,7 @@ import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.AchievementService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +31,7 @@ public class AchievementController {
     @PostMapping
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> createAchievement(
             @RequestHeader("Authorization") String auth,
-            @RequestBody AchievementRequestDTO dto) throws GenericException {
+            @Valid @RequestBody AchievementRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.createAchievement(dto);
         return ApiResponse.respond(response, "Achievement created successfully", "Failed to create Achievement");
@@ -41,7 +42,7 @@ public class AchievementController {
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id, 
-            @RequestBody AchievementRequestDTO dto) throws GenericException {
+            @Valid @RequestBody AchievementRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.updateAchievement(id, dto);
         return ApiResponse.respond(response, "Achievement updated successfully", "Failed to update Achievement");

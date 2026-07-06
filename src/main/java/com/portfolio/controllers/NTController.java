@@ -10,6 +10,7 @@ import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.NTService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public class NTController {
     @Operation(summary = "Create notification template", description = "Creates a new notification template for email, SMS, or WhatsApp messaging.")
     @PostMapping("/api/v1/notification-templates")
     public ResponseEntity<ResponseModel<NotificationTemplate>> create(
-            @RequestBody NTRequestDTO dto) throws GenericException {
+            @Valid @RequestBody NTRequestDTO dto) throws GenericException {
         return ApiResponse.respond(ntService.createNT(dto),
                 "Notification template created", "Failed to create notification template");
     }
@@ -56,7 +57,7 @@ public class NTController {
     @PutMapping("/api/v1/notification-templates/{id}")
     public ResponseEntity<ResponseModel<NotificationTemplate>> update(
             @PathVariable Long id,
-            @RequestBody NTRequestDTO dto) throws GenericException {
+            @Valid @RequestBody NTRequestDTO dto) throws GenericException {
         return ApiResponse.respond(ntService.updateNT(id, dto),
                 "Notification template updated", "Failed to update notification template");
     }

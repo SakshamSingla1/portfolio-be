@@ -8,6 +8,7 @@ import com.portfolio.services.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,7 +20,7 @@ public class AdminController {
 
     @Operation(summary = "Register a new user", description = "Registers a new user account and sends an OTP to the provided email for verification.")
     @PostMapping("/register")
-    public ResponseEntity<ResponseModel<AuthResponseDTO>> register(@RequestBody AuthRegisterDTO registerDTO)
+    public ResponseEntity<ResponseModel<AuthResponseDTO>> register(@Valid @RequestBody AuthRegisterDTO registerDTO)
             throws GenericException {
         AuthResponseDTO response = adminService.register(registerDTO);
         return ApiResponse.respond(response, "User registered successfully", "User registration failed");
@@ -27,7 +28,7 @@ public class AdminController {
 
     @Operation(summary = "Verify OTP sent to user email", description = "Verifies the OTP sent to the user's email after registration. Returns a success message on valid OTP.")
     @PostMapping("/verify-otp")
-    public ResponseEntity<ResponseModel<String>> verifyOtp(@RequestBody OtpRequestDTO otpRequestDTO)
+    public ResponseEntity<ResponseModel<String>> verifyOtp(@Valid @RequestBody OtpRequestDTO otpRequestDTO)
             throws GenericException {
         String message = adminService.verifyOtp(otpRequestDTO);
         return ApiResponse.respond(message, "OTP verified successfully", "Invalid or expired OTP");
@@ -35,7 +36,7 @@ public class AdminController {
 
     @Operation(summary = "Resend OTP to user email", description = "Resends a new OTP to the user's registered email address.")
     @PostMapping("/resend-otp")
-    public ResponseEntity<ResponseModel<String>> resendOtp(@RequestBody OtpRequestDTO otpRequestDTO)
+    public ResponseEntity<ResponseModel<String>> resendOtp(@Valid @RequestBody OtpRequestDTO otpRequestDTO)
             throws GenericException {
         String message = adminService.resendOtp(otpRequestDTO.getEmail());
         return ApiResponse.respond(message, "OTP resent successfully", "Failed to resend OTP");
@@ -43,7 +44,7 @@ public class AdminController {
 
     @Operation(summary = "Send OTP for phone login", description = "Sends a one-time password to the user's phone number for phone-based login.")
     @PostMapping("/send-otp")
-    public ResponseEntity<ResponseModel<String>> sendLoginOtp(@RequestBody PhoneOtpRequestDTO request)
+    public ResponseEntity<ResponseModel<String>> sendLoginOtp(@Valid @RequestBody PhoneOtpRequestDTO request)
             throws GenericException {
         String message = adminService.sendOtp(request);
         return ApiResponse.respond(message, "OTP sent successfully", "Failed to send OTP");
@@ -51,7 +52,7 @@ public class AdminController {
 
     @Operation(summary = "Login user using email/username/password or phone+OTP", description = "Authenticates a user by email/username and password, or by phone and OTP. Returns a JWT access token on success.")
     @PostMapping("/login")
-    public ResponseEntity<ResponseModel<LoginResponseDTO>> login(@RequestBody AuthLoginDTO loginDTO)
+    public ResponseEntity<ResponseModel<LoginResponseDTO>> login(@Valid @RequestBody AuthLoginDTO loginDTO)
             throws GenericException {
         LoginResponseDTO response = adminService.login(loginDTO);
         return ApiResponse.respond(response, "Login successful", "Invalid credentials");
@@ -59,7 +60,7 @@ public class AdminController {
 
     @Operation(summary = "Send password reset token to user email", description = "Sends a password reset link to the user's email address.")
     @PostMapping("/forgot-password")
-    public ResponseEntity<ResponseModel<String>> forgotPassword(@RequestBody PasswordResetRequestDTO requestDTO)
+    public ResponseEntity<ResponseModel<String>> forgotPassword(@Valid @RequestBody PasswordResetRequestDTO requestDTO)
             throws GenericException {
         String message = adminService.forgotPassword(requestDTO);
         return ApiResponse.respond(message, "Password reset email sent successfully", "Failed to send reset email");
@@ -75,7 +76,7 @@ public class AdminController {
 
     @Operation(summary = "Reset password using reset token", description = "Resets the user's password using the token received via email.")
     @PostMapping("/reset-password")
-    public ResponseEntity<ResponseModel<String>> resetPassword(@RequestBody PasswordResetConfirmDTO requestDTO)
+    public ResponseEntity<ResponseModel<String>> resetPassword(@Valid @RequestBody PasswordResetConfirmDTO requestDTO)
             throws GenericException {
         String message = adminService.resetPassword(requestDTO);
         return ApiResponse.respond(message, "Password reset successfully", "Failed to reset password");
@@ -85,7 +86,7 @@ public class AdminController {
     @PutMapping("/change-password")
     public ResponseEntity<ResponseModel<String>> changePassword(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody ChangePasswordDTO requestDTO)
+            @Valid @RequestBody ChangePasswordDTO requestDTO)
             throws GenericException {
         String message = adminService.changePassword(authorizationHeader,requestDTO);
         return ApiResponse.respond(message, "Password changed successfully", "Failed to change password");
@@ -95,7 +96,7 @@ public class AdminController {
     @PostMapping("/request-email-change")
     public ResponseEntity<ResponseModel<String>> requestEmailChange(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody ChangeEmailRequestDTO requestDTO) throws GenericException {
+            @Valid @RequestBody ChangeEmailRequestDTO requestDTO) throws GenericException {
         String message = adminService.requestEmailChange(authorizationHeader, requestDTO);
         return ApiResponse.respond(message,"OTP sent to new email for verification","Failed to send OTP");
     }
@@ -104,7 +105,7 @@ public class AdminController {
     @PutMapping("/verify-email-change")
     public ResponseEntity<ResponseModel<String>> verifyEmailChange(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody VerifyEmailChangeDTO requestDTO) throws GenericException {
+            @Valid @RequestBody VerifyEmailChangeDTO requestDTO) throws GenericException {
         String message = adminService.verifyEmailChangeOtp(authorizationHeader, requestDTO);
         return ApiResponse.respond(message,"Email updated successfully","Failed to update email");
     }
@@ -120,7 +121,7 @@ public class AdminController {
     @Operation(summary = "Verify TOTP code for 2FA and return access token", description = "Validates a TOTP code and returns a full access token once 2FA is confirmed.")
     @PostMapping("/2fa/verify")
     public ResponseEntity<ResponseModel<LoginResponseDTO>> verify2Fa(
-            @RequestBody  TwoFactorVerifyDTO requestDTO) throws GenericException {
+            @Valid @RequestBody TwoFactorVerifyDTO requestDTO) throws GenericException {
         LoginResponseDTO response = adminService.verify2Fa(requestDTO);
         return ApiResponse.respond(response, "2FA verified successfully", "Failed to verify 2FA");
     }
@@ -129,7 +130,7 @@ public class AdminController {
     @PutMapping("/2fa/toggle")
     public ResponseEntity<ResponseModel<String>> toggle2Fa(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody TotpCodeDTO dto) throws GenericException {
+            @Valid @RequestBody TotpCodeDTO dto) throws GenericException {
         String message = adminService.toggle2Fa(authorizationHeader, dto.getTotpCode());
         return ApiResponse.respond(message, "2FA toggled successfully", "Failed to toggle 2FA");
     }

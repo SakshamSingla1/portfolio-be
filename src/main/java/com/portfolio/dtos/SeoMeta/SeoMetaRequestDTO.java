@@ -1,12 +1,14 @@
 package com.portfolio.dtos.SeoMeta;
 
 import com.portfolio.enums.PageKeyEnum;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 public class SeoMetaRequestDTO {
+    @NotNull(message = "Page key is required")
     private PageKeyEnum pageKey;
     private String title;
     private String description;

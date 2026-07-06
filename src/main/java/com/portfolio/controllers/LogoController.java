@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,19 +43,19 @@ public class LogoController {
             LogoResponse response = logoService.getById(id);
             return ApiResponse.respond(response, "Logo fetched successfully", "Failed to fetch logo");
         } catch (Exception e) {
-            return ApiResponse.respond(null, "Logo fetched successfully", e.getMessage());
+            return ApiResponse.failureResponse(null, e.getMessage());
         }
     }
 
     @Operation(summary = "Create a logo", description = "Creates a new logo")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping
-    public ResponseEntity<ResponseModel<LogoResponse>> createLogo(@RequestBody LogoRequest request) {
+    public ResponseEntity<ResponseModel<LogoResponse>> createLogo(@Valid @RequestBody LogoRequest request) {
         try {
             LogoResponse response = logoService.create(request);
             return ApiResponse.respond(response, "Logo created successfully", "Failed to create logo");
         } catch (Exception e) {
-            return ApiResponse.respond(null, "Logo created successfully", e.getMessage());
+            return ApiResponse.failureResponse(null, e.getMessage());
         }
     }
 
@@ -63,12 +64,12 @@ public class LogoController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<LogoResponse>> updateLogo(
             @PathVariable Long id,
-            @RequestBody LogoRequest request) {
+            @Valid @RequestBody LogoRequest request) {
         try {
             LogoResponse response = logoService.update(id, request);
             return ApiResponse.respond(response, "Logo updated successfully", "Failed to update logo");
         } catch (Exception e) {
-            return ApiResponse.respond(null, "Logo updated successfully", e.getMessage());
+            return ApiResponse.failureResponse(null, e.getMessage());
         }
     }
 
@@ -81,7 +82,7 @@ public class LogoController {
             return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully",
                     "Failed to delete logo");
         } catch (Exception e) {
-            return ApiResponse.respond(null, "Logo deleted successfully", e.getMessage());
+            return ApiResponse.failureResponse(null, e.getMessage());
         }
     }
 }

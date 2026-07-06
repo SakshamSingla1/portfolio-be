@@ -2,6 +2,7 @@ package com.portfolio.dtos.Project;
 
 import com.portfolio.dtos.ProjectImages.ProjectImageRequest;
 import com.portfolio.enums.WorkStatusEnum;
+import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +13,7 @@ import java.util.List;
 @Builder
 public class ProjectRequest {
     private Long profileId;
+    @NotBlank(message = "Project name is required")
     private String projectName;
     private String projectDescription;
     private List<String> githubRepositories;

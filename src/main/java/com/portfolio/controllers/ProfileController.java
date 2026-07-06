@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
 import java.io.IOException;
 
 @RestController
@@ -54,7 +55,7 @@ public class ProfileController {
         @PutMapping
         public ResponseEntity<ResponseModel<ProfileResponse>> updateProfile(
                         @RequestHeader("Authorization") String auth,
-                        @RequestBody ProfileRequest req) throws GenericException, IOException {
+                        @Valid @RequestBody ProfileRequest req) throws GenericException, IOException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.update(profileId, req), "Profile updated successfully",
                                 "Failed to update profile");
@@ -138,7 +139,7 @@ public class ProfileController {
         @PutMapping("/users/{id}/status")
         public ResponseEntity<ResponseModel<UserResponse>> updateUserStatus(
                         @PathVariable Long id,
-                        @RequestBody StatusUpdateRequest request) throws GenericException {
+                        @Valid @RequestBody StatusUpdateRequest request) throws GenericException {
                 UserResponse user = profileService.updateUserStatus(id, request);
                 return ApiResponse.respond(
                                 user,
@@ -151,7 +152,7 @@ public class ProfileController {
         @PutMapping("/users/{id}/role")
         public ResponseEntity<ResponseModel<UserResponse>> updateUserRole(
                         @PathVariable Long id,
-                        @RequestBody RoleUpdateRequest request) throws GenericException {
+                        @Valid @RequestBody RoleUpdateRequest request) throws GenericException {
                 UserResponse user = profileService.updateUserRole(id, request);
                 return ApiResponse.respond(
                                 user,
@@ -169,5 +170,13 @@ public class ProfileController {
                                 user,
                                 "User verification toggled successfully",
                                 "Failed to toggle user verification");
+        }
+
+        @Operation(summary = "Delete user (Admin)", description = "Soft-deletes a user account by setting its status to DELETED. Requires SUPER_ADMIN role.")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        @DeleteMapping("/users/{id}")
+        public ResponseEntity<ResponseModel<Void>> deleteUser(@PathVariable Long id) throws GenericException {
+                profileService.deleteUser(id);
+                return ApiResponse.respond(null, "User deleted successfully", "Failed to delete user");
         }
 }

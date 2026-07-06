@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -52,7 +53,7 @@ public class ContactUsController {
     public ResponseEntity<ResponseModel<ContactUsResponse>> reply(
             @PathVariable Long id,
             @RequestHeader("Authorization") String auth,
-            @RequestBody ContactUsReplyDTO dto
+            @Valid @RequestBody ContactUsReplyDTO dto
     ) throws GenericException {
         ContactUsResponse response = contactUsService.reply(id, dto.getMessage(), auth);
         return ApiResponse.respond(response, "Reply sent successfully", ApiResponse.FAILED);

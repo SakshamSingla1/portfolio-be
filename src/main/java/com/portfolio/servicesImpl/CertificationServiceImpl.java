@@ -53,7 +53,7 @@ public class CertificationServiceImpl implements CertificationService {
                 .order(dto.getOrder())
                 .build();
         Certifications saved = certificationDao.save(certification);
-        linkFileAsset(saved.getId(), dto.getCredentialUrl());
+        linkFileAsset(saved.getId(), dto.getCredentialPublicId(), dto.getCredentialUrl());
         return mapToResponse(saved);
     }
 
@@ -73,7 +73,7 @@ public class CertificationServiceImpl implements CertificationService {
         existing.setOrder(dto.getOrder());
         existing.setUpdatedAt(LocalDateTime.now());
         Certifications saved = certificationDao.save(existing);
-        linkFileAsset(id, dto.getCredentialUrl());
+        linkFileAsset(id, dto.getCredentialPublicId(), dto.getCredentialUrl());
         return mapToResponse(saved);
     }
 
@@ -127,25 +127,45 @@ public class CertificationServiceImpl implements CertificationService {
                 .toList();
     }
 
-    private void linkFileAsset(Long resourceId, String url) {
-        if (url == null || url.isBlank()) return;
+    private void linkFileAsset(Long resourceId, String publicId, String url) {
+        if (publicId == null || publicId.isBlank()) {
+            if (url == null || url.isBlank()) return;
+        }
+
+        Optional<FileAsset> assetOpt = Optional.empty();
+        if (publicId != null && !publicId.isBlank()) {
+            try {
+                Long assetId = Long.parseLong(publicId);
+                assetOpt = fileAssetDao.findById(assetId);
+            } catch (NumberFormatException e) {
+                assetOpt = fileAssetDao.findByPublicId(publicId);
+            }
+        }
+
+        if (assetOpt.isEmpty() && url != null && !url.isBlank()) {
+            assetOpt = fileAssetDao.findByPath(url);
+        }
+
+        Long targetAssetId = assetOpt.map(FileAsset::getId).orElse(null);
+
         List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId.intValue(), ResourceTypeEnum.CERTIFICATION);
         for (FileAsset asset : existing) {
-            if (!url.equals(asset.getPath())) {
+            if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
                 try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
             }
         }
-        Optional<FileAsset> assetOpt = fileAssetDao.findByPath(url);
+
         if (assetOpt.isPresent()) {
             FileAsset asset = assetOpt.get();
             asset.setResourceId(resourceId.intValue());
             asset.setPrimary(true);
             fileAssetDao.save(asset);
-        } else {
+        } else if (url != null && !url.isBlank()) {
             FileAsset asset = new FileAsset();
             asset.setResourceId(resourceId.intValue());
             asset.setResourceType(ResourceTypeEnum.CERTIFICATION);
             asset.setPath(url);
+            asset.setPublicId(publicId);
             asset.setPrimary(true);
             fileAssetDao.save(asset);
         }
@@ -153,9 +173,11 @@ public class CertificationServiceImpl implements CertificationService {
 
     private CertificationResponseDTO mapToResponse(Certifications c) {
         String credentialUrl = null;
+        String credentialPublicId = null;
         Optional<FileAsset> assetOpt = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(c.getId().intValue(), ResourceTypeEnum.CERTIFICATION);
         if (assetOpt.isPresent()) {
             credentialUrl = assetOpt.get().getPath();
+            credentialPublicId = assetOpt.get().getPublicId();
         }
         CertificationResponseDTO responseDTO = CertificationResponseDTO.builder()
                 .id(c.getId())
@@ -163,6 +185,7 @@ public class CertificationServiceImpl implements CertificationService {
                 .issuer(c.getIssuer())
                 .credentialId(c.getCredentialId())
                 .credentialUrl(credentialUrl)
+                .credentialPublicId(credentialPublicId)
                 .status(c.getStatus())
                 .order(c.getOrder())
                 .issueDate(c.getIssueDate())

@@ -138,13 +138,13 @@ public class ProfileServiceImpl implements ProfileService {
             MultipartFile file) throws IOException, GenericException {
         profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
-        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.LOGO)
+        fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId.intValue(), ResourceTypeEnum.PROFILE_LOGO)
                 .ifPresent(existing -> {
                     try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
         uploadReq.setResourceId(profileId.intValue());
-        uploadReq.setResourceType(ResourceTypeEnum.LOGO);
+        uploadReq.setResourceType(ResourceTypeEnum.PROFILE_LOGO);
         uploadReq.setPrimary(true);
         try {
             FileAssetDTO asset = fileService.upload(file, uploadReq);
@@ -173,7 +173,7 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
 
-        Optional<FileAsset> logoAsset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profile.getId().intValue(), ResourceTypeEnum.LOGO);
+        Optional<FileAsset> logoAsset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profile.getId().intValue(), ResourceTypeEnum.PROFILE_LOGO);
         if (logoAsset.isPresent()) {
             logoUrl = logoAsset.get().getPath();
             logoPublicId = logoAsset.get().getPublicId();
@@ -286,6 +286,15 @@ public class ProfileServiceImpl implements ProfileService {
                 .profileImageUrl(profileImageUrl)
                 .build();
         return user;
+    }
+
+    @Override
+    public void deleteUser(Long id) throws GenericException {
+        Profile profile = profileDao.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+        profile.setStatus(StatusEnum.DELETED);
+        profile.setUpdatedAt(LocalDateTime.now());
+        profileDao.save(profile);
     }
 
     private String getRoleNameById(Long roleId) {

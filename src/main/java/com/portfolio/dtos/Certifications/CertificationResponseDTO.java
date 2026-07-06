@@ -18,6 +18,7 @@ public class CertificationResponseDTO extends AuditableResponse {
     private String issuer;
     private String credentialId;
     private String credentialUrl;
+    private String credentialPublicId;
     private StatusEnum status;
     private String order;
     private LocalDate issueDate;
@@ -25,6 +26,7 @@ public class CertificationResponseDTO extends AuditableResponse {
 
     public CertificationResponseDTO(Long id, String title, String issuer,
                                     String credentialId, String credentialUrl,
+                                    String credentialPublicId,
                                     StatusEnum status, String order,
                                     LocalDate issueDate, LocalDate expiryDate,
                                     LocalDateTime createdAt, LocalDateTime updatedAt,
@@ -36,6 +38,7 @@ public class CertificationResponseDTO extends AuditableResponse {
         this.issuer = issuer;
         this.credentialId = credentialId;
         this.credentialUrl = credentialUrl;
+        this.credentialPublicId = credentialPublicId;
         this.status = status;
         this.order = order;
         this.issueDate = issueDate;

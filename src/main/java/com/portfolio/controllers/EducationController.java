@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,7 +30,7 @@ public class EducationController {
     @PostMapping
     public ResponseEntity<ResponseModel<EducationResponse>> create(
             @RequestHeader("Authorization") String auth,
-            @RequestBody EducationRequest request) throws GenericException {
+            @Valid @RequestBody EducationRequest request) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(
                 educationService.createEducation(request),
@@ -43,7 +44,7 @@ public class EducationController {
     public ResponseEntity<ResponseModel<EducationResponse>> update(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id,
-            @RequestBody EducationRequest request
+            @Valid @RequestBody EducationRequest request
     ) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(

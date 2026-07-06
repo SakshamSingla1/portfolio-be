@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,7 +29,7 @@ public class RoleController {
     @Operation(summary = "Create role", description = "Creates a new role with optional permission mappings. Requires SUPER_ADMIN role.")
     @PostMapping
     public ResponseEntity<ResponseModel<RoleListResponseDTO>> createRole(
-            @RequestBody RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
+            @Valid @RequestBody RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
         RoleListResponseDTO responseDTO = roleService.upsertRole(null, roleRequestBodyDTO);
         return ApiResponse.respond(responseDTO, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
@@ -36,7 +37,7 @@ public class RoleController {
     @Operation(summary = "Update role", description = "Updates an existing role and its permission mappings by ID. Requires SUPER_ADMIN role.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<RoleListResponseDTO>> updateRole(@PathVariable Long id,
-            @RequestBody RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
+            @Valid @RequestBody RoleRequestBodyDTO roleRequestBodyDTO) throws GenericException {
         RoleListResponseDTO responseDTO = roleService.upsertRole(id, roleRequestBodyDTO);
         return ApiResponse.respond(responseDTO, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }

@@ -8,6 +8,7 @@ public enum ResourceTypeEnum {
     CERTIFICATION,
     PLATFORM,
     LOGO,
+    PROFILE_LOGO,
     RESUME,
     BANNER
 }

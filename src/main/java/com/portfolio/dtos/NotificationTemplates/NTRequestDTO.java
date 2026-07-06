@@ -1,5 +1,6 @@
 package com.portfolio.dtos.NotificationTemplates;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class NTRequestDTO {
     private String emailBcc;
     private String emailReplyTo;
 
-    @NotNull(message = "Template name is required")
+    @NotBlank(message = "Template name is required")
     private String template;
 
     private Integer isSms;

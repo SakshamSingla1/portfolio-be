@@ -3,15 +3,20 @@ package com.portfolio.exceptions;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.payload.ResponseModel;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -118,6 +123,48 @@ public class GlobalExceptionHandler {
         ResponseModel<Void> body = new ResponseModel<>("Invalid query. Check your search or filter values.", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
         body.toFailure();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseModel<Void>> handleValidationException(MethodArgumentNotValidException ex) {
+        java.util.List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.toList());
+        String message = "Validation failed: " + String.join(", ", errors);
+        log.warn("ValidationException: {}", message);
+
+        ResponseModel<Void> body = new ResponseModel<>(message, null, ExceptionCodeEnum.VALIDATION_FAILED.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ResponseModel<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        String message = ex.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
+        log.warn("ConstraintViolationException: {}", message);
+        ResponseModel<Void> body = new ResponseModel<>("Validation failed: " + message, null, ExceptionCodeEnum.VALIDATION_FAILED.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ResponseModel<Void>> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+        log.warn("HttpMessageNotReadableException: {}", ex.getMessage());
+        ResponseModel<Void> body = new ResponseModel<>("Malformed JSON request body", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ResponseModel<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        log.warn("HttpRequestMethodNotSupportedException: {}", ex.getMethod());
+        ResponseModel<Void> body = new ResponseModel<>("HTTP method " + ex.getMethod() + " is not supported for this endpoint", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
     }
 
     @ExceptionHandler(Exception.class)

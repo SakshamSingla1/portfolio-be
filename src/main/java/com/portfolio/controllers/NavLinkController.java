@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -29,7 +30,7 @@ public class NavLinkController {
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PostMapping
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> createNavLink(
-                        @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
+                        @Valid @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
 
                 NavLinkResponseDTO responseDTO = navLinkService.createNavLink(navLinkRequestDTO);
 
@@ -44,7 +45,7 @@ public class NavLinkController {
         @PutMapping("/{id}")
         public ResponseEntity<ResponseModel<NavLinkResponseDTO>> updateNavLink(
                         @PathVariable Long id,
-                        @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
+                        @Valid @RequestBody NavLinkRequestDTO navLinkRequestDTO) throws GenericException {
 
                 NavLinkResponseDTO responseDTO = navLinkService.updateNavLink(id, navLinkRequestDTO);
 

@@ -34,11 +34,25 @@ public class FileServiceImpl implements FileService {
                 ? cloudinaryService.uploadImage(file, folder)
                 : cloudinaryService.uploadRawDocument(file, folder);
 
-        // If this asset is primary, delete the existing primary for the same resource to avoid orphaned assets
+        // Delete existing primary asset (same resource) to avoid orphaned Cloudinary files
         if (request.isPrimary()) {
             fileAssetDao
                     .findByResourceIdAndResourceTypeAndIsPrimaryTrue(request.getResourceId(), request.getResourceType())
                     .ifPresent(existing -> {
+                        try {
+                            if (existing.getPublicId() != null && !existing.getPublicId().isBlank()) {
+                                cloudinaryService.deleteFile(existing.getPublicId());
+                            }
+                            fileAssetDao.delete(existing);
+                        } catch (Exception ignored) {}
+                    });
+        } else if (request.getMetaData() != null && !request.getMetaData().isBlank()) {
+            // For non-primary assets tagged with metadata (e.g. ABOUT_ME_IMAGE), replace the existing tagged asset
+            fileAssetDao
+                    .findByResourceIdAndResourceTypeOrderBySortOrderAsc(request.getResourceId(), request.getResourceType())
+                    .stream()
+                    .filter(a -> request.getMetaData().equals(a.getMetaData()))
+                    .forEach(existing -> {
                         try {
                             if (existing.getPublicId() != null && !existing.getPublicId().isBlank()) {
                                 cloudinaryService.deleteFile(existing.getPublicId());

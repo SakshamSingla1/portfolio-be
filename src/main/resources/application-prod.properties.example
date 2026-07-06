@@ -1,0 +1,42 @@
+# ===============================
+# APP CONFIGURATION
+# ===============================
+SPRING_APPLICATION_NAME=portfolio
+SERVER_PORT=8080
+APP_FRONTEND_URL=https://yourdomain.com,https://admin.yourdomain.com,https://www.yourdomain.com
+APP_URL=https://admin.yourdomain.com/
+
+# ===============================
+# POSTGRESQL CONFIGURATION
+# ===============================
+DATABASE_URL=jdbc:postgresql://<host>/<db>?sslmode=require
+DATABASE_USER=CHANGE_ME
+DATABASE_PASSWORD=CHANGE_ME
+
+# ===============================
+# EMAIL CONFIGURATION (Gmail SMTP)
+# ===============================
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=CHANGE_ME@gmail.com
+MAIL_PASSWORD=CHANGE_ME_APP_PASSWORD
+
+# ===============================
+# JWT CONFIGURATION
+# NOTE: Use a DIFFERENT secret from dev — dev tokens must not be valid on prod
+# ===============================
+JWT_SECRET=CHANGE_ME_BASE64_SECRET_MIN_32_CHARS_DIFFERENT_FROM_DEV
+JWT_ACCESS_TOKEN_EXPIRATION=36000000
+
+# ===============================
+# CLOUDINARY CONFIGURATION
+# ===============================
+CLOUDINARY_API_KEY=CHANGE_ME
+CLOUDINARY_API_SECRET=CHANGE_ME
+CLOUDINARY_CLOUD_NAME=CHANGE_ME
+
+# ===============================
+# RESEND CONFIGURATION
+# ===============================
+RESEND_API_KEY=CHANGE_ME
+RESEND_FROM_EMAIL=no-reply@yourdomain.com

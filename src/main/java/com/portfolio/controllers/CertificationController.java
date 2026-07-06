@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.validation.Valid;
 import java.io.IOException;
 
 @RestController
@@ -30,7 +31,7 @@ public class CertificationController {
     @PostMapping
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> createCertification(
             @RequestHeader("Authorization") String auth,
-            @RequestBody CertificationRequestDTO dto) throws GenericException {
+            @Valid @RequestBody CertificationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.createCertification(dto);
         return ApiResponse.respond(response, "Certification created successfully", "Failed to create certification");
@@ -41,7 +42,7 @@ public class CertificationController {
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id, 
-            @RequestBody CertificationRequestDTO dto) throws GenericException {
+            @Valid @RequestBody CertificationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.updateCertification(id, dto);
         return ApiResponse.respond(response, "Certification updated successfully", "Failed to update certification");

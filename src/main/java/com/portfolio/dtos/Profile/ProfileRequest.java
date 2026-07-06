@@ -1,10 +1,13 @@
 package com.portfolio.dtos.Profile;
 
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 @Data
 public class ProfileRequest {
+    @NotBlank(message = "Full name is required")
     private String fullName;
+    @NotBlank(message = "Username is required")
     private String userName;
     private String title;
     private String aboutMe;

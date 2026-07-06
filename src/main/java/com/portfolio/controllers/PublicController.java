@@ -17,6 +17,7 @@ import com.portfolio.services.ContactUsService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -72,7 +73,7 @@ public class PublicController {
 
     @Operation(summary = "Create contact message", description = "Saves a new contact us message.")
     @PostMapping("/contact-us")
-    public ResponseEntity<ResponseModel<ContactUsResponse>> create(@RequestBody ContactUsRequest request) throws GenericException {
+    public ResponseEntity<ResponseModel<ContactUsResponse>> create(@Valid @RequestBody ContactUsRequest request) throws GenericException {
         ContactUsResponse response = contactUsService.create(request);
         return ApiResponse.respond(response, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }

@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -31,7 +32,7 @@ public class SocialLinkController {
     @PostMapping
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> createLink(
             @RequestHeader("Authorization") String auth,
-            @RequestBody SocialLinkRequestDTO requestDTO) throws GenericException {
+            @Valid @RequestBody SocialLinkRequestDTO requestDTO) throws GenericException {
         requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.createLink(requestDTO);
         return ApiResponse.respond(responseDTO,"Social Link created successfully","Failed to create social link");
@@ -42,7 +43,7 @@ public class SocialLinkController {
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> updateLink(
             @RequestHeader("Authorization") String auth,
             @PathVariable Long id,
-            @RequestBody SocialLinkRequestDTO requestDTO ) throws GenericException {
+            @Valid @RequestBody SocialLinkRequestDTO requestDTO ) throws GenericException {
         requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.updateLink(id,requestDTO);
         return ApiResponse.respond(responseDTO,"Social Link updated successfully","Failed to update social link");

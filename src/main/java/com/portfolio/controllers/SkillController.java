@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,7 +31,7 @@ public class SkillController {
     @PostMapping
     public ResponseEntity<ResponseModel<SkillResponse>> create(
             @RequestHeader("Authorization") String auth,
-            @RequestBody SkillRequest req) {
+            @Valid @RequestBody SkillRequest req) {
         try {
             req.setProfileId(helper.getProfileIdFromHeader(auth));
             SkillResponse response = skillService.create(req);
@@ -45,7 +46,7 @@ public class SkillController {
     public ResponseEntity<ResponseModel<SkillResponse>> update(
             @RequestHeader("Authorization") String auth,
             @Parameter(description = "Skill ID") @PathVariable Long id, 
-            @RequestBody SkillRequest req) {
+            @Valid @RequestBody SkillRequest req) {
         try {
             req.setProfileId(helper.getProfileIdFromHeader(auth));
             SkillResponse response = skillService.update(id, req);

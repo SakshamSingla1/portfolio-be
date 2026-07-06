@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -42,7 +43,7 @@ public class SeoMetaController {
     @PutMapping
     public ResponseEntity<ResponseModel<SeoMetaResponseDTO>> upsert(
             @RequestHeader("Authorization") String auth,
-            @RequestBody SeoMetaRequestDTO dto) throws GenericException {
+            @Valid @RequestBody SeoMetaRequestDTO dto) throws GenericException {
         return ApiResponse.respond(seoMetaService.upsert(auth, dto), ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 }
