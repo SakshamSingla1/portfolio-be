@@ -1,5 +1,7 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dtos.Blog.BlogPostResponse;
+import com.portfolio.dtos.Blog.BlogPostSummary;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
@@ -9,6 +11,7 @@ import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.services.BlogPostService;
 import com.portfolio.services.FileService;
 import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
@@ -19,6 +22,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +37,7 @@ public class PublicController {
     private final ResumePublicService resumePublicService;
     private final PortfolioViewService portfolioViewService;
     private final FileService fileService;
+    private final BlogPostService blogPostService;
 
     // Platform-level resource ID used for singleton assets (e.g. landing page banner)
     private static final long PLATFORM_RESOURCE_ID = 1L;
@@ -80,11 +86,32 @@ public class PublicController {
 
     @Operation(summary = "Track portfolio view", description = "Records a page view from the public portfolio site.")
     @PostMapping("/track-view")
-    public ResponseEntity<Void> trackView(@RequestBody PortfolioViewRequest request, HttpServletRequest httpRequest) {
+    public ResponseEntity<Void> trackView(@Valid @RequestBody PortfolioViewRequest request, HttpServletRequest httpRequest) {
         String ip = resolveClientIp(httpRequest);
         String ua = httpRequest.getHeader("User-Agent");
         portfolioViewService.trackView(request, ip, ua);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Get published blog posts", description = "Returns paginated published posts for a given username.")
+    @GetMapping("/blog/{username}")
+    public ResponseEntity<ResponseModel<Page<BlogPostSummary>>> getPublishedPosts(
+            @PathVariable String username,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "publishedAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir,
+            Pageable pageable) throws GenericException {
+        Page<BlogPostSummary> posts = blogPostService.getPublishedByUsername(username, search, sortBy, sortDir, pageable);
+        return ApiResponse.successResponse(posts, "Blog posts fetched successfully");
+    }
+
+    @Operation(summary = "Get a single published blog post", description = "Returns post detail and increments view count.")
+    @GetMapping("/blog/{username}/{slug}")
+    public ResponseEntity<ResponseModel<BlogPostResponse>> getPublishedPost(
+            @PathVariable String username,
+            @PathVariable String slug) throws GenericException {
+        BlogPostResponse post = blogPostService.getPublishedByUsernameAndSlug(username, slug);
+        return ApiResponse.successResponse(post, "Blog post fetched successfully");
     }
 
     private String resolveClientIp(HttpServletRequest request) {
