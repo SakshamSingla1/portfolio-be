@@ -3,9 +3,11 @@ package com.portfolio.repositories;
 import com.portfolio.dtos.Role.NavLinkPermissionRow;
 import com.portfolio.entities.RolePermission;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,7 +24,10 @@ public interface RolePermissionRepository extends JpaRepository<RolePermission, 
 
     RolePermission findByRoleIdAndNavLinkIdAndPermissionId(Long roleId, Long navLinkId, Long permissionId);
 
-    void deleteByRoleId(Long roleId);
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("DELETE FROM RolePermission rp WHERE rp.roleId = :roleId")
+    void deleteByRoleId(@Param("roleId") Long roleId);
 
     List<RolePermission> findByRoleIdAndNavLinkId(Long roleId, Long navLinkId);
 

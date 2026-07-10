@@ -55,11 +55,19 @@ public class RoleServiceImpl implements RoleService {
             rolePermissionDao.deleteByRoleId(savedRole.getId());
 
             List<RolePermission> permissions = roleRequestBodyDTO.getRolePermissions().stream()
-                    .map(rp -> RolePermission.builder()
-                            .roleId(savedRole.getId())
-                            .navLinkId(rp.getNavLinkId())
-                            .permissionId(rp.getPermissionId())
-                            .build())
+                    .filter(rp -> rp.getNavLinkId() != null && rp.getPermissionId() != null)
+                    .distinct()
+                    .collect(Collectors.toMap(
+                            rp -> rp.getNavLinkId() + "_" + rp.getPermissionId(),
+                            rp -> RolePermission.builder()
+                                    .roleId(savedRole.getId())
+                                    .navLinkId(rp.getNavLinkId())
+                                    .permissionId(rp.getPermissionId())
+                                    .build(),
+                            (a, b) -> a
+                    ))
+                    .values()
+                    .stream()
                     .collect(Collectors.toList());
 
             rolePermissionDao.saveAll(permissions);
