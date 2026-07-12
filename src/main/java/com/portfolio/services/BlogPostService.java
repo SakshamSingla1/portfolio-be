@@ -28,7 +28,7 @@ public interface BlogPostService {
 
     BlogPostResponse archive(Long id) throws GenericException;
 
-    ImageUploadResponse uploadCoverImage(Long profileId, MultipartFile file) throws IOException, GenericException;
+    ImageUploadResponse uploadCoverImage(Long postId, MultipartFile file) throws IOException, GenericException;
 
     // Public (no-auth) endpoints
     Page<BlogPostSummary> getPublishedByUsername(String username, String search, String sortBy, String sortDir, Pageable pageable) throws GenericException;

@@ -1,5 +1,7 @@
 package com.portfolio.entities;
 
+import java.time.LocalDate;
+
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
@@ -58,4 +60,9 @@ public class Profile extends Auditable {
 
     private boolean isTwoFactorEnabled;
     private String totpSecret;
+
+
+    private boolean isAvailableForWork;
+    private String availabilityNote;
+    private LocalDate availableFrom;
 }

@@ -114,14 +114,13 @@ public class BlogPostController {
         }
     }
 
-    @Operation(summary = "Upload a blog post cover image")
-    @PostMapping("/cover/upload")
+    @Operation(summary = "Upload a cover image for a specific blog post")
+    @PostMapping("/{id}/cover")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadCoverImage(
-            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id,
             @RequestParam("file") MultipartFile file) throws IOException, GenericException {
-        Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
-                blogPostService.uploadCoverImage(profileId, file),
+                blogPostService.uploadCoverImage(id, file),
                 "Cover image uploaded successfully",
                 "Failed to upload cover image"
         );

@@ -147,11 +147,11 @@ public class BlogPostServiceImpl implements BlogPostService {
     }
 
     @Override
-    public ImageUploadResponse uploadCoverImage(Long profileId, MultipartFile file) throws IOException, GenericException {
-        profileDao.findById(profileId)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+    public ImageUploadResponse uploadCoverImage(Long postId, MultipartFile file) throws IOException, GenericException {
+        blogPostDao.findById(postId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.BLOG_POST_NOT_FOUND, "Blog post not found"));
         FileUploadRequest uploadReq = new FileUploadRequest();
-        uploadReq.setResourceId(profileId);
+        uploadReq.setResourceId(postId);
         uploadReq.setResourceType(ResourceTypeEnum.BLOG_POST);
         uploadReq.setPrimary(true);
         try {
