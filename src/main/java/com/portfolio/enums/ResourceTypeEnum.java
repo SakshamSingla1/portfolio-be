@@ -11,5 +11,6 @@ public enum ResourceTypeEnum {
     PROFILE_LOGO,
     RESUME,
     BANNER,
-    BLOG_POST
+    BLOG_POST,
+    SERVICE
 }
