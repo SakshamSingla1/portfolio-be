@@ -16,6 +16,7 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.*;
+import com.portfolio.services.ProfileLanguageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final ProfileThemeService profileThemeService;
     private final GitHubService gitHubService;
     private final SeoMetaDao seoMetaDao;
+    private final ProfileLanguageService profileLanguageService;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
@@ -77,6 +79,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .socialLinks(socialLinks)
                 .githubStats(githubStats)
                 .seoMeta(seoMeta)
+                .languages(profileLanguageService.getByProfile(profileId))
                 .build();
     }
 
