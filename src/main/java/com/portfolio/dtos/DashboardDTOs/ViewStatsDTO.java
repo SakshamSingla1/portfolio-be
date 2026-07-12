@@ -20,5 +20,6 @@ public class ViewStatsDTO {
     private Map<String, Long> deviceBreakdown;
     private Map<String, Long> browserBreakdown;
     private Map<String, Long> locationBreakdown;
+    private Map<String, Long> referrerBreakdown;
     private List<PortfolioViewDTO> recentViews;
 }

@@ -43,4 +43,13 @@ public class PortfolioView extends Auditable {
 
     @Column(name = "country_code")
     private String countryCode;
+
+    @Column(name = "device_type")
+    private String deviceType;
+
+    @Column(name = "referrer_domain")
+    private String referrerDomain;
+
+    @Column(name = "referrer_url")
+    private String referrerUrl;
 }

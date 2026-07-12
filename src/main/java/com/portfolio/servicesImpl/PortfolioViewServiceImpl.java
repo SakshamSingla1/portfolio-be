@@ -36,11 +36,18 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
         GeoLocation geo = fetchGeoLocation(clientIp);
 
+        String normDevice = normaliseDevice(request.getDevice());
+        String refUrl    = request.getReferrer();
+        String refDomain = cleanReferrer(refUrl);
+
         PortfolioView view = PortfolioView.builder()
                 .profileId(request.getProfileId())
                 .sessionId(request.getSessionId())
-                .device(normaliseDevice(request.getDevice()))
-                .referrer(request.getReferrer())
+                .device(normDevice)
+                .deviceType(normDevice)
+                .referrer(refUrl)
+                .referrerUrl(refUrl != null && !refUrl.isBlank() ? refUrl : null)
+                .referrerDomain("Direct".equals(refDomain) ? null : refDomain)
                 .browser(request.getBrowser())
                 .os(request.getOs())
                 .language(request.getLanguage())
@@ -110,6 +117,15 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .filter(v -> v.getCountry() != null && !v.getCountry().isBlank())
                 .collect(Collectors.groupingBy(PortfolioView::getCountry, Collectors.counting()));
 
+        Map<String, Long> referrerBreakdown = last30.stream()
+                .collect(Collectors.groupingBy(
+                        v -> {
+                            String domain = cleanReferrer(v.getReferrer());
+                            return domain.isBlank() ? "Direct" : domain;
+                        },
+                        Collectors.counting()
+                ));
+
         List<PortfolioView> last7 = last30.stream()
                 .filter(v -> v.getTimestamp().isAfter(now.minusDays(7)))
                 .toList();
@@ -135,6 +151,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .deviceBreakdown(deviceBreakdown)
                 .browserBreakdown(browserBreakdown)
                 .locationBreakdown(locationBreakdown)
+                .referrerBreakdown(referrerBreakdown)
                 .recentViews(recentViews)
                 .build();
     }
