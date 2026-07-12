@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -37,4 +38,8 @@ public class ProfileResponse extends AuditableResponse {
     private StatusEnum status;
     private VerificationStatusEnum emailVerified;
     private VerificationStatusEnum phoneVerified;
+
+    private boolean availableForWork;
+    private String availabilityNote;
+    private LocalDate availableFrom;
 }

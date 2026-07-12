@@ -76,6 +76,9 @@ public class ProfileServiceImpl implements ProfileService {
         existing.setEmail(req.getEmail());
         existing.setPhone(req.getPhone());
         existing.setLocation(req.getLocation());
+        existing.setAvailableForWork(Boolean.TRUE.equals(req.getAvailableForWork()));
+        existing.setAvailabilityNote(req.getAvailabilityNote());
+        existing.setAvailableFrom(req.getAvailableFrom());
         existing.setUpdatedAt(LocalDateTime.now());
         Profile updated = profileDao.save(existing);
         return mapToResponse(updated);
@@ -195,6 +198,9 @@ public class ProfileServiceImpl implements ProfileService {
                 .logoPublicId(logoPublicId)
                 .emailVerified(profile.getEmailVerified())
                 .phoneVerified(profile.getPhoneVerified())
+                .availableForWork(profile.isAvailableForWork())
+                .availabilityNote(profile.getAvailabilityNote())
+                .availableFrom(profile.getAvailableFrom())
                 .build();
     }
 
