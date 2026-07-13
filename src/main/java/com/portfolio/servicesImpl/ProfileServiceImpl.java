@@ -10,6 +10,7 @@ import com.portfolio.dtos.File.FileUploadRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Profile.ProfileRequest;
 import com.portfolio.dtos.Profile.ProfileResponse;
+import com.portfolio.dtos.Profile.ProfileSettingsRequest;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
@@ -300,6 +301,20 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setStatus(StatusEnum.DELETED);
         profile.setUpdatedAt(LocalDateTime.now());
         profileDao.save(profile);
+    }
+
+    @Override
+    public ProfileResponse updateSettings(Long profileId, ProfileSettingsRequest req) throws GenericException {
+        Profile profile = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+        if (req.getIsDiscoverable() != null) {
+            profile.setDiscoverable(req.getIsDiscoverable());
+        }
+        if (req.getDigestEmailEnabled() != null) {
+            profile.setDigestEmailEnabled(req.getDigestEmailEnabled());
+        }
+        profile.setUpdatedAt(LocalDateTime.now());
+        return mapToResponse(profileDao.save(profile));
     }
 
     private String getRoleNameById(Long roleId) {

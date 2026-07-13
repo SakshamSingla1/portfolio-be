@@ -1,6 +1,7 @@
 package com.portfolio.entities;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
@@ -65,4 +66,13 @@ public class Profile extends Auditable {
     private boolean isAvailableForWork;
     private String availabilityNote;
     private LocalDate availableFrom;
+
+    @Column(name = "is_discoverable")
+    private boolean isDiscoverable;
+
+    @Column(name = "digest_email_enabled")
+    private boolean digestEmailEnabled;
+
+    @Column(name = "digest_last_sent_at")
+    private LocalDateTime digestLastSentAt;
 }

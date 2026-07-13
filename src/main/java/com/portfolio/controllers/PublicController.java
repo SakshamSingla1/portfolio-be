@@ -1,10 +1,17 @@
 package com.portfolio.controllers;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Blog.BlogPostResponse;
 import com.portfolio.dtos.Blog.BlogPostSummary;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
+import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.enums.ResourceTypeEnum;
@@ -22,10 +29,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayOutputStream;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/v1/public")
@@ -38,6 +52,10 @@ public class PublicController {
     private final PortfolioViewService portfolioViewService;
     private final FileService fileService;
     private final BlogPostService blogPostService;
+    private final ProfileDao profileDao;
+
+    @Value("${portfolio.public.base-url:http://localhost:5173}")
+    private String portfolioPublicBaseUrl;
 
     // Platform-level resource ID used for singleton assets (e.g. landing page banner)
     private static final long PLATFORM_RESOURCE_ID = 1L;
@@ -112,6 +130,36 @@ public class PublicController {
             @PathVariable String slug) throws GenericException {
         BlogPostResponse post = blogPostService.getPublishedByUsernameAndSlug(username, slug);
         return ApiResponse.successResponse(post, "Blog post fetched successfully");
+    }
+
+    @Operation(summary = "Download QR code", description = "Generates and returns a downloadable PNG QR code for the portfolio URL of the given username.")
+    @GetMapping("/qr/{username}")
+    public ResponseEntity<byte[]> getQrCode(@PathVariable String username) throws Exception {
+        profileDao.findByUserName(username)
+                .orElseThrow(() -> new GenericException(null, "Profile not found"));
+
+        String portfolioUrl = portfolioPublicBaseUrl;
+        QRCodeWriter writer = new QRCodeWriter();
+        Map<EncodeHintType, Object> hints = Map.of(EncodeHintType.MARGIN, 1);
+        BitMatrix matrix = writer.encode(portfolioUrl, BarcodeFormat.QR_CODE, 400, 400, hints);
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        MatrixToImageWriter.writeToStream(matrix, "PNG", out);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"portfolio-qr-" + username + ".png\"")
+                .body(out.toByteArray());
+    }
+
+    @Operation(summary = "Explore discoverable portfolios", description = "Returns all publicly discoverable profiles, optionally filtered by a search term or skill.")
+    @GetMapping("/explore")
+    public ResponseEntity<ResponseModel<List<DiscoverProfileResponse>>> explore(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String skill) {
+        List<DiscoverProfileResponse> results = profileDao.findDiscoverableProfiles(search, skill);
+        return ApiResponse.successResponse(results, "Profiles fetched successfully");
     }
 
     private String resolveClientIp(HttpServletRequest request) {

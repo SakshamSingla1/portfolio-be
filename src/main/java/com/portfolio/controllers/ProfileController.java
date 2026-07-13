@@ -5,6 +5,7 @@ import com.portfolio.dtos.Admin.StatusUpdateRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Profile.ProfileRequest;
 import com.portfolio.dtos.Profile.ProfileResponse;
+import com.portfolio.dtos.Profile.ProfileSettingsRequest;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -179,5 +180,15 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<Void>> deleteUser(@PathVariable Long id) throws GenericException {
                 profileService.deleteUser(id);
                 return ApiResponse.respond(null, "User deleted successfully", "Failed to delete user");
+        }
+
+        @Operation(summary = "Update profile settings", description = "Toggles discoverability and weekly digest email for the authenticated user.")
+        @PatchMapping("/settings")
+        public ResponseEntity<ResponseModel<ProfileResponse>> updateSettings(
+                        @RequestHeader("Authorization") String auth,
+                        @RequestBody ProfileSettingsRequest req) throws GenericException {
+                Long profileId = helper.getProfileIdFromHeader(auth);
+                return ApiResponse.respond(profileService.updateSettings(profileId, req),
+                                "Settings updated successfully", "Failed to update settings");
         }
 }

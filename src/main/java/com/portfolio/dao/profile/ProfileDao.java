@@ -2,6 +2,7 @@ package com.portfolio.dao.profile;
 
 import com.portfolio.dtos.DashboardDTOs.ActivityDTO;
 import com.portfolio.dtos.DashboardDTOs.StatsDTO;
+import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.StatusEnum;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -95,6 +97,29 @@ public class ProfileDao {
                         .description((String) row[1])
                         .timestamp(row[2] != null ? ((Timestamp) row[2]).toLocalDateTime() : null)
                         .entityId((String) row[3])
+                        .build())
+                .toList();
+    }
+
+    public List<Profile> findAllDigestEnabled() {
+        return profileRepository.findAllByDigestEmailEnabledTrueAndStatus(StatusEnum.ACTIVE);
+    }
+
+    public List<DiscoverProfileResponse> findDiscoverableProfiles(String search, String skill) {
+        return profileRepository.findDiscoverableProfiles(
+                        search == null ? "" : search,
+                        skill  == null ? "" : skill)
+                .stream()
+                .map(row -> DiscoverProfileResponse.builder()
+                        .id(row[0] != null ? ((Number) row[0]).longValue() : null)
+                        .fullName((String) row[1])
+                        .userName((String) row[2])
+                        .title((String) row[3])
+                        .location((String) row[4])
+                        .profileImageUrl((String) row[5])
+                        .topSkills(row[6] != null
+                                ? Arrays.asList(((String) row[6]).split(","))
+                                : List.of())
                         .build())
                 .toList();
     }

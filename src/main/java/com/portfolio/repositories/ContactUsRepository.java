@@ -69,4 +69,6 @@ public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
     long countByStatusAndProfileId(ContactUsStatusEnum status, Long profileId);
 
     Optional<ContactUs> findTop1ByProfileIdOrderByCreatedAtDesc(Long profileId);
+
+    long countByProfileIdAndCreatedAtAfter(Long profileId, java.time.LocalDateTime after);
 }

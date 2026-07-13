@@ -13,6 +13,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+
+
 @Repository
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
@@ -122,5 +124,28 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
             LIMIT 10
             """, nativeQuery = true)
     List<Object[]> getLatestActivities(@Param("profileId") Long profileId);
+
+    List<Profile> findAllByDigestEmailEnabledTrueAndStatus(StatusEnum status);
+
+    @Query(value = """
+            SELECT p.id, p.full_name, p.user_name, p.title, p.location, fa.path,
+                   (SELECT STRING_AGG(s.logo_name, ',' ORDER BY s.id)
+                    FROM (SELECT logo_name, id FROM skills WHERE profile_id = p.id ORDER BY id LIMIT 6) s) AS top_skills
+            FROM profiles p
+            LEFT JOIN file_assets fa ON fa.resource_id = p.id
+                AND fa.resource_type = 'PROFILE' AND fa.is_primary = true
+            WHERE p.is_discoverable = true AND p.status = 'ACTIVE'
+              AND (:search IS NULL OR :search = ''
+                   OR LOWER(p.full_name) LIKE CONCAT('%', LOWER(:search), '%')
+                   OR LOWER(p.title)     LIKE CONCAT('%', LOWER(:search), '%'))
+              AND (:skill IS NULL OR :skill = ''
+                   OR EXISTS (SELECT 1 FROM skills sk
+                              WHERE sk.profile_id = p.id
+                                AND LOWER(sk.logo_name) LIKE CONCAT('%', LOWER(:skill), '%')))
+            ORDER BY p.id
+            """, nativeQuery = true)
+    List<Object[]> findDiscoverableProfiles(
+            @Param("search") String search,
+            @Param("skill") String skill);
 }
 

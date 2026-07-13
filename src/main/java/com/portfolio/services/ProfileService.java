@@ -4,6 +4,7 @@ import com.portfolio.dtos.Admin.*;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Profile.ProfileRequest;
 import com.portfolio.dtos.Profile.ProfileResponse;
+import com.portfolio.dtos.Profile.ProfileSettingsRequest;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.StatusEnum;
@@ -37,4 +38,6 @@ public interface ProfileService {
     UserResponse toggleUserVerification(Long id) throws GenericException;
 
     void deleteUser(Long id) throws GenericException;
+
+    ProfileResponse updateSettings(Long profileId, ProfileSettingsRequest req) throws GenericException;
 }
