@@ -45,6 +45,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final SeoMetaDao seoMetaDao;
     private final ProfileLanguageService profileLanguageService;
     private final ServiceOfferingService serviceOfferingService;
+    private final com.portfolio.services.PublicationService publicationService;
 
     @Override
     public ProfileMasterResponse getProfileMasterData(String host)
@@ -88,6 +89,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .seoMeta(seoMeta)
                 .languages(profileLanguageService.getByProfile(profileId))
                 .services(serviceOfferingService.getByProfile(profileId))
+                .publications(publicationService.getByProfile(profileId))
                 .build();
     }
 

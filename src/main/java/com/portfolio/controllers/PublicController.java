@@ -14,6 +14,8 @@ import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
+import com.portfolio.dtos.TestimonialLink.TestimonialLinkPublicResponse;
+import com.portfolio.dtos.TestimonialLink.TestimonialSubmitRequest;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -24,6 +26,7 @@ import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
 import com.portfolio.services.ContactUsService;
+import com.portfolio.services.TestimonialLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -53,6 +56,7 @@ public class PublicController {
     private final FileService fileService;
     private final BlogPostService blogPostService;
     private final ProfileDao profileDao;
+    private final TestimonialLinkService testimonialLinkService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
     private String portfolioPublicBaseUrl;
@@ -160,6 +164,23 @@ public class PublicController {
             @RequestParam(required = false) String skill) {
         List<DiscoverProfileResponse> results = profileDao.findDiscoverableProfiles(search, skill);
         return ApiResponse.successResponse(results, "Profiles fetched successfully");
+    }
+
+    @Operation(summary = "Get public testimonial link details", description = "Returns owner name and optional requester name for the testimonial form. No auth required.")
+    @GetMapping("/testimonial-requests/{token}")
+    public ResponseEntity<ResponseModel<TestimonialLinkPublicResponse>> getPublicLinkDetails(
+            @PathVariable String token) throws GenericException {
+        TestimonialLinkPublicResponse response = testimonialLinkService.getPublicLinkDetails(token);
+        return ApiResponse.successResponse(response, "Testimonial link details fetched successfully");
+    }
+
+    @Operation(summary = "Submit a testimonial via share link", description = "Saves a new testimonial (status=PENDING) and marks the link as used. No auth required.")
+    @PostMapping("/testimonial-requests/{token}/submit")
+    public ResponseEntity<Void> submitTestimonial(
+            @PathVariable String token,
+            @Valid @RequestBody TestimonialSubmitRequest req) throws GenericException {
+        testimonialLinkService.submitTestimonial(token, req);
+        return ResponseEntity.ok().build();
     }
 
     private String resolveClientIp(HttpServletRequest request) {
