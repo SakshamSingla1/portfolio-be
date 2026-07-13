@@ -16,6 +16,7 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.*;
+import com.portfolio.services.GithubIntegrationService;
 import com.portfolio.services.ProfileLanguageService;
 import com.portfolio.services.ServiceOfferingService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final ColorThemeService colorThemeService;
     private final ProfileThemeService profileThemeService;
     private final GitHubService gitHubService;
+    private final GithubIntegrationService githubIntegrationService;
     private final SeoMetaDao seoMetaDao;
     private final ProfileLanguageService profileLanguageService;
     private final ServiceOfferingService serviceOfferingService;
@@ -56,12 +58,14 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
         ProfileThemeResponse theme = profileThemeService.getThemeByProfileId(profileId);
         List<SocialLinkResponseDTO> socialLinks = socialLinkService.getByProfile(profileId);
 
-        GitHubStatsDTO githubStats = socialLinks.stream()
-                .filter(l -> PlatformEnum.GITHUB.equals(l.getPlatform())
-                        && StatusEnum.ACTIVE.equals(l.getStatus()))
-                .findFirst()
-                .map(l -> gitHubService.fetchStats(l.getUrl()))
-                .orElse(null);
+        // Prefer cached stats from OAuth integration; fall back to live public-API fetch
+        GitHubStatsDTO githubStats = githubIntegrationService.getCachedStats(profileId)
+                .orElseGet(() -> socialLinks.stream()
+                        .filter(l -> PlatformEnum.GITHUB.equals(l.getPlatform())
+                                && StatusEnum.ACTIVE.equals(l.getStatus()))
+                        .findFirst()
+                        .map(l -> gitHubService.fetchStats(l.getUrl()))
+                        .orElse(null));
 
         SeoMetaResponseDTO seoMeta = seoMetaDao
                 .findByProfileIdAndPageKey(profileId, PageKeyEnum.HOME)
@@ -80,6 +84,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
                 .certifications(certificationService.getByProfile(profileId))
                 .socialLinks(socialLinks)
                 .githubStats(githubStats)
+                .githubRepos(githubIntegrationService.getVisibleRepos(profileId))
                 .seoMeta(seoMeta)
                 .languages(profileLanguageService.getByProfile(profileId))
                 .services(serviceOfferingService.getByProfile(profileId))
