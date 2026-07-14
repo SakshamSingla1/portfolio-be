@@ -186,7 +186,7 @@ public class ProfileController {
         @PatchMapping("/settings")
         public ResponseEntity<ResponseModel<ProfileResponse>> updateSettings(
                         @RequestHeader("Authorization") String auth,
-                        @RequestBody ProfileSettingsRequest req) throws GenericException {
+                        @Valid @RequestBody ProfileSettingsRequest req) throws GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.updateSettings(profileId, req),
                                 "Settings updated successfully", "Failed to update settings");

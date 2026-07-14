@@ -47,7 +47,6 @@ public class EmbedController {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.valueOf("text/html;charset=UTF-8"));
-            headers.add("X-Frame-Options", "ALLOWALL");
             headers.add("Content-Security-Policy", "frame-ancestors *");
             return ResponseEntity.ok().headers(headers).body(html);
 

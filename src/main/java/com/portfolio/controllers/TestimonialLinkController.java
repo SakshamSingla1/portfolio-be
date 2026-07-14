@@ -7,6 +7,7 @@ import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.TestimonialLinkService;
 import com.portfolio.utils.Helper;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,7 +27,7 @@ public class TestimonialLinkController {
     @PostMapping("/")
     public ResponseEntity<ResponseModel<TestimonialLinkResponse>> createLink(
             @RequestHeader("Authorization") String auth,
-            @RequestBody CreateTestimonialLinkRequest req) throws GenericException {
+            @Valid @RequestBody CreateTestimonialLinkRequest req) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         TestimonialLinkResponse response = testimonialLinkService.createLink(profileId, req);
         return ApiResponse.successResponse(response, "Testimonial request link created successfully");

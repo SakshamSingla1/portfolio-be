@@ -16,6 +16,7 @@ public class AuthRegisterDTO {
     private String email;
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[0-9]).{8,}$", message = "Password must contain at least one uppercase letter and one digit")
     private String password;
     private String role;
     private String phone;

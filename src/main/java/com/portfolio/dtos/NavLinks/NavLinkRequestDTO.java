@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class NavLinkRequestDTO {
+    @NotNull(message = "Index is required")
     private String index;
     @NotBlank(message = "Name is required")
     private String name;

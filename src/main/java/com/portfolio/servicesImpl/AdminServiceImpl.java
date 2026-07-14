@@ -38,6 +38,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
+    private static final int OTP_TTL_MINUTES = 10;
+
     @Value("${app.url}")
     private String url;
 
@@ -87,7 +89,7 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .expiryDate(LocalDateTime.now().plusMinutes(10))
+                        .expiryDate(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES))
                         .build()
         );
         ntService.sendNotification(
@@ -95,7 +97,7 @@ public class AdminServiceImpl implements AdminService {
                 Map.of(
                         "fullName", user.getFullName(),
                         "otp", rawOtp,
-                        "expiryMinutes", 5
+                        "expiryMinutes", OTP_TTL_MINUTES
                 ),
                 user.getEmail()
         );
@@ -129,7 +131,7 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .expiryDate(LocalDateTime.now().plusMinutes(10))
+                        .expiryDate(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES))
                         .build()
         );
         ntService.sendNotification(
@@ -137,7 +139,7 @@ public class AdminServiceImpl implements AdminService {
                 Map.of(
                         "fullName", user.getFullName(),
                         "otp", rawOtp,
-                        "expiryMinutes", 5
+                        "expiryMinutes", OTP_TTL_MINUTES
                 ),
                 user.getEmail()
         );
@@ -208,7 +210,7 @@ public class AdminServiceImpl implements AdminService {
                 OtpStore.builder()
                         .profileId(user.getId())
                         .otp(encodedOtp)
-                        .expiryDate(LocalDateTime.now().plusMinutes(10))
+                        .expiryDate(LocalDateTime.now().plusMinutes(OTP_TTL_MINUTES))
                         .build()
         );
         ntService.sendNotification(
@@ -216,7 +218,7 @@ public class AdminServiceImpl implements AdminService {
                 Map.of(
                         "fullName", user.getFullName(),
                         "otp", rawOtp,
-                        "expiryMinutes", 5
+                        "expiryMinutes", OTP_TTL_MINUTES
                 ),
                 user.getEmail()
         );

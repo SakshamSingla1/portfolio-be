@@ -2,6 +2,7 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dao.portfolio_view.PortfolioViewDao;
 import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.entities.PortfolioView;
 import com.portfolio.entities.Profile;
 import com.portfolio.repositories.ContactUsRepository;
 import com.portfolio.services.EmailService;
@@ -45,15 +46,15 @@ public class WeeklyDigestScheduler {
     }
 
     private void sendDigest(Profile profile, LocalDateTime weekAgo) {
-        long viewsThisWeek = portfolioViewDao
-                .findByProfileIdAndTimestampAfter(profile.getId(), weekAgo)
-                .size();
+        List<PortfolioView> weekViews = portfolioViewDao
+                .findByProfileIdAndTimestampAfter(profile.getId(), weekAgo);
+
+        long viewsThisWeek = weekViews.size();
 
         long newMessages = contactUsRepository
                 .countByProfileIdAndCreatedAtAfter(profile.getId(), weekAgo);
 
-        Map<String, Long> topReferrers = portfolioViewDao
-                .findByProfileIdAndTimestampAfter(profile.getId(), weekAgo)
+        Map<String, Long> topReferrers = weekViews
                 .stream()
                 .map(v -> v.getReferrerDomain() != null ? v.getReferrerDomain() : "Direct")
                 .collect(Collectors.groupingBy(r -> r, Collectors.counting()));

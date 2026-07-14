@@ -179,7 +179,8 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
         if ("127.0.0.1".equals(ip) || "::1".equals(ip)) return null;
         if (ip.startsWith("192.168.") || ip.startsWith("10.") || ip.startsWith("172.")) return null;
         try {
-            String url = "http://ip-api.com/json/" + ip + "?fields=status,country,countryCode,city";
+            // NOTE: ip-api.com HTTPS endpoint requires a Pro/paid plan key.
+            String url = "https://ip-api.com/json/" + ip + "?fields=status,country,countryCode,city";
             GeoLocation result = restTemplate.getForObject(url, GeoLocation.class);
             return (result != null && "success".equals(result.getStatus())) ? result : null;
         } catch (Exception e) {

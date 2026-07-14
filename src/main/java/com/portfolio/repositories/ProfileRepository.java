@@ -40,7 +40,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
                     LEFT JOIN Role r ON p.roleId = r.id
                     LEFT JOIN Profile p1 ON p.createdBy = p1.id
                     LEFT JOIN Profile p2 ON p.updatedBy = p2.id
-                    LEFT JOIN FileAsset fa ON fa.resourceId = p.id AND fa.resourceType = 'PROFILE'
+                    LEFT JOIN FileAsset fa ON fa.resourceId = p.id AND fa.resourceType = 'PROFILE' AND fa.isPrimary = true
                 WHERE (:search IS NULL OR :search = '' OR 
                        LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
                        LOWER(p.userName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
