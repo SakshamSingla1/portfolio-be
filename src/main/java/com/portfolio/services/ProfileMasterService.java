@@ -5,4 +5,5 @@ import com.portfolio.exceptions.GenericException;
 
 public interface ProfileMasterService {
     ProfileMasterResponse getProfileMasterData(String host) throws GenericException;
+    ProfileMasterResponse getByProfileId(Long profileId) throws GenericException;
 }

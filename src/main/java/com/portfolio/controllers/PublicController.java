@@ -22,6 +22,7 @@ import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.BlogPostService;
 import com.portfolio.services.FileService;
+import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
@@ -57,6 +58,7 @@ public class PublicController {
     private final BlogPostService blogPostService;
     private final ProfileDao profileDao;
     private final TestimonialLinkService testimonialLinkService;
+    private final PortfolioExportService portfolioExportService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
     private String portfolioPublicBaseUrl;
@@ -181,6 +183,20 @@ public class PublicController {
             @Valid @RequestBody TestimonialSubmitRequest req) throws GenericException {
         testimonialLinkService.submitTestimonial(token, req);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Export portfolio as PDF", description = "Generates and returns a downloadable PDF of the full portfolio for the given username.")
+    @GetMapping("/portfolio-export/{username}")
+    public ResponseEntity<byte[]> exportPortfolio(@PathVariable String username) {
+        try {
+            byte[] pdf = portfolioExportService.exportPdf(username);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "portfolio-" + username + ".pdf");
+            return ResponseEntity.ok().headers(headers).body(pdf);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     private String resolveClientIp(HttpServletRequest request) {
