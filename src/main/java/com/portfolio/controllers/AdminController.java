@@ -1,15 +1,26 @@
 package com.portfolio.controllers;
 
 import com.portfolio.dtos.Authentication.*;
+import com.portfolio.entities.Profile;
+import com.portfolio.entities.RefreshToken;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.ProfileRepository;
+import com.portfolio.repositories.RefreshTokenRepository;
+import com.portfolio.security.JwtUtil;
 import com.portfolio.services.AdminService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -17,6 +28,9 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtUtil jwtUtil;
+    private final ProfileRepository profileRepository;
 
     @Operation(summary = "Register a new user", description = "Registers a new user account and sends an OTP to the provided email for verification.")
     @PostMapping("/register")
@@ -52,10 +66,105 @@ public class AdminController {
 
     @Operation(summary = "Login user using email/username/password or phone+OTP", description = "Authenticates a user by email/username and password, or by phone and OTP. Returns a JWT access token on success.")
     @PostMapping("/login")
-    public ResponseEntity<ResponseModel<LoginResponseDTO>> login(@Valid @RequestBody AuthLoginDTO loginDTO)
-            throws GenericException {
+    public ResponseEntity<ResponseModel<LoginResponseDTO>> login(
+            @Valid @RequestBody AuthLoginDTO loginDTO,
+            HttpServletResponse httpResponse) throws GenericException {
         LoginResponseDTO response = adminService.login(loginDTO);
+        // Set cookies only after a fully completed login (not when 2FA is still pending)
+        if (!response.isTwoFactorRequired() && response.getToken() != null) {
+            String accessToken = response.getToken().replace("Bearer ", "").trim();
+            String refreshTokenValue = UUID.randomUUID().toString();
+            refreshTokenRepository.save(RefreshToken.builder()
+                    .profileId(response.getId())
+                    .token(refreshTokenValue)
+                    .expiresAt(LocalDateTime.now().plusDays(7))
+                    .revoked(false)
+                    .build());
+            setAuthCookies(httpResponse, accessToken, refreshTokenValue);
+        }
         return ApiResponse.respond(response, "Login successful", "Invalid credentials");
+    }
+
+    @Operation(summary = "Refresh access token", description = "Issues a new access token cookie using the httpOnly refresh token cookie. No request body required.")
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshTokenValue = extractCookieValue(request, "refreshToken");
+        if (refreshTokenValue == null) {
+            return ApiResponse.failureResponse(null, "No refresh token provided");
+        }
+        RefreshToken storedToken = refreshTokenRepository.findByToken(refreshTokenValue).orElse(null);
+        if (storedToken == null || storedToken.isRevoked()
+                || storedToken.getExpiresAt().isBefore(LocalDateTime.now())) {
+            return ApiResponse.failureResponse(null, "Invalid or expired refresh token");
+        }
+        Profile profile = profileRepository.findById(storedToken.getProfileId()).orElse(null);
+        if (profile == null) {
+            return ApiResponse.failureResponse(null, "User not found");
+        }
+        String newAccessToken = jwtUtil.generateAccessToken(profile.getEmail(), String.valueOf(profile.getId()));
+        Cookie newAccessCookie = new Cookie("accessToken", newAccessToken);
+        newAccessCookie.setHttpOnly(true);
+        newAccessCookie.setSecure(true);
+        newAccessCookie.setPath("/");
+        newAccessCookie.setMaxAge(36000); // 10 hours
+        response.addCookie(newAccessCookie);
+        return ApiResponse.successResponse(null, "Token refreshed successfully");
+    }
+
+    @Operation(summary = "Logout user", description = "Clears auth cookies and revokes the refresh token in the database.")
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        // Revoke refresh token from DB
+        String refreshTokenValue = extractCookieValue(request, "refreshToken");
+        if (refreshTokenValue != null) {
+            refreshTokenRepository.deleteByToken(refreshTokenValue);
+        }
+        // Clear access token cookie
+        Cookie accessCookie = new Cookie("accessToken", "");
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(0);
+        response.addCookie(accessCookie);
+        // Clear refresh token cookie
+        Cookie refreshCookie = new Cookie("refreshToken", "");
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+        refreshCookie.setPath("/api/v1/auth/refresh");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
+        return ApiResponse.successResponse(null, "Logged out successfully");
+    }
+
+    // ─── private helpers ────────────────────────────────────────────────────────
+
+    private void setAuthCookies(HttpServletResponse response, String accessToken, String refreshToken) {
+        // Access token cookie — 10 hours
+        Cookie accessCookie = new Cookie("accessToken", accessToken);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(36000);
+        response.addCookie(accessCookie);
+        // Refresh token cookie — 7 days, scoped to the refresh endpoint
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(true);
+        refreshCookie.setPath("/api/v1/auth/refresh");
+        refreshCookie.setMaxAge(7 * 24 * 3600);
+        response.addCookie(refreshCookie);
+    }
+
+    private String extractCookieValue(HttpServletRequest request, String name) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie c : cookies) {
+                if (name.equals(c.getName())) {
+                    return c.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     @Operation(summary = "Send password reset token to user email", description = "Sends a password reset link to the user's email address.")
@@ -121,8 +230,20 @@ public class AdminController {
     @Operation(summary = "Verify TOTP code for 2FA and return access token", description = "Validates a TOTP code and returns a full access token once 2FA is confirmed.")
     @PostMapping("/2fa/verify")
     public ResponseEntity<ResponseModel<LoginResponseDTO>> verify2Fa(
-            @Valid @RequestBody TwoFactorVerifyDTO requestDTO) throws GenericException {
+            @Valid @RequestBody TwoFactorVerifyDTO requestDTO,
+            HttpServletResponse httpResponse) throws GenericException {
         LoginResponseDTO response = adminService.verify2Fa(requestDTO);
+        if (response != null && response.getToken() != null) {
+            String accessToken = response.getToken().replace("Bearer ", "").trim();
+            String refreshTokenValue = UUID.randomUUID().toString();
+            refreshTokenRepository.save(RefreshToken.builder()
+                    .profileId(response.getId())
+                    .token(refreshTokenValue)
+                    .expiresAt(LocalDateTime.now().plusDays(7))
+                    .revoked(false)
+                    .build());
+            setAuthCookies(httpResponse, accessToken, refreshTokenValue);
+        }
         return ApiResponse.respond(response, "2FA verified successfully", "Failed to verify 2FA");
     }
 

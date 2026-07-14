@@ -12,6 +12,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -33,17 +34,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // Try Authorization header first (for API clients)
+        String token = null;
         String authHeader = request.getHeader("Authorization");
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7).trim();
+        } else {
+            // Fall back to httpOnly cookie
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if ("accessToken".equals(cookie.getName())) {
+                        token = cookie.getValue();
+                        break;
+                    }
+                }
+            }
         }
 
-        // ✅ Extract raw token & trim whitespace
-        String token = authHeader.substring(7).trim();
-
-        if (token.isBlank()) {
+        if (token == null || token.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
