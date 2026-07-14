@@ -68,6 +68,6 @@ public class PublicationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteById(@PathVariable Long id) throws GenericException {
         publicationService.deleteById(id);
-        return ApiResponse.respond(null, "Publication deleted successfully", "Failed to delete publication");
+        return ApiResponse.successResponse(null, "Publication deleted successfully");
     }
 }

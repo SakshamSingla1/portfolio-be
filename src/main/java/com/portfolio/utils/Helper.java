@@ -12,6 +12,7 @@ import com.portfolio.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,7 +57,7 @@ public class Helper {
     }
 
     public String generateRawOtp() {
-        return String.format("%06d", new Random().nextInt(1_000_000));
+        return String.format("%06d", new SecureRandom().nextInt(1_000_000));
     }
 
     public void setAudit(Auditable entity, AuditableResponse dto) {

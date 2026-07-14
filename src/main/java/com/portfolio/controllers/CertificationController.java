@@ -1,8 +1,11 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dao.certification.CertificationDao;
 import com.portfolio.dtos.Certifications.CertificationRequestDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
 import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.entities.Certifications;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -27,6 +30,7 @@ import java.io.IOException;
 public class CertificationController {
 
     private final CertificationService certificationService;
+    private final CertificationDao certificationDao;
     private final Helper helper;
 
     @Operation(summary = "Create certification", description = "Creates a new certification record for the authenticated user's profile.")
@@ -65,16 +69,23 @@ public class CertificationController {
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        System.out.println(profileId);
         Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, pageable);
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
 
     @Operation(summary = "Delete certification", description = "Permanently deletes the certification record identified by its ID.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> deleteCertification(@PathVariable Long id) throws GenericException {
+    public ResponseEntity<ResponseModel<Void>> deleteCertification(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        Certifications certification = certificationDao.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CERTIFICATION_NOT_FOUND, "Certification not found"));
+        if (!certification.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this certification");
+        }
         certificationService.deleteById(id);
-        return ApiResponse.respond(null, "Certification deleted successfully", "Failed to delete certification");
+        return ApiResponse.successResponse(null, "Certification deleted successfully");
     }
 
     @Operation(summary = "Upload certification credential image", description = "Uploads a credential image file for a certification and returns the stored image URL for the authenticated user's profile.")

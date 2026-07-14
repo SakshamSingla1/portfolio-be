@@ -75,7 +75,7 @@ public class TestimonialController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteTestimonial(@PathVariable Long id) throws GenericException {
         testimonialService.deleteById(id);
-        return ApiResponse.respond(null, "Testimonial deleted successfully", "Failed to delete Testimonial");
+        return ApiResponse.successResponse(null, "Testimonial deleted successfully");
     }
 
     @Operation(summary = "Upload testimonial author image", description = "Uploads an author image file for a testimonial and returns the stored image URL for the authenticated user's profile.")

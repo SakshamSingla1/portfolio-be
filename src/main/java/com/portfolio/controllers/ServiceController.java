@@ -63,7 +63,7 @@ public class ServiceController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> delete(@PathVariable Long id) throws GenericException {
         serviceOfferingService.delete(id);
-        return ApiResponse.respond(null, "Service deleted successfully", "Failed to delete service");
+        return ApiResponse.successResponse(null, "Service deleted successfully");
     }
 
     @PostMapping("/upload")

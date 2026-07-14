@@ -72,8 +72,15 @@ public class BlogPostController {
 
     @Operation(summary = "Delete a blog post")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Long id) {
+    public ResponseEntity<ResponseModel<String>> delete(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) {
         try {
+            Long profileId = helper.getProfileIdFromHeader(auth);
+            BlogPostResponse post = blogPostService.getById(id);
+            if (!post.getProfileId().equals(profileId)) {
+                return ApiResponse.failureResponse(null, "You do not have permission to delete this blog post");
+            }
             return ApiResponse.successResponse(blogPostService.delete(id), "Blog post deleted successfully");
         } catch (GenericException e) {
             return ApiResponse.failureResponse(null, e.getMessage());
@@ -96,8 +103,15 @@ public class BlogPostController {
 
     @Operation(summary = "Publish a blog post")
     @PatchMapping("/{id}/publish")
-    public ResponseEntity<ResponseModel<BlogPostResponse>> publish(@PathVariable Long id) {
+    public ResponseEntity<ResponseModel<BlogPostResponse>> publish(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) {
         try {
+            Long profileId = helper.getProfileIdFromHeader(auth);
+            BlogPostResponse post = blogPostService.getById(id);
+            if (!post.getProfileId().equals(profileId)) {
+                return ApiResponse.failureResponse(null, "You do not have permission to publish this blog post");
+            }
             return ApiResponse.successResponse(blogPostService.publish(id), "Blog post published successfully");
         } catch (GenericException e) {
             return ApiResponse.failureResponse(null, e.getMessage());
@@ -106,8 +120,15 @@ public class BlogPostController {
 
     @Operation(summary = "Archive a blog post")
     @PatchMapping("/{id}/archive")
-    public ResponseEntity<ResponseModel<BlogPostResponse>> archive(@PathVariable Long id) {
+    public ResponseEntity<ResponseModel<BlogPostResponse>> archive(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) {
         try {
+            Long profileId = helper.getProfileIdFromHeader(auth);
+            BlogPostResponse post = blogPostService.getById(id);
+            if (!post.getProfileId().equals(profileId)) {
+                return ApiResponse.failureResponse(null, "You do not have permission to archive this blog post");
+            }
             return ApiResponse.successResponse(blogPostService.archive(id), "Blog post archived successfully");
         } catch (GenericException e) {
             return ApiResponse.failureResponse(null, e.getMessage());

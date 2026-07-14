@@ -179,7 +179,7 @@ public class ProfileController {
         @DeleteMapping("/users/{id}")
         public ResponseEntity<ResponseModel<Void>> deleteUser(@PathVariable Long id) throws GenericException {
                 profileService.deleteUser(id);
-                return ApiResponse.respond(null, "User deleted successfully", "Failed to delete user");
+                return ApiResponse.successResponse(null, "User deleted successfully");
         }
 
         @Operation(summary = "Update profile settings", description = "Toggles discoverability and weekly digest email for the authenticated user.")

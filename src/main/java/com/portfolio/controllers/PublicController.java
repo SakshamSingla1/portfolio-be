@@ -144,7 +144,7 @@ public class PublicController {
         profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(null, "Profile not found"));
 
-        String portfolioUrl = portfolioPublicBaseUrl;
+        String portfolioUrl = portfolioPublicBaseUrl + "/" + username;
         QRCodeWriter writer = new QRCodeWriter();
         Map<EncodeHintType, Object> hints = Map.of(EncodeHintType.MARGIN, 1);
         BitMatrix matrix = writer.encode(portfolioUrl, BarcodeFormat.QR_CODE, 400, 400, hints);

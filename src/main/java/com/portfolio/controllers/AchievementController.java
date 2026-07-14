@@ -73,7 +73,7 @@ public class AchievementController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteAchievement(@PathVariable Long id) throws GenericException {
         achievementService.deleteById(id);
-        return ApiResponse.respond(null, "Achievement deleted successfully", "Failed to delete Achievement");
+        return ApiResponse.successResponse(null, "Achievement deleted successfully");
     }
 
     @Operation(summary = "Upload achievement image", description = "Uploads an image file for an achievement and returns the stored image URL for the authenticated user's profile.")
