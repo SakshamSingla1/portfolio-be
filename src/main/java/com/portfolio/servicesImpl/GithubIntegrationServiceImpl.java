@@ -10,6 +10,7 @@ import com.portfolio.dtos.GitHub.GitHubStatsDTO;
 import com.portfolio.entities.GithubIntegration;
 import com.portfolio.entities.GithubRepo;
 import com.portfolio.services.GithubIntegrationService;
+import com.portfolio.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,12 +21,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -40,6 +38,7 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
     private final GithubRepoDao repoDao;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final EncryptionUtil encryptionUtil;
 
     @Value("${github.oauth.client-id:}")
     private String clientId;
@@ -53,14 +52,8 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
     @Value("${github.oauth.admin-ui-url:http://localhost:5174/github-integration}")
     private String adminUiUrl;
 
-    @Value("${github.encryption.key:change-me-to-32-chars-in-production!}")
-    private String encryptionKey;
-
     @Value("${github.oauth.state-secret:change-me-in-production}")
     private String stateSecret;
-
-    private static final int GCM_IV_LENGTH = 12;
-    private static final int GCM_TAG_LENGTH = 128;
 
     // ── OAuth ────────────────────────────────────────────────────────────────
 
@@ -85,7 +78,7 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
         String username = fetchUsername(accessToken);
         if (username == null) throw new RuntimeException("Could not fetch GitHub username");
 
-        String encrypted = encrypt(accessToken);
+        String encrypted = encryptionUtil.encrypt(accessToken);
 
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         GithubIntegration integration = integrationDao.findByProfileId(profileId)
@@ -111,7 +104,7 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
     @Transactional
     public void syncRepos(Long profileId) {
         GithubIntegration integration = integrationDao.findByProfileId(profileId).orElseThrow();
-        String token    = decrypt(integration.getAccessToken());
+        String token    = encryptionUtil.decrypt(integration.getAccessToken());
         String username = integration.getGithubUsername();
         HttpHeaders hdrs = buildAuthHeaders(token);
 
@@ -377,40 +370,6 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
         h.set("X-GitHub-Api-Version", "2022-11-28");
         h.set("Authorization", "Bearer " + token);
         return h;
-    }
-
-    // ── Encryption (AES-256-GCM) ──────────────────────────────────────────────
-
-    private String encrypt(String plaintext) {
-        try {
-            byte[] keyBytes = Arrays.copyOf(encryptionKey.getBytes(StandardCharsets.UTF_8), 32);
-            SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-            byte[] iv = new byte[GCM_IV_LENGTH];
-            new SecureRandom().nextBytes(iv);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(GCM_TAG_LENGTH, iv));
-            byte[] enc = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
-            byte[] combined = new byte[iv.length + enc.length];
-            System.arraycopy(iv, 0, combined, 0, iv.length);
-            System.arraycopy(enc, 0, combined, iv.length, enc.length);
-            return Base64.getEncoder().encodeToString(combined);
-        } catch (Exception e) {
-            throw new RuntimeException("Encrypt failed", e);
-        }
-    }
-
-    private String decrypt(String ciphertext) {
-        try {
-            byte[] combined = Base64.getDecoder().decode(ciphertext);
-            byte[] keyBytes = Arrays.copyOf(encryptionKey.getBytes(StandardCharsets.UTF_8), 32);
-            byte[] iv = Arrays.copyOf(combined, GCM_IV_LENGTH);
-            byte[] enc = Arrays.copyOfRange(combined, GCM_IV_LENGTH, combined.length);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), new GCMParameterSpec(GCM_TAG_LENGTH, iv));
-            return new String(cipher.doFinal(enc), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new RuntimeException("Decrypt failed", e);
-        }
     }
 
     // ── Mappers ───────────────────────────────────────────────────────────────

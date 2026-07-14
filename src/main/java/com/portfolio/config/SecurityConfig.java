@@ -4,6 +4,7 @@ import com.portfolio.security.JwtAuthFilter;
 import com.portfolio.security.CustomUserDetailsService;
 import com.portfolio.filter.AuditFilter;
 import com.portfolio.filter.NotFoundFilter;
+import com.portfolio.filter.RateLimitingFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final AuditFilter auditFilter;
     private final NotFoundFilter notFoundFilter;
+    private final RateLimitingFilter rateLimitingFilter;
     private final CustomUserDetailsService userDetailsService;
 
     @Value("${app.frontend.url:http://localhost:3000}")
@@ -86,6 +88,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(notFoundFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(auditFilter, JwtAuthFilter.class)
