@@ -34,7 +34,7 @@ public class ExperienceController {
     @Operation(summary = "Create experience", description = "Creates a new work experience record.")
     @PostMapping
     public ResponseEntity<ResponseModel<ExperienceResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ExperienceRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
         ExperienceResponse response = experienceService.create(req);
@@ -44,7 +44,7 @@ public class ExperienceController {
     @Operation(summary = "Update experience", description = "Updates an existing work experience record by ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ExperienceResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody ExperienceRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -62,7 +62,7 @@ public class ExperienceController {
     @Operation(summary = "Delete experience", description = "Deletes a work experience record by ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> delete(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         Experience experience = experienceRepository.findById(id)
@@ -77,7 +77,7 @@ public class ExperienceController {
     @Operation(summary = "Get experiences", description = "Fetches paginated list of experiences for the logged-in profile.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

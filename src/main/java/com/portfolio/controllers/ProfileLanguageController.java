@@ -26,7 +26,7 @@ public class ProfileLanguageController {
 
     @PostMapping
     public ResponseEntity<ResponseModel<ProfileLanguageResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ProfileLanguageRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(profileLanguageService.create(req), "Language created successfully", "Failed to create language");
@@ -34,7 +34,7 @@ public class ProfileLanguageController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProfileLanguageResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody ProfileLanguageRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -49,7 +49,7 @@ public class ProfileLanguageController {
 
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ProfileLanguageResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             Pageable pageable) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

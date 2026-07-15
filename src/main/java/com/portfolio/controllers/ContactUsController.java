@@ -31,7 +31,7 @@ public class ContactUsController {
     @Operation(summary = "Get contact messages by profile", description = "Fetches paginated contact messages for a profile with optional search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ContactUsResponse>>> getByProfile(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) ContactUsStatusEnum status,
             Pageable pageable
@@ -54,7 +54,7 @@ public class ContactUsController {
     @PostMapping("/{id}/reply")
     public ResponseEntity<ResponseModel<ContactUsResponse>> reply(
             @PathVariable Long id,
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ContactUsReplyDTO dto
     ) throws GenericException {
         ContactUsResponse response = contactUsService.reply(id, dto.getMessage(), auth);

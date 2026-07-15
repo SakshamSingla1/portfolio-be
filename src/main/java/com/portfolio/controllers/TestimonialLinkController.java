@@ -26,7 +26,7 @@ public class TestimonialLinkController {
 
     @PostMapping("/")
     public ResponseEntity<ResponseModel<TestimonialLinkResponse>> createLink(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody CreateTestimonialLinkRequest req) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         TestimonialLinkResponse response = testimonialLinkService.createLink(profileId, req);
@@ -35,7 +35,7 @@ public class TestimonialLinkController {
 
     @GetMapping("/")
     public ResponseEntity<ResponseModel<List<TestimonialLinkResponse>>> getLinks(
-            @RequestHeader("Authorization") String auth) throws GenericException {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         List<TestimonialLinkResponse> links = testimonialLinkService.getLinks(profileId);
         return ApiResponse.successResponse(links, "Testimonial request links fetched successfully");
@@ -43,7 +43,7 @@ public class TestimonialLinkController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> revokeLink(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         testimonialLinkService.revokeLink(profileId, id);

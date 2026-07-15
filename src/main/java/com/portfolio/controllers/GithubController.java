@@ -28,7 +28,7 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/oauth/url")
     public ResponseEntity<ResponseModel<Map<String, String>>> getOAuthUrl(
-            @RequestHeader("Authorization") String auth) throws Exception {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         String url = githubIntegrationService.getOAuthUrl(profileId);
         return ApiResponse.respond(Map.of("url", url), "OAuth URL generated", "Failed to generate OAuth URL");
@@ -44,7 +44,7 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/integration")
     public ResponseEntity<ResponseModel<GithubIntegrationResponse>> getIntegration(
-            @RequestHeader("Authorization") String auth) throws Exception {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(githubIntegrationService.getIntegration(profileId),
                 "Integration fetched", "Failed to fetch integration");
@@ -53,7 +53,7 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/sync")
     public ResponseEntity<ResponseModel<Void>> sync(
-            @RequestHeader("Authorization") String auth) throws Exception {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         githubIntegrationService.syncRepos(profileId);
         return ApiResponse.respond(null, "Sync completed", "Sync failed");
@@ -62,7 +62,7 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/integration")
     public ResponseEntity<ResponseModel<Void>> disconnect(
-            @RequestHeader("Authorization") String auth) throws Exception {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         githubIntegrationService.disconnect(profileId);
         return ApiResponse.respond(null, "Disconnected", "Failed to disconnect");
@@ -71,7 +71,7 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/repos/{repoId}")
     public ResponseEntity<ResponseModel<Void>> updateRepo(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long repoId,
             @RequestParam(required = false) Boolean isVisible,
             @RequestParam(required = false) Integer sortOrder) throws Exception {

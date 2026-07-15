@@ -30,7 +30,7 @@ public class SocialLinkController {
     @Operation(summary = "Create social link", description = "Creates a new social media link for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> createLink(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody SocialLinkRequestDTO requestDTO) throws GenericException {
         requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
         SocialLinkResponseDTO responseDTO = socialLinkService.createLink(requestDTO);
@@ -40,7 +40,7 @@ public class SocialLinkController {
     @Operation(summary = "Update social link", description = "Updates an existing social link by ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SocialLinkResponseDTO>> updateLink(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody SocialLinkRequestDTO requestDTO ) throws GenericException {
         requestDTO.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -58,7 +58,7 @@ public class SocialLinkController {
     @Operation(summary = "Get all social links", description = "Returns a paginated list of social links for the authenticated user with optional status filter and search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<SocialLinkResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,
             @RequestParam(required = false) String search,

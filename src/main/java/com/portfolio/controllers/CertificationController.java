@@ -36,7 +36,7 @@ public class CertificationController {
     @Operation(summary = "Create certification", description = "Creates a new certification record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> createCertification(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody CertificationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         CertificationResponseDTO response = certificationService.createCertification(dto);
@@ -46,7 +46,7 @@ public class CertificationController {
     @Operation(summary = "Update certification", description = "Updates an existing certification record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<CertificationResponseDTO>> updateCertification(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id, 
             @Valid @RequestBody CertificationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -64,7 +64,7 @@ public class CertificationController {
     @Operation(summary = "Get all certifications", description = "Returns a paginated list of certification records for the authenticated user's profile, with optional keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             Pageable pageable
     ) throws GenericException {
@@ -76,7 +76,7 @@ public class CertificationController {
     @Operation(summary = "Delete certification", description = "Permanently deletes the certification record identified by its ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteCertification(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         Certifications certification = certificationDao.findById(id)
@@ -91,7 +91,7 @@ public class CertificationController {
     @Operation(summary = "Upload certification credential image", description = "Uploads a credential image file for a certification and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadCredentialImage(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

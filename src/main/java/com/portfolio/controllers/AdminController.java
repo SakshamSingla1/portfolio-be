@@ -194,7 +194,7 @@ public class AdminController {
     @Operation(summary = "Change password (for logged-in user)", description = "Changes the password for the currently authenticated user. Requires the old password for verification.")
     @PutMapping("/change-password")
     public ResponseEntity<ResponseModel<String>> changePassword(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ChangePasswordDTO requestDTO)
             throws GenericException {
         String message = adminService.changePassword(authorizationHeader,requestDTO);
@@ -204,7 +204,7 @@ public class AdminController {
     @Operation(summary = "Request email change (send OTP to new email)", description = "Sends an OTP to the new email address to verify ownership before committing the email change.")
     @PostMapping("/request-email-change")
     public ResponseEntity<ResponseModel<String>> requestEmailChange(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody ChangeEmailRequestDTO requestDTO) throws GenericException {
         String message = adminService.requestEmailChange(authorizationHeader, requestDTO);
         return ApiResponse.respond(message,"OTP sent to new email for verification","Failed to send OTP");
@@ -213,7 +213,7 @@ public class AdminController {
     @Operation(summary = "Verify OTP and update email", description = "Verifies the OTP sent to the new email and updates the user's email address.")
     @PutMapping("/verify-email-change")
     public ResponseEntity<ResponseModel<String>> verifyEmailChange(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody VerifyEmailChangeDTO requestDTO) throws GenericException {
         String message = adminService.verifyEmailChangeOtp(authorizationHeader, requestDTO);
         return ApiResponse.respond(message,"Email updated successfully","Failed to update email");
@@ -222,7 +222,7 @@ public class AdminController {
     @Operation(summary = "Generate secret + QR URI", description = "Generates a TOTP secret and QR code URI for configuring an authenticator app.")
     @PostMapping("/2fa/setup")
     public ResponseEntity<ResponseModel<TwoFactorSetupResponseDTO>> generate2FaSecret(
-            @RequestHeader("Authorization") String authorizationHeader) throws GenericException {
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) throws GenericException {
         TwoFactorSetupResponseDTO response = adminService.generate2FaSecret(authorizationHeader);
         return ApiResponse.respond(response, "Secret and QR URI generated successfully", "Failed to generate secret and QR URI");
     }
@@ -250,7 +250,7 @@ public class AdminController {
     @Operation(summary = "Enable or disable 2FA for the authenticated user", description = "Enables or disables two-factor authentication for the authenticated user. Requires a valid TOTP code.")
     @PutMapping("/2fa/toggle")
     public ResponseEntity<ResponseModel<String>> toggle2Fa(
-            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @Valid @RequestBody TotpCodeDTO dto) throws GenericException {
         String message = adminService.toggle2Fa(authorizationHeader, dto.getTotpCode());
         return ApiResponse.respond(message, "2FA toggled successfully", "Failed to toggle 2FA");

@@ -30,7 +30,7 @@ public class ServiceController {
 
     @PostMapping
     public ResponseEntity<ResponseModel<ServiceResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ServiceRequest req) throws GenericException {
         req.setBannerPublicId(req.getBannerPublicId());
         ServiceResponse response = serviceOfferingService.create(setProfileId(req, auth));
@@ -39,7 +39,7 @@ public class ServiceController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ServiceResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody ServiceRequest req) throws GenericException {
         ServiceResponse response = serviceOfferingService.update(id, setProfileId(req, auth));
@@ -53,7 +53,7 @@ public class ServiceController {
 
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ServiceResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             Pageable pageable) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
@@ -68,7 +68,7 @@ public class ServiceController {
 
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadBanner(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam("file") MultipartFile file) throws GenericException, IOException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(serviceOfferingService.uploadBanner(profileId, file), "Banner uploaded successfully", "Failed to upload banner");

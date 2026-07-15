@@ -35,7 +35,7 @@ public class SkillController {
     @Operation(summary = "Create Skill", description = "Add a new skill to a profile")
     @PostMapping
     public ResponseEntity<ResponseModel<SkillResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody SkillRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
         SkillResponse response = skillService.create(req);
@@ -45,7 +45,7 @@ public class SkillController {
     @Operation(summary = "Update Skill", description = "Update an existing skill by ID")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SkillResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Parameter(description = "Skill ID") @PathVariable Long id,
             @Valid @RequestBody SkillRequest req) throws GenericException {
         req.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -63,7 +63,7 @@ public class SkillController {
     @Operation(summary = "Get Skills", description = "Fetch all skills of the logged-in profile")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<SkillResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
@@ -77,7 +77,7 @@ public class SkillController {
     @Operation(summary = "Delete Skill", description = "Delete a skill by ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> delete(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Parameter(description = "Skill ID") @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         Skill skill = skillRepository.findById(id)
@@ -92,7 +92,7 @@ public class SkillController {
     @Operation(summary = "Get skill statistics", description = "Returns aggregated skill statistics such as counts by category and level for the authenticated profile.")
     @GetMapping("/stats")
     public ResponseEntity<ResponseModel<SkillStat>> getStats(
-            @RequestHeader("Authorization") String auth) throws GenericException {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         SkillStat statsResponse = skillService.getStats(profileId);
         return ApiResponse.successResponse(statsResponse, "Stats Fetched Successfully");

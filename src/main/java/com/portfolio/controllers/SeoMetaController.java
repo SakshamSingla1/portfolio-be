@@ -29,14 +29,14 @@ public class SeoMetaController {
     @Operation(summary = "Get all SEO meta entries for the authenticated profile", description = "Returns all SEO metadata entries for every page belonging to the authenticated user's profile.")
     @GetMapping
     public ResponseEntity<ResponseModel<List<SeoMetaResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth) throws GenericException {
+            @RequestHeader(value = "Authorization", required = false) String auth) throws GenericException {
         return ApiResponse.respond(seoMetaService.getAllByProfile(auth), ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 
     @Operation(summary = "Get SEO meta for a specific page key", description = "Returns the SEO metadata for a specific page (e.g. HOME, ABOUT, PROJECTS) for the authenticated user's profile.")
     @GetMapping("/{pageKey}")
     public ResponseEntity<ResponseModel<SeoMetaResponseDTO>> getByPageKey(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable PageKeyEnum pageKey) throws GenericException {
         return ApiResponse.respond(seoMetaService.getByPageKey(auth, pageKey), ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
@@ -44,7 +44,7 @@ public class SeoMetaController {
     @Operation(summary = "Create or update SEO meta for a page", description = "Creates or updates the SEO metadata for a specific page. If an entry already exists for the page key, it is updated; otherwise a new one is created.")
     @PutMapping
     public ResponseEntity<ResponseModel<SeoMetaResponseDTO>> upsert(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody SeoMetaRequestDTO dto) throws GenericException {
         return ApiResponse.respond(seoMetaService.upsert(auth, dto), ApiResponse.SUCCESS, ApiResponse.FAILED);
     }

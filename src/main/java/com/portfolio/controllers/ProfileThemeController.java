@@ -27,7 +27,7 @@ public class ProfileThemeController {
 
     @Operation(summary = "Get active theme", description = "Returns the currently active color theme for the authenticated user's profile.")
     @GetMapping
-    public ResponseEntity<ResponseModel<ProfileThemeResponse>> getTheme(@RequestHeader("Authorization") String auth)
+    public ResponseEntity<ResponseModel<ProfileThemeResponse>> getTheme(@RequestHeader(value = "Authorization", required = false) String auth)
             throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.getThemeByProfileId(profileId);
@@ -37,7 +37,7 @@ public class ProfileThemeController {
     @Operation(summary = "Set profile theme", description = "Sets or updates the active color theme for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<ProfileThemeResponse>> setTheme(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ProfileThemeRequest request) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ProfileThemeResponse response = profileThemeService.setThemeForProfile(profileId, request);

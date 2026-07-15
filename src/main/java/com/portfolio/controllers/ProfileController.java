@@ -37,7 +37,7 @@ public class ProfileController {
         @Operation(summary = "Get profile", description = "Returns the full profile of the currently authenticated user.")
         @GetMapping
         public ResponseEntity<ResponseModel<ProfileResponse>> getProfile(
-                        @RequestHeader("Authorization") String auth) throws GenericException {
+                        @RequestHeader(value = "Authorization", required = false) String auth) throws GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.get(profileId), "Profile fetched successfully",
                                 "Failed to fetch profile");
@@ -54,7 +54,7 @@ public class ProfileController {
         @Operation(summary = "Update profile", description = "Updates the profile of the currently authenticated user including name, title, location, and bio.")
         @PutMapping
         public ResponseEntity<ResponseModel<ProfileResponse>> updateProfile(
-                        @RequestHeader("Authorization") String auth,
+                        @RequestHeader(value = "Authorization", required = false) String auth,
                         @Valid @RequestBody ProfileRequest req) throws GenericException, IOException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.update(profileId, req), "Profile updated successfully",
@@ -64,7 +64,7 @@ public class ProfileController {
         @Operation(summary = "Upload profile image", description = "Uploads and sets a new profile picture for the authenticated user. Accepts image files up to 10MB.")
         @PutMapping("/upload/profile-image")
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProfileImage(
-                        @RequestHeader("Authorization") String auth,
+                        @RequestHeader(value = "Authorization", required = false) String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadProfileImage(profileId, file),
@@ -74,7 +74,7 @@ public class ProfileController {
         @Operation(summary = "Upload About image", description = "Uploads and sets the about-me section image for the authenticated user. Accepts image files up to 10MB.")
         @PutMapping("/upload/about-image")
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadAboutImage(
-                        @RequestHeader("Authorization") String auth,
+                        @RequestHeader(value = "Authorization", required = false) String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadAboutMeImage(profileId, file),
@@ -84,7 +84,7 @@ public class ProfileController {
         @Operation(summary = "Upload logo", description = "Uploads and sets the logo image for the authenticated user's profile. Accepts image files up to 10MB.")
         @PutMapping("/upload/logo")
         public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadLogo(
-                        @RequestHeader("Authorization") String auth,
+                        @RequestHeader(value = "Authorization", required = false) String auth,
                         @RequestParam("file") MultipartFile file) throws IOException, GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.uploadLogoImage(profileId, file),
@@ -184,7 +184,7 @@ public class ProfileController {
         @Operation(summary = "Update profile settings", description = "Toggles discoverability and weekly digest email for the authenticated user.")
         @PatchMapping("/settings")
         public ResponseEntity<ResponseModel<ProfileResponse>> updateSettings(
-                        @RequestHeader("Authorization") String auth,
+                        @RequestHeader(value = "Authorization", required = false) String auth,
                         @Valid @RequestBody ProfileSettingsRequest req) throws GenericException {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.updateSettings(profileId, req),

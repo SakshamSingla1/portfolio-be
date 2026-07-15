@@ -23,7 +23,7 @@ public class DashboardController {
 
     @Operation(summary = "Get dashboard summary", description = "Returns aggregated counts and statistics for the authenticated user's profile including experience, education, skills, projects, achievements, certifications, and contact messages.")
     @GetMapping
-    public ResponseEntity<ResponseModel<DashboardSummaryDTO>> getDashboardSummary(@RequestHeader("Authorization") String auth) throws GenericException {
+    public ResponseEntity<ResponseModel<DashboardSummaryDTO>> getDashboardSummary(@RequestHeader(value = "Authorization", required = false) String auth) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         DashboardSummaryDTO result = dashboardService.getDashboardSummary(profileId);
         return ApiResponse.respond(result,ApiResponse.SUCCESS,ApiResponse.FAILED);

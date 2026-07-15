@@ -31,7 +31,7 @@ public class EducationController {
     @Operation(summary = "Create education", description = "Creates a new education record.")
     @PostMapping
     public ResponseEntity<ResponseModel<EducationResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody EducationRequest request) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
         return ApiResponse.respond(
@@ -44,7 +44,7 @@ public class EducationController {
     @Operation(summary = "Update education by ID", description = "Updates education details by ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody EducationRequest request
     ) throws GenericException {
@@ -59,7 +59,7 @@ public class EducationController {
     @Operation(summary = "Get education by ID", description = "Fetches education record for the logged-in user.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<EducationResponse>> getById(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
@@ -73,7 +73,7 @@ public class EducationController {
     @Operation(summary = "Get education", description = "Fetches paginated education records for the logged-in profile.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<EducationResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search
     ) throws GenericException {
@@ -88,7 +88,7 @@ public class EducationController {
     @Operation(summary = "Delete education", description = "Delete education record by ID for the logged-in user.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> delete(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

@@ -30,7 +30,7 @@ public class ResumeController {
     @Operation(summary = "Upload resume", description = "Uploads a PDF resume file for the authenticated user's profile and stores it in cloud storage.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ResumeUploadResponseDTO>> upload(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam MultipartFile file) throws IOException, GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ResumeUploadResponseDTO resumeUploadResponseDTO = resumeService.uploadResume(profileId, file);
@@ -40,7 +40,7 @@ public class ResumeController {
     @Operation(summary = "Get resumes", description = "Returns a paginated list of resume records for the authenticated user with optional status filter and search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ResumeUploadResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) StatusEnum status,
             Pageable pageable,
             @RequestParam(required = false) String search,
@@ -54,7 +54,7 @@ public class ResumeController {
     @Operation(summary = "Activate resume", description = "Sets a specific resume as the active one for the authenticated user's profile. Deactivates all others.")
     @PutMapping("/activate")
     public ResponseEntity<ResponseModel<String>> activate(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam Long resumeId) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         resumeService.activateResume(profileId, resumeId);

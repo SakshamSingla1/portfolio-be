@@ -10,6 +10,8 @@ import com.portfolio.repositories.ProfileRepository;
 import com.portfolio.security.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.security.SecureRandom;
@@ -29,31 +31,47 @@ public class Helper {
     private static final String UNKNOWN = "Unknown";
 
     public String extractEmailFromHeader(String header) throws GenericException {
-        if (header == null || !header.startsWith("Bearer ")) {
-            throw new GenericException(
-                    ExceptionCodeEnum.UNAUTHORIZED,
-                    "Invalid authorization header"
-            );
+        if (header != null && header.startsWith("Bearer ")) {
+            return jwtUtil.extractEmail(header.substring(7));
         }
-        String token = header.substring(7);
-        return jwtUtil.extractEmail(token);
+        return getAuthenticatedEmail();
     }
 
     public Profile getProfileFromHeader(String header) throws GenericException {
-        String email = extractEmailFromHeader(header);
-        return profileRepository.findByEmail(email)
-                .orElseThrow(() -> new GenericException( ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found" ));
+        if (header != null && header.startsWith("Bearer ")) {
+            String email = jwtUtil.extractEmail(header.substring(7));
+            if (email != null) {
+                return profileRepository.findByEmail(email)
+                        .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+            }
+        }
+        return getAuthenticatedProfile();
     }
 
     public Long getProfileIdFromHeader(String header) throws GenericException {
-        if (header == null || !header.startsWith("Bearer ")) {
-            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid authorization header");
+        if (header != null && header.startsWith("Bearer ")) {
+            String userId = jwtUtil.extractUserId(header.substring(7));
+            if (userId != null) return Long.parseLong(userId);
         }
-        String userId = jwtUtil.extractUserId(header.substring(7));
-        if (userId == null) {
-            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Invalid token");
+        return getAuthenticatedProfileId();
+    }
+
+    public Long getAuthenticatedProfileId() throws GenericException {
+        return getAuthenticatedProfile().getId();
+    }
+
+    public Profile getAuthenticatedProfile() throws GenericException {
+        String email = getAuthenticatedEmail();
+        return profileRepository.findByEmail(email)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+    }
+
+    private String getAuthenticatedEmail() throws GenericException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(String.valueOf(auth.getPrincipal()))) {
+            throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Not authenticated");
         }
-        return Long.parseLong(userId);
+        return auth.getName();
     }
 
     public String generateRawOtp() {

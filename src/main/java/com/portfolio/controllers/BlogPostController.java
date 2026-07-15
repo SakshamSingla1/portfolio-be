@@ -36,7 +36,7 @@ public class BlogPostController {
     @Operation(summary = "Create a blog post")
     @PostMapping
     public ResponseEntity<ResponseModel<BlogPostResponse>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody BlogPostRequest request) {
         try {
             request.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -49,7 +49,7 @@ public class BlogPostController {
     @Operation(summary = "Update a blog post")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<BlogPostResponse>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody BlogPostRequest request) {
         try {
@@ -73,7 +73,7 @@ public class BlogPostController {
     @Operation(summary = "Delete a blog post")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> delete(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) {
         try {
             Long profileId = helper.getProfileIdFromHeader(auth);
@@ -90,7 +90,7 @@ public class BlogPostController {
     @Operation(summary = "List blog posts for the logged-in profile")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<BlogPostSummary>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) BlogStatusEnum status,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
@@ -104,7 +104,7 @@ public class BlogPostController {
     @Operation(summary = "Publish a blog post")
     @PatchMapping("/{id}/publish")
     public ResponseEntity<ResponseModel<BlogPostResponse>> publish(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) {
         try {
             Long profileId = helper.getProfileIdFromHeader(auth);
@@ -121,7 +121,7 @@ public class BlogPostController {
     @Operation(summary = "Archive a blog post")
     @PatchMapping("/{id}/archive")
     public ResponseEntity<ResponseModel<BlogPostResponse>> archive(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) {
         try {
             Long profileId = helper.getProfileIdFromHeader(auth);

@@ -28,7 +28,7 @@ public class PublicationController {
     @Operation(summary = "Create publication", description = "Creates a new publication record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<PublicationResponseDTO>> create(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody PublicationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         PublicationResponseDTO response = publicationService.create(dto);
@@ -38,7 +38,7 @@ public class PublicationController {
     @Operation(summary = "Update publication", description = "Updates an existing publication record identified by its ID.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<PublicationResponseDTO>> update(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody PublicationRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -56,7 +56,7 @@ public class PublicationController {
     @Operation(summary = "Get all publications", description = "Returns a paginated list of publication records for the authenticated user's profile.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<PublicationResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             Pageable pageable) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

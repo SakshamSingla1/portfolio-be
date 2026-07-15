@@ -53,7 +53,7 @@ public class FileController {
     @GetMapping("/{resourceType}/singleton")
     public ResponseEntity<ResponseModel<FileAssetDTO>> getSingleton(
             @PathVariable String resourceType,
-            @RequestHeader("Authorization") String auth
+            @RequestHeader(value = "Authorization", required = false) String auth
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         ResourceTypeEnum type = ResourceTypeEnum.valueOf(resourceType.toUpperCase());

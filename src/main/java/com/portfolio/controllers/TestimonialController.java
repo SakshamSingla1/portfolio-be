@@ -32,7 +32,7 @@ public class TestimonialController {
     @Operation(summary = "Create testimonial", description = "Creates a new testimonial record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> createTestimonial(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody TestimonialRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         TestimonialResponseDTO response = testimonialService.createTestimonial(dto);
@@ -42,7 +42,7 @@ public class TestimonialController {
     @Operation(summary = "Update testimonial", description = "Updates an existing testimonial record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<TestimonialResponseDTO>> updateTestimonial(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id, 
             @Valid @RequestBody TestimonialRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -60,7 +60,7 @@ public class TestimonialController {
     @Operation(summary = "Get all testimonials", description = "Returns a paginated list of testimonial records for the authenticated user's profile, with optional keyword search and configurable sort field and direction.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(required = false, defaultValue = "order") String sortBy,
@@ -81,7 +81,7 @@ public class TestimonialController {
     @Operation(summary = "Upload testimonial author image", description = "Uploads an author image file for a testimonial and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

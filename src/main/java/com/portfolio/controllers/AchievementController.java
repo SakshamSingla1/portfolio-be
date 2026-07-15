@@ -36,7 +36,7 @@ public class AchievementController {
     @Operation(summary = "Create achievement", description = "Creates a new achievement record for the authenticated user's profile.")
     @PostMapping
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> createAchievement(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody AchievementRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
         AchievementResponseDTO response = achievementService.createAchievement(dto);
@@ -46,7 +46,7 @@ public class AchievementController {
     @Operation(summary = "Update achievement", description = "Updates an existing achievement record identified by its ID for the authenticated user's profile.")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<AchievementResponseDTO>> updateAchievement(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id, 
             @Valid @RequestBody AchievementRequestDTO dto) throws GenericException {
         dto.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -64,7 +64,7 @@ public class AchievementController {
     @Operation(summary = "Get all achievements", description = "Returns a paginated list of achievement records for the authenticated user's profile, with optional keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam(required = false) String search,
             Pageable pageable
     ) throws GenericException {
@@ -76,7 +76,7 @@ public class AchievementController {
     @Operation(summary = "Delete achievement", description = "Permanently deletes the achievement record identified by its ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> deleteAchievement(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         Achievements achievement = achievementRepository.findById(id)
@@ -91,7 +91,7 @@ public class AchievementController {
     @Operation(summary = "Upload achievement image", description = "Uploads an image file for an achievement and returns the stored image URL for the authenticated user's profile.")
     @PostMapping("/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadImage(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);

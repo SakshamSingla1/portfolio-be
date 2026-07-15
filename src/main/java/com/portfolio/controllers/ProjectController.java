@@ -38,7 +38,7 @@ public class ProjectController {
     @Operation(summary = "Create a Project", description = "Create a new project for a profile")
     @PostMapping
     public ResponseEntity<ResponseModel<ProjectResponse>> createProject(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @Valid @RequestBody ProjectRequest request) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
         ProjectResponse response = projectService.create(request);
@@ -55,7 +55,7 @@ public class ProjectController {
     @Operation(summary = "Update Project", description = "Update project details by ID")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id,
             @Valid @RequestBody ProjectRequest request) throws GenericException {
         request.setProfileId(helper.getProfileIdFromHeader(auth));
@@ -66,7 +66,7 @@ public class ProjectController {
     @Operation(summary = "Delete Project", description = "Delete project by ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> deleteProject(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @PathVariable Long id) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         Project project = projectRepository.findById(id)
@@ -81,7 +81,7 @@ public class ProjectController {
     @Operation(summary = "Get Projects", description = "Fetch all projects of the logged-in profile")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<ProjectResponse>>> getAll(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
@@ -94,7 +94,7 @@ public class ProjectController {
     @Operation(summary = "Upload a project image")
     @PostMapping("/images/upload")
     public ResponseEntity<ResponseModel<ImageUploadResponse>> uploadProjectImage(
-            @RequestHeader("Authorization") String auth,
+            @RequestHeader(value = "Authorization", required = false) String auth,
             @RequestParam("file") MultipartFile file
     ) throws IOException, GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
