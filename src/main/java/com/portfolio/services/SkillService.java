@@ -23,5 +23,5 @@ public interface SkillService {
 
     List<SkillResponse> getByProfile(Long profileId);
 
-    SkillStat getStats();
+    SkillStat getStats(Long profileId);
 }

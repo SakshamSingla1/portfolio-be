@@ -1,12 +1,14 @@
 package com.portfolio.controllers;
 
-import com.cloudinary.Api;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
+import com.portfolio.entities.Skill;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.SkillRepository;
 import com.portfolio.services.SkillService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,46 +29,35 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SkillController {
     private final SkillService skillService;
+    private final SkillRepository skillRepository;
     private final Helper helper;
 
     @Operation(summary = "Create Skill", description = "Add a new skill to a profile")
     @PostMapping
     public ResponseEntity<ResponseModel<SkillResponse>> create(
             @RequestHeader("Authorization") String auth,
-            @Valid @RequestBody SkillRequest req) {
-        try {
-            req.setProfileId(helper.getProfileIdFromHeader(auth));
-            SkillResponse response = skillService.create(req);
-            return ApiResponse.successResponse(response, "Skill created successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @Valid @RequestBody SkillRequest req) throws GenericException {
+        req.setProfileId(helper.getProfileIdFromHeader(auth));
+        SkillResponse response = skillService.create(req);
+        return ApiResponse.successResponse(response, "Skill created successfully");
     }
 
     @Operation(summary = "Update Skill", description = "Update an existing skill by ID")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SkillResponse>> update(
             @RequestHeader("Authorization") String auth,
-            @Parameter(description = "Skill ID") @PathVariable Long id, 
-            @Valid @RequestBody SkillRequest req) {
-        try {
-            req.setProfileId(helper.getProfileIdFromHeader(auth));
-            SkillResponse response = skillService.update(id, req);
-            return ApiResponse.successResponse(response, "Skill updated successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @Parameter(description = "Skill ID") @PathVariable Long id,
+            @Valid @RequestBody SkillRequest req) throws GenericException {
+        req.setProfileId(helper.getProfileIdFromHeader(auth));
+        SkillResponse response = skillService.update(id, req);
+        return ApiResponse.successResponse(response, "Skill updated successfully");
     }
 
     @Operation(summary = "Get Skill by ID", description = "Retrieve details of a skill by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<SkillResponse>> findById(@Parameter(description = "Skill ID") @PathVariable Long id) {
-        try {
-            SkillResponse response = skillService.getById(id);
-            return ApiResponse.successResponse(response, "Skill fetched successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<SkillResponse>> findById(@Parameter(description = "Skill ID") @PathVariable Long id) throws GenericException {
+        SkillResponse response = skillService.getById(id);
+        return ApiResponse.successResponse(response, "Skill fetched successfully");
     }
 
     @Operation(summary = "Get Skills", description = "Fetch all skills of the logged-in profile")
@@ -85,19 +76,25 @@ public class SkillController {
 
     @Operation(summary = "Delete Skill", description = "Delete a skill by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@Parameter(description = "Skill ID") @PathVariable Long id) {
-        try {
-            skillService.delete(id);
-            return ApiResponse.successResponse("Skill deleted successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
+    public ResponseEntity<ResponseModel<String>> delete(
+            @RequestHeader("Authorization") String auth,
+            @Parameter(description = "Skill ID") @PathVariable Long id) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        Skill skill = skillRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SKILL_NOT_FOUND, "Skill not found"));
+        if (!skill.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this skill");
         }
+        skillService.delete(id);
+        return ApiResponse.successResponse("Skill deleted successfully");
     }
 
     @Operation(summary = "Get skill statistics", description = "Returns aggregated skill statistics such as counts by category and level for the authenticated profile.")
     @GetMapping("/stats")
-    public ResponseEntity<ResponseModel<SkillStat>> getStats() {
-        SkillStat statsResponse = skillService.getStats();
+    public ResponseEntity<ResponseModel<SkillStat>> getStats(
+            @RequestHeader("Authorization") String auth) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        SkillStat statsResponse = skillService.getStats(profileId);
         return ApiResponse.successResponse(statsResponse, "Stats Fetched Successfully");
     }
 }

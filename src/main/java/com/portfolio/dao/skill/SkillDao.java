@@ -63,6 +63,10 @@ public class SkillDao {
         return skillRepository.countByLevel(level);
     }
 
+    public Long countByLevelAndProfileId(SkillLevelEnum level, Long profileId) {
+        return skillRepository.countByLevelAndProfileId(level, profileId);
+    }
+
     public void delete(Skill skill) {
         skillRepository.delete(skill);
     }

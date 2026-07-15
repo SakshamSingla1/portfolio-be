@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.dao.github.GithubIntegrationDao;
 import com.portfolio.dao.github.GithubRepoDao;
+import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.exceptions.GenericException;
 import com.portfolio.dtos.GitHub.GithubIntegrationResponse;
 import com.portfolio.dtos.GitHub.GithubRepoResponse;
 import com.portfolio.dtos.GitHub.GitHubStatsDTO;
@@ -272,12 +274,17 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
     }
 
     @Override
-    public void updateRepo(Long repoId, Boolean isVisible, Integer sortOrder) {
-        repoDao.findById(repoId).ifPresent(repo -> {
-            if (isVisible != null) repo.setVisible(isVisible);
-            if (sortOrder != null) repo.setSortOrder(sortOrder);
-            repoDao.save(repo);
-        });
+    public void updateRepo(Long repoId, Boolean isVisible, Integer sortOrder, Long profileId) throws GenericException {
+        GithubRepo repo = repoDao.findById(repoId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Repo not found"));
+        GithubIntegration integration = integrationDao.findById(repo.getIntegrationId())
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Integration not found"));
+        if (!integration.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to update this repo");
+        }
+        if (isVisible != null) repo.setVisible(isVisible);
+        if (sortOrder != null) repo.setSortOrder(sortOrder);
+        repoDao.save(repo);
     }
 
     // ── OAuth helpers ─────────────────────────────────────────────────────────

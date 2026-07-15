@@ -1,5 +1,6 @@
 package com.portfolio.utils;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -21,14 +22,16 @@ public class EncryptionUtil {
     @Value("${ENCRYPTION_KEY:#{null}}")
     private String encryptionKeyBase64;
 
-    @Value("${JWT_SECRET}")
-    private String jwtSecret;
+    @PostConstruct
+    public void validate() {
+        if (encryptionKeyBase64 == null || encryptionKeyBase64.isBlank()) {
+            throw new IllegalStateException("ENCRYPTION_KEY is required but not configured");
+        }
+    }
 
     private SecretKey getKey() {
-        String keySource = (encryptionKeyBase64 != null && !encryptionKeyBase64.isBlank())
-                ? encryptionKeyBase64 : jwtSecret;
         // Use first 32 bytes of the key (256-bit AES)
-        byte[] keyBytes = Base64.getDecoder().decode(keySource);
+        byte[] keyBytes = Base64.getDecoder().decode(encryptionKeyBase64);
         byte[] aesKey = new byte[32];
         System.arraycopy(keyBytes, 0, aesKey, 0, Math.min(keyBytes.length, 32));
         return new SecretKeySpec(aesKey, "AES");

@@ -2,9 +2,12 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.Experience.ExperienceRequest;
 import com.portfolio.dtos.Experience.ExperienceResponse;
+import com.portfolio.entities.Experience;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.ExperienceRepository;
 import com.portfolio.services.ExperienceService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class ExperienceController {
 
     private final ExperienceService experienceService;
+    private final ExperienceRepository experienceRepository;
     private final Helper helper;
 
     @Operation(summary = "Create experience", description = "Creates a new work experience record.")
@@ -57,7 +61,15 @@ public class ExperienceController {
 
     @Operation(summary = "Delete experience", description = "Deletes a work experience record by ID.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Long id) throws GenericException {
+    public ResponseEntity<ResponseModel<String>> delete(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.EXPERIENCE_NOT_FOUND, "Experience not found"));
+        if (!experience.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this experience");
+        }
         String response = experienceService.delete(id);
         return ApiResponse.respond(response, "Experience deleted successfully", "Failed to delete experience");
     }

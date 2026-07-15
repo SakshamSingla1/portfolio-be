@@ -27,4 +27,8 @@ public class OtpStore extends Auditable {
 
     @Column(nullable = false)
     private LocalDateTime expiryDate;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int attempts = 0;
 }

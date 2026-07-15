@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -102,12 +104,24 @@ public class AdminController {
             return ApiResponse.failureResponse(null, "User not found");
         }
         String newAccessToken = jwtUtil.generateAccessToken(profile.getEmail(), String.valueOf(profile.getId()));
-        Cookie newAccessCookie = new Cookie("accessToken", newAccessToken);
-        newAccessCookie.setHttpOnly(true);
-        newAccessCookie.setSecure(true);
-        newAccessCookie.setPath("/");
-        newAccessCookie.setMaxAge(36000); // 10 hours
-        response.addCookie(newAccessCookie);
+        // Revoke old refresh token (token rotation)
+        refreshTokenRepository.deleteByToken(refreshTokenValue);
+        // Issue a new refresh token
+        String newRefreshToken = UUID.randomUUID().toString();
+        refreshTokenRepository.save(RefreshToken.builder()
+                .profileId(storedToken.getProfileId())
+                .token(newRefreshToken)
+                .expiresAt(LocalDateTime.now().plusDays(7))
+                .revoked(false)
+                .build());
+        // Set new access token cookie
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", newAccessToken)
+                .httpOnly(true).secure(true).path("/").maxAge(36000).sameSite("Strict").build();
+        // Set new refresh token cookie
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                .httpOnly(true).secure(true).path("/api/v1/auth/refresh").maxAge(7 * 24 * 3600).sameSite("Strict").build();
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         return ApiResponse.successResponse(null, "Token refreshed successfully");
     }
 
@@ -120,39 +134,25 @@ public class AdminController {
             refreshTokenRepository.deleteByToken(refreshTokenValue);
         }
         // Clear access token cookie
-        Cookie accessCookie = new Cookie("accessToken", "");
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(0);
-        response.addCookie(accessCookie);
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", "")
+                .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
         // Clear refresh token cookie
-        Cookie refreshCookie = new Cookie("refreshToken", "");
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
-        refreshCookie.setPath("/api/v1/auth/refresh");
-        refreshCookie.setMaxAge(0);
-        response.addCookie(refreshCookie);
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true).secure(true).path("/api/v1/auth/refresh").maxAge(0).sameSite("Strict").build();
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
         return ApiResponse.successResponse(null, "Logged out successfully");
     }
 
     // ─── private helpers ────────────────────────────────────────────────────────
 
     private void setAuthCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        // Access token cookie — 10 hours
-        Cookie accessCookie = new Cookie("accessToken", accessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(36000);
-        response.addCookie(accessCookie);
-        // Refresh token cookie — 7 days, scoped to the refresh endpoint
-        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
-        refreshCookie.setPath("/api/v1/auth/refresh");
-        refreshCookie.setMaxAge(7 * 24 * 3600);
-        response.addCookie(refreshCookie);
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
+                .httpOnly(true).secure(true).path("/").maxAge(36000).sameSite("Strict").build();
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true).secure(true).path("/api/v1/auth/refresh").maxAge(7 * 24 * 3600).sameSite("Strict").build();
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
     }
 
     private String extractCookieValue(HttpServletRequest request, String name) {

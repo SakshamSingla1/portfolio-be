@@ -3,9 +3,12 @@ package com.portfolio.controllers;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Project.ProjectRequest;
 import com.portfolio.dtos.Project.ProjectResponse;
+import com.portfolio.entities.Project;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.ProjectRepository;
 import com.portfolio.services.ProjectService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,57 +32,50 @@ import java.io.IOException;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final ProjectRepository projectRepository;
     private final Helper helper;
 
     @Operation(summary = "Create a Project", description = "Create a new project for a profile")
     @PostMapping
     public ResponseEntity<ResponseModel<ProjectResponse>> createProject(
             @RequestHeader("Authorization") String auth,
-            @Valid @RequestBody ProjectRequest request) {
-        try {
-            request.setProfileId(helper.getProfileIdFromHeader(auth));
-            ProjectResponse response = projectService.create(request);
-            return ApiResponse.successResponse(response, "Project created successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @Valid @RequestBody ProjectRequest request) throws GenericException {
+        request.setProfileId(helper.getProfileIdFromHeader(auth));
+        ProjectResponse response = projectService.create(request);
+        return ApiResponse.successResponse(response, "Project created successfully");
     }
 
     @Operation(summary = "Get Project by ID", description = "Retrieve project details by project ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(@PathVariable Long id) {
-        try {
-            ProjectResponse response = projectService.getById(id);
-            return ApiResponse.successResponse(response, "Project fetched successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<ProjectResponse>> getProjectById(@PathVariable Long id) throws GenericException {
+        ProjectResponse response = projectService.getById(id);
+        return ApiResponse.successResponse(response, "Project fetched successfully");
     }
 
     @Operation(summary = "Update Project", description = "Update project details by ID")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<ProjectResponse>> updateProject(
             @RequestHeader("Authorization") String auth,
-            @PathVariable Long id, 
-            @Valid @RequestBody ProjectRequest request) {
-        try {
-            request.setProfileId(helper.getProfileIdFromHeader(auth));
-            ProjectResponse response = projectService.update(id, request);
-            return ApiResponse.successResponse(response, "Project updated successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @PathVariable Long id,
+            @Valid @RequestBody ProjectRequest request) throws GenericException {
+        request.setProfileId(helper.getProfileIdFromHeader(auth));
+        ProjectResponse response = projectService.update(id, request);
+        return ApiResponse.successResponse(response, "Project updated successfully");
     }
 
     @Operation(summary = "Delete Project", description = "Delete project by ID")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> deleteProject(@PathVariable Long id) {
-        try {
-            String message = projectService.delete(id);
-            return ApiResponse.successResponse(message, "Project deleted successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
+    public ResponseEntity<ResponseModel<String>> deleteProject(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROJECT_NOT_FOUND, "Project not found"));
+        if (!project.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this project");
         }
+        String message = projectService.delete(id);
+        return ApiResponse.successResponse(message, "Project deleted successfully");
     }
 
     @Operation(summary = "Get Projects", description = "Fetch all projects of the logged-in profile")

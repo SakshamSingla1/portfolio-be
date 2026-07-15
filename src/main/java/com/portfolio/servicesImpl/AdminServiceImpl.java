@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.portfolio.utils.EncryptionUtil;
 import com.portfolio.utils.Helper;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -54,6 +55,7 @@ public class AdminServiceImpl implements AdminService {
     private final RoleService roleService;
     private final ProfileThemeMappingDao profileThemeMappingDao;
     private final SocialLinkService socialLinkService;
+    private final EncryptionUtil encryptionUtil;
 
     @Override
     @Transactional
@@ -158,11 +160,16 @@ public class AdminServiceImpl implements AdminService {
             otpStoreDao.deleteByProfileId(profile.getId());
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "OTP expired");
         }
+        if (otpStore.getAttempts() >= 5) {
+            otpStoreDao.deleteByProfileId(profile.getId());
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Too many failed attempts. Please request a new OTP.");
+        }
         if (!passwordEncoder.matches(dto.getOtp(), otpStore.getOtp())) {
+            otpStore.setAttempts(otpStore.getAttempts() + 1);
+            otpStoreDao.save(otpStore);
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid OTP");
         }
         profile.setEmailVerified(VerificationStatusEnum.VERIFIED);
-        profile.setPhoneVerified(VerificationStatusEnum.VERIFIED);
         profile.setStatus(StatusEnum.ACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
         profileDao.save(profile);
@@ -470,7 +477,7 @@ public class AdminServiceImpl implements AdminService {
         Profile profile = profileDao.findById(profileId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
         String secret = new DefaultSecretGenerator().generate();
-        profile.setTotpSecret(secret);
+        profile.setTotpSecret(encryptionUtil.encrypt(secret));
         profileDao.save(profile);
         String otpAuthUrl = new QrData.Builder()
                 .label(profile.getEmail())
@@ -494,8 +501,9 @@ public class AdminServiceImpl implements AdminService {
         String email = jwtUtil.extractEmail(dto.getPendingToken());
         Profile user = profileDao.findByEmail(email)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "User not found"));
+        String decryptedSecret = encryptionUtil.decrypt(user.getTotpSecret());
         boolean valid = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider())
-                .isValidCode(user.getTotpSecret(), dto.getTotpCode());
+                .isValidCode(decryptedSecret, dto.getTotpCode());
         if (!valid) {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid authenticator code. Please try again.");
         }
@@ -538,8 +546,9 @@ public class AdminServiceImpl implements AdminService {
         if (profile.getTotpSecret() == null) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "2FA not set up. Call /2fa/setup first.");
         }
+        String decryptedSecret = encryptionUtil.decrypt(profile.getTotpSecret());
         boolean valid = new DefaultCodeVerifier(new DefaultCodeGenerator(), new SystemTimeProvider())
-                .isValidCode(profile.getTotpSecret(), totpCode);
+                .isValidCode(decryptedSecret, totpCode);
         if (!valid) {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid authenticator code. Please try again.");
         }

@@ -67,4 +67,6 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
     Optional<Skill> findTop1ByProfileIdOrderByUpdatedAtDesc(Long profileId);
 
     Long countByLevel(SkillLevelEnum levelEnum);
+
+    Long countByLevelAndProfileId(SkillLevelEnum level, Long profileId);
 }

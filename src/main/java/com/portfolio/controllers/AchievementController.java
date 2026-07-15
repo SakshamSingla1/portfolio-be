@@ -3,9 +3,12 @@ package com.portfolio.controllers;
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Achievements.AchievementRequestDTO;
 import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.entities.Achievements;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.repositories.AchievementRepository;
 import com.portfolio.services.AchievementService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +30,7 @@ import java.io.IOException;
 public class AchievementController {
 
     private final AchievementService achievementService;
+    private final AchievementRepository achievementRepository;
     private final Helper helper;
 
     @Operation(summary = "Create achievement", description = "Creates a new achievement record for the authenticated user's profile.")
@@ -71,7 +75,15 @@ public class AchievementController {
 
     @Operation(summary = "Delete achievement", description = "Permanently deletes the achievement record identified by its ID.")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<Void>> deleteAchievement(@PathVariable Long id) throws GenericException {
+    public ResponseEntity<ResponseModel<Void>> deleteAchievement(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long id) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        Achievements achievement = achievementRepository.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ACHIEVEMENT_NOT_FOUND, "Achievement not found"));
+        if (!achievement.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this achievement");
+        }
         achievementService.deleteById(id);
         return ApiResponse.successResponse(null, "Achievement deleted successfully");
     }

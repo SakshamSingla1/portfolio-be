@@ -98,12 +98,12 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public SkillStat getStats() {
+    public SkillStat getStats(Long profileId) {
         return SkillStat.builder()
-                .expertSkillCount(skillDao.countByLevel(SkillLevelEnum.Expert))
-                .advancedSkillCount(skillDao.countByLevel(SkillLevelEnum.Advanced))
-                .intermediateSkillCount(skillDao.countByLevel(SkillLevelEnum.Intermediate))
-                .beginnerSkillCount(skillDao.countByLevel(SkillLevelEnum.Beginner))
+                .expertSkillCount(skillDao.countByLevelAndProfileId(SkillLevelEnum.Expert, profileId))
+                .advancedSkillCount(skillDao.countByLevelAndProfileId(SkillLevelEnum.Advanced, profileId))
+                .intermediateSkillCount(skillDao.countByLevelAndProfileId(SkillLevelEnum.Intermediate, profileId))
+                .beginnerSkillCount(skillDao.countByLevelAndProfileId(SkillLevelEnum.Beginner, profileId))
                 .build();
     }
 

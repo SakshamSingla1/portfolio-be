@@ -71,10 +71,12 @@ public class GithubController {
     @PreAuthorize("isAuthenticated()")
     @PatchMapping("/repos/{repoId}")
     public ResponseEntity<ResponseModel<Void>> updateRepo(
+            @RequestHeader("Authorization") String auth,
             @PathVariable Long repoId,
             @RequestParam(required = false) Boolean isVisible,
-            @RequestParam(required = false) Integer sortOrder) {
-        githubIntegrationService.updateRepo(repoId, isVisible, sortOrder);
+            @RequestParam(required = false) Integer sortOrder) throws Exception {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        githubIntegrationService.updateRepo(repoId, isVisible, sortOrder, profileId);
         return ApiResponse.respond(null, "Repo updated", "Failed to update repo");
     }
 }

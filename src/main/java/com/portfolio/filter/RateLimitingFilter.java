@@ -29,11 +29,18 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        String remoteAddr = request.getRemoteAddr();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank() && isTrustedProxy(remoteAddr)) {
+            return forwardedFor.split(",")[0].trim();
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    private boolean isTrustedProxy(String ip) {
+        return ip != null && (ip.startsWith("10.") || ip.startsWith("172.")
+                || ip.startsWith("192.168.") || ip.equals("127.0.0.1")
+                || ip.equals("0:0:0:0:0:0:0:1") || ip.equals("::1"));
     }
 
     @Override
@@ -48,20 +55,20 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
         // Auth endpoints: 10 requests per minute per IP
         if ("POST".equals(method) && (
-                path.contains("/admin/auth/login") ||
-                path.contains("/admin/auth/register") ||
-                path.contains("/admin/auth/verify-otp") ||
-                path.contains("/admin/auth/resend-otp") ||
-                path.contains("/admin/auth/forgot-password") ||
-                path.contains("/admin/auth/reset-password"))) {
+                path.contains("/api/v1/auth/login") ||
+                path.contains("/api/v1/auth/register") ||
+                path.contains("/api/v1/auth/verify-otp") ||
+                path.contains("/api/v1/auth/resend-otp") ||
+                path.contains("/api/v1/auth/forgot-password") ||
+                path.contains("/api/v1/auth/reset-password"))) {
             bucket = resolveBucket("auth:" + ip, 10, Duration.ofMinutes(1));
         }
         // Contact form: 5 per hour per IP
-        else if ("POST".equals(method) && path.contains("/public/contact")) {
+        else if ("POST".equals(method) && path.contains("/api/v1/public/contact-us")) {
             bucket = resolveBucket("contact:" + ip, 5, Duration.ofHours(1));
         }
         // Public portfolio fetch: 60 per minute per IP
-        else if ("GET".equals(method) && path.contains("/public/profile/")) {
+        else if ("GET".equals(method) && path.contains("/api/v1/public/profile-master")) {
             bucket = resolveBucket("public:" + ip, 60, Duration.ofMinutes(1));
         }
 

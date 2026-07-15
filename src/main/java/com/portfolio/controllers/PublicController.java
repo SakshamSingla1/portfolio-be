@@ -200,11 +200,18 @@ public class PublicController {
     }
 
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        String remoteAddr = request.getRemoteAddr();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank() && isTrustedProxy(remoteAddr)) {
+            return forwardedFor.split(",")[0].trim();
         }
-        return request.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    private boolean isTrustedProxy(String ip) {
+        return ip != null && (ip.startsWith("10.") || ip.startsWith("172.")
+                || ip.startsWith("192.168.") || ip.equals("127.0.0.1")
+                || ip.equals("0:0:0:0:0:0:0:1") || ip.equals("::1"));
     }
 
 }

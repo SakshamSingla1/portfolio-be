@@ -38,25 +38,17 @@ public class LogoController {
 
     @Operation(summary = "Get logo by ID", description = "Fetches a single logo by its ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<LogoResponse>> getLogoById(@PathVariable Long id) {
-        try {
-            LogoResponse response = logoService.getById(id);
-            return ApiResponse.respond(response, "Logo fetched successfully", "Failed to fetch logo");
-        } catch (Exception e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<LogoResponse>> getLogoById(@PathVariable Long id) throws Exception {
+        LogoResponse response = logoService.getById(id);
+        return ApiResponse.respond(response, "Logo fetched successfully", "Failed to fetch logo");
     }
 
     @Operation(summary = "Create a logo", description = "Creates a new logo")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping
-    public ResponseEntity<ResponseModel<LogoResponse>> createLogo(@Valid @RequestBody LogoRequest request) {
-        try {
-            LogoResponse response = logoService.create(request);
-            return ApiResponse.respond(response, "Logo created successfully", "Failed to create logo");
-        } catch (Exception e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<LogoResponse>> createLogo(@Valid @RequestBody LogoRequest request) throws Exception {
+        LogoResponse response = logoService.create(request);
+        return ApiResponse.respond(response, "Logo created successfully", "Failed to create logo");
     }
 
     @Operation(summary = "Update a logo", description = "Updates an existing logo by ID")
@@ -64,25 +56,17 @@ public class LogoController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<LogoResponse>> updateLogo(
             @PathVariable Long id,
-            @Valid @RequestBody LogoRequest request) {
-        try {
-            LogoResponse response = logoService.update(id, request);
-            return ApiResponse.respond(response, "Logo updated successfully", "Failed to update logo");
-        } catch (Exception e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @Valid @RequestBody LogoRequest request) throws Exception {
+        LogoResponse response = logoService.update(id, request);
+        return ApiResponse.respond(response, "Logo updated successfully", "Failed to update logo");
     }
 
     @Operation(summary = "Delete a logo", description = "Deletes a logo by ID")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> deleteLogo(@PathVariable Long id) {
-        try {
-            logoService.delete(id);
-            return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully",
-                    "Failed to delete logo");
-        } catch (Exception e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<String>> deleteLogo(@PathVariable Long id) throws Exception {
+        logoService.delete(id);
+        return ApiResponse.respond("Deleted logo with ID: " + id, "Logo deleted successfully",
+                "Failed to delete logo");
     }
 }

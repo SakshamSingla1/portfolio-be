@@ -28,7 +28,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
     private final PortfolioViewDao portfolioViewDao;
     private final ResumeDownloadDao resumeDownloadDao;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     @Override
     public void trackView(PortfolioViewRequest request, String clientIp, String userAgent) {
