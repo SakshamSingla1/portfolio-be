@@ -98,7 +98,9 @@ public class CertificationServiceImpl implements CertificationService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.CERTIFICATION.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         certificationDao.deleteById(id);
         return null;
     }
@@ -154,7 +156,7 @@ public class CertificationServiceImpl implements CertificationService {
         List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.CERTIFICATION);
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
 

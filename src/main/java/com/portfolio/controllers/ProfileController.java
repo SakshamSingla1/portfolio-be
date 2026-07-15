@@ -10,7 +10,6 @@ import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
-import com.portfolio.enums.StatusEnum;
 import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;

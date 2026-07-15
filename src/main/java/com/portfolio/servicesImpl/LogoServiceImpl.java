@@ -92,7 +92,9 @@ public class LogoServiceImpl implements LogoService {
                         ExceptionCodeEnum.LOGO_NOT_FOUND, "Logo not found"));
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.LOGO.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         logoDao.delete(logo);
     }
 
@@ -101,7 +103,7 @@ public class LogoServiceImpl implements LogoService {
         List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.LOGO);
         for (FileAsset asset : existing) {
             if (!url.equals(asset.getPath())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
         Optional<FileAsset> assetOpt = fileAssetDao.findByPath(url);

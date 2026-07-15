@@ -25,10 +25,7 @@ import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +34,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -93,7 +89,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId, ResourceTypeEnum.PROFILE)
                 .ifPresent(existing -> {
-                    try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
+                    try { fileService.delete(existing.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
         uploadReq.setResourceId(profileId);
@@ -117,7 +113,7 @@ public class ProfileServiceImpl implements ProfileService {
         List<FileAsset> existingList = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE);
         for (FileAsset asset : existingList) {
             if ("ABOUT_ME_IMAGE".equals(asset.getMetaData())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
         FileUploadRequest uploadReq = new FileUploadRequest();
@@ -141,7 +137,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
         fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(profileId, ResourceTypeEnum.PROFILE_LOGO)
                 .ifPresent(existing -> {
-                    try { fileService.delete(existing.getId()); } catch (Exception ignored) {}
+                    try { fileService.delete(existing.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
                 });
         FileUploadRequest uploadReq = new FileUploadRequest();
         uploadReq.setResourceId(profileId);

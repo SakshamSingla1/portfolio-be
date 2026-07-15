@@ -90,7 +90,9 @@ public class ResumeServiceImpl implements ResumeService {
                 ));
         try {
             fileService.deleteByResource(resumeId, ResourceTypeEnum.RESUME.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         resume.setStatus(StatusEnum.DELETED);
         resume.setUpdatedAt(LocalDateTime.now());
         resumeDao.save(resume);

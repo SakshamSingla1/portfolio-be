@@ -1,9 +1,7 @@
 package com.portfolio.controllers;
 
-import com.portfolio.dtos.Resume.ResumeUploadResponseDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
-import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -19,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

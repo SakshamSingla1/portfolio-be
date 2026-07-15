@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -95,7 +94,9 @@ public class AchievementServiceImpl implements AchievementService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.ACHIEVEMENT.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         achievementDao.deleteById(id);
         return null;
     }
@@ -148,7 +149,7 @@ public class AchievementServiceImpl implements AchievementService {
         List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.ACHIEVEMENT);
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
 

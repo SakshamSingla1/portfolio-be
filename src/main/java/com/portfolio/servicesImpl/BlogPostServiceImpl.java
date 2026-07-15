@@ -110,7 +110,9 @@ public class BlogPostServiceImpl implements BlogPostService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.BLOG_POST.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         blogPostDao.deleteById(id);
         return "Blog post deleted successfully";
     }

@@ -44,7 +44,9 @@ public class FileServiceImpl implements FileService {
                                 cloudinaryService.deleteFile(existing.getPublicId());
                             }
                             fileAssetDao.delete(existing);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                            // best-effort cleanup; failure is non-fatal
+                        }
                     });
         } else if (request.getMetaData() != null && !request.getMetaData().isBlank()) {
             // For non-primary assets tagged with metadata (e.g. ABOUT_ME_IMAGE), replace the existing tagged asset
@@ -58,7 +60,9 @@ public class FileServiceImpl implements FileService {
                                 cloudinaryService.deleteFile(existing.getPublicId());
                             }
                             fileAssetDao.delete(existing);
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                            // best-effort cleanup; failure is non-fatal
+                        }
                     });
         }
 
@@ -112,7 +116,7 @@ public class FileServiceImpl implements FileService {
                 .findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, type);
         for (FileAsset asset : assets) {
             if (asset.getPublicId() != null && !asset.getPublicId().isBlank()) {
-                try { cloudinaryService.deleteFile(asset.getPublicId()); } catch (Exception ignored) {}
+                try { cloudinaryService.deleteFile(asset.getPublicId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
         fileAssetDao.deleteByResourceIdAndResourceType(resourceId, type);

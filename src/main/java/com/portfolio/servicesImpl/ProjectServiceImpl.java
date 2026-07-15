@@ -31,7 +31,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -132,7 +131,9 @@ public class ProjectServiceImpl implements ProjectService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.PROJECT.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         projectDao.deleteById(id);
         return "Project deleted successfully";
     }
@@ -185,7 +186,9 @@ public class ProjectServiceImpl implements ProjectService {
             if (!targetAssetIds.contains(asset.getId())) {
                 try {
                     fileService.delete(asset.getId());
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                    // best-effort cleanup; failure is non-fatal
+                }
             }
         }
 

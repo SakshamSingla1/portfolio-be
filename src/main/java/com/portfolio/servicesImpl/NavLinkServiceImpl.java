@@ -6,7 +6,6 @@ import com.portfolio.dtos.NavLinks.NavLinkResponseDTO;
 import com.portfolio.dtos.NavLinks.GroupedNavLinkResponseDTO;
 import com.portfolio.entities.NavLink;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.RoleEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.NavLinkService;

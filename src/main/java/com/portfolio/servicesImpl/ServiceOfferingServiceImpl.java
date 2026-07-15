@@ -92,7 +92,9 @@ public class ServiceOfferingServiceImpl implements ServiceOfferingService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.SERVICE.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         serviceOfferingDao.deleteById(id);
         return null;
     }
@@ -140,7 +142,7 @@ public class ServiceOfferingServiceImpl implements ServiceOfferingService {
         List<FileAsset> existing = fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(resourceId, ResourceTypeEnum.SERVICE);
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
 

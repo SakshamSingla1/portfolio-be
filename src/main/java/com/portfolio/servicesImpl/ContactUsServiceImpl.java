@@ -59,7 +59,7 @@ public class ContactUsServiceImpl implements ContactUsService{
                         profile.getEmail()
                 );
             } catch (Exception e) {
-                e.getMessage();
+                // notification failure is non-fatal; contact-us record is already saved
             }
         }
         return toDto(saved);

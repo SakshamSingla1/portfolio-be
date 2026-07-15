@@ -107,7 +107,9 @@ public class TestimonialServiceImpl implements TestimonialService {
         }
         try {
             fileService.deleteByResource(id, ResourceTypeEnum.TESTIMONIAL.name());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            // best-effort cleanup; failure is non-fatal
+        }
         testimonialDao.deleteById(id);
         return null;
     }
@@ -150,7 +152,7 @@ public class TestimonialServiceImpl implements TestimonialService {
 
         for (FileAsset asset : existing) {
             if (targetAssetId == null || !targetAssetId.equals(asset.getId())) {
-                try { fileService.delete(asset.getId()); } catch (Exception ignored) {}
+                try { fileService.delete(asset.getId()); } catch (Exception ignored) { /* best-effort cleanup */ }
             }
         }
 
