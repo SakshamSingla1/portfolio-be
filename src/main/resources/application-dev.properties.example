@@ -5,7 +5,7 @@ app.frontend.url=http://localhost:5173,http://localhost:5174,http://localhost:30
 app.url=http://localhost:8080
 
 # ===============================
-# POSTGRESQL / NEON CONFIGURATION
+# POSTGRESQL / SUPABASE CONFIGURATION
 # ===============================
 spring.datasource.url=jdbc:postgresql://<host>/<db>?user=<user>&password=<password>&sslmode=require
 spring.datasource.username=CHANGE_ME

@@ -1,5 +1,6 @@
 package com.portfolio.dtos.LandingPage;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.portfolio.dtos.AuditableResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,5 +35,10 @@ public class LandingAudienceCardResponse extends AuditableResponse {
         this.description = description;
         this.sortOrder = sortOrder;
         this.isActive = isActive;
+    }
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
     }
 }

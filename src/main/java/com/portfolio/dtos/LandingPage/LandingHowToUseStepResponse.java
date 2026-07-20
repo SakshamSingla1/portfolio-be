@@ -1,5 +1,6 @@
 package com.portfolio.dtos.LandingPage;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.portfolio.dtos.AuditableResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,4 +20,9 @@ public class LandingHowToUseStepResponse extends AuditableResponse {
     private List<String> bullets;
     private int sortOrder;
     private boolean isActive;
+
+    @JsonProperty("isActive")
+    public boolean isActive() {
+        return isActive;
+    }
 }
