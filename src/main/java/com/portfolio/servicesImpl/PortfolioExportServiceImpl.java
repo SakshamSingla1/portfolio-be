@@ -1,12 +1,12 @@
 package com.portfolio.servicesImpl;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.safety.Safelist;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
+import com.portfolio.dtos.ColorTheme.ColorGroupDTO;
+import com.portfolio.dtos.ColorTheme.ColorShadeDTO;
+import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.dtos.Language.ProfileLanguageResponse;
@@ -24,6 +24,9 @@ import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.ProfileMasterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -63,6 +66,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private String buildHtml(ProfileMasterResponse data) {
         ProfileResponse profile = data.getProfile();
+        Theme theme = Theme.from(data.getColorTheme());
+
         StringBuilder sb = new StringBuilder();
 
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -70,56 +75,107 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
         sb.append("<head>\n");
         sb.append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n");
-        sb.append("<title>").append(esc(s(profile.getFullName()))).append(" — Portfolio</title>\n");
-        sb.append("<style type=\"text/css\">\n");
-        sb.append("@page { size: A4; margin: 20mm 15mm 20mm 15mm; }\n");
-        sb.append("body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #1a1a1a; background: #ffffff; margin: 0; padding: 0; }\n");
-        sb.append(".name { font-size: 14pt; font-weight: bold; color: #1e3a5f; }\n");
-        sb.append(".role-title { font-size: 11pt; color: #555555; margin-top: 2px; }\n");
-        sb.append(".contact-line { font-size: 9pt; color: #555555; margin-top: 5px; }\n");
-        sb.append(".section-heading { font-size: 11pt; font-weight: bold; color: #1e3a5f; border-bottom: 1px solid #1e3a5f; margin-top: 14px; margin-bottom: 8px; padding-bottom: 3px; }\n");
-        sb.append(".item { margin-bottom: 8px; }\n");
-        sb.append(".item-title { font-weight: bold; font-size: 10pt; color: #1a1a1a; }\n");
-        sb.append(".item-subtitle { font-size: 9pt; color: #555555; }\n");
-        sb.append(".item-desc { font-size: 9pt; margin-top: 2px; color: #333333; }\n");
-        sb.append(".item-desc p { margin: 0 0 4px 0; }\n");
-        sb.append(".item-desc ul, .item-desc ol { margin: 2px 0 2px 16px; padding: 0; }\n");
-        sb.append(".item-desc li { margin-bottom: 2px; }\n");
-        sb.append(".skill-cat { font-weight: bold; font-size: 9pt; color: #1e3a5f; }\n");
-        sb.append(".skill-list { font-size: 9pt; color: #333333; }\n");
-        sb.append(".link { color: #1e3a5f; font-size: 9pt; }\n");
-        sb.append("</style>\n");
+        sb.append("<title>").append(esc(s(profile.getFullName()))).append(" — Resume</title>\n");
+        sb.append("<style type=\"text/css\">\n").append(buildCss(theme)).append("</style>\n");
         sb.append("</head>\n");
         sb.append("<body>\n");
 
-        // ── Header ──────────────────────────────────────────────────────────
-        sb.append("<div>\n");
-        sb.append("<span class=\"name\">").append(esc(s(profile.getFullName()))).append("</span><br/>\n");
+        sb.append(buildHeader(profile, theme));
+
+        if (notBlank(profile.getAboutMe())) {
+            sb.append("<div class=\"summary\">\n");
+            sb.append("<div class=\"summary-label\">Professional Summary</div>\n");
+            sb.append("<div class=\"summary-text\">").append(richText(profile.getAboutMe())).append("</div>\n");
+            sb.append("</div>\n");
+        }
+
+        sb.append("<table class=\"layout\" cellspacing=\"0\" cellpadding=\"0\">\n<tr>\n");
+        sb.append("<td class=\"col-main\">\n").append(buildMainColumn(data)).append("</td>\n");
+        sb.append("<td class=\"col-side\">\n").append(buildSideColumn(data)).append("</td>\n");
+        sb.append("</tr>\n</table>\n");
+
+        sb.append("</body>\n</html>");
+        return sb.toString();
+    }
+
+    private String buildCss(Theme t) {
+        StringBuilder css = new StringBuilder();
+        css.append("@page { size: A4; margin: 0mm 14mm 14mm 14mm; }\n");
+        css.append("* { box-sizing: border-box; }\n");
+        css.append("body { font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #262626; background: #ffffff; margin: 0; padding: 0; }\n");
+
+        // Header band (page top margin is zero so this can bleed edge-to-edge without clipping)
+        css.append(".header { background-color: ").append(t.headerBg).append("; color: #ffffff; padding: 16px 14mm; margin: 0 -14mm 0 -14mm; }\n");
+        css.append(".name { font-size: 22pt; font-weight: bold; color: #ffffff; letter-spacing: 0.3px; }\n");
+        css.append(".role-title { font-size: 11.5pt; color: ").append(t.headerAccentText).append("; margin-top: 3px; }\n");
+        css.append(".contact-line { font-size: 9pt; color: #ffffff; margin-top: 8px; }\n");
+        css.append(".contact-line span.sep { color: ").append(t.headerAccentText).append("; padding: 0 6px; }\n");
+
+        // Summary band (full width, under header)
+        css.append(".summary { padding: 10px 0 4px 0; border-bottom: 1px solid ").append(t.neutral200).append("; margin-bottom: 4px; }\n");
+        css.append(".summary-label { font-size: 8.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: ").append(t.primary600).append("; margin-bottom: 3px; }\n");
+        css.append(".summary-text { font-size: 9.5pt; color: #333333; }\n");
+        css.append(".summary-text p { margin: 0 0 4px 0; }\n");
+
+        // Two-column layout
+        css.append(".layout { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 10px; }\n");
+        css.append(".col-main { width: 63%; vertical-align: top; padding-right: 16px; }\n");
+        css.append(".col-side { width: 37%; vertical-align: top; background-color: ").append(t.neutral50).append("; padding: 10px 12px; border-left: 1px solid ").append(t.neutral200).append("; }\n");
+
+        // Section headings
+        css.append(".section-heading { font-size: 10.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.6px; color: ").append(t.primary700).append("; border-left: 3px solid ").append(t.primary500).append("; padding-left: 7px; margin-top: 12px; margin-bottom: 7px; }\n");
+        css.append(".col-main .section-heading:first-child, .col-side .section-heading:first-child { margin-top: 0; }\n");
+
+        // Items
+        css.append(".item { margin-bottom: 9px; }\n");
+        css.append(".item-title { font-weight: bold; font-size: 10pt; color: #1a1a1a; }\n");
+        css.append(".item-subtitle { font-size: 8.7pt; color: #666666; margin-top: 1px; }\n");
+        css.append(".item-desc { font-size: 9pt; margin-top: 3px; color: #3a3a3a; }\n");
+        css.append(".item-desc p { margin: 0 0 4px 0; }\n");
+        css.append(".item-desc ul, .item-desc ol { margin: 2px 0 2px 15px; padding: 0; }\n");
+        css.append(".item-desc li { margin-bottom: 3px; }\n");
+        css.append(".link { color: ").append(t.primary600).append("; font-size: 8.7pt; }\n");
+
+        // Sidebar-specific: skill pills, compact list items
+        css.append(".skill-cat { font-weight: bold; font-size: 8.7pt; color: ").append(t.primary700).append("; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; margin-top: 8px; }\n");
+        css.append(".col-side .section-heading + .skill-cat { margin-top: 0; }\n");
+        css.append(".pill { display: inline; background-color: ").append(t.primary50).append("; color: ").append(t.primary700).append("; border: 1px solid ").append(t.primary200).append("; border-radius: 3px; padding: 2px 6px; margin: 0 4px 4px 0; font-size: 8.3pt; }\n");
+        css.append(".side-item { margin-bottom: 8px; }\n");
+        css.append(".side-item-title { font-weight: bold; font-size: 9pt; color: #1a1a1a; }\n");
+        css.append(".side-item-sub { font-size: 8.3pt; color: #666666; margin-top: 1px; }\n");
+        css.append(".lang-row { font-size: 8.7pt; color: #3a3a3a; margin-bottom: 3px; }\n");
+        css.append(".lang-name { font-weight: bold; color: #1a1a1a; }\n");
+        return css.toString();
+    }
+
+    private String buildHeader(ProfileResponse profile, Theme t) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div class=\"header\">\n");
+        sb.append("<div class=\"name\">").append(esc(s(profile.getFullName()))).append("</div>\n");
         if (notBlank(profile.getTitle())) {
-            sb.append("<span class=\"role-title\">").append(esc(profile.getTitle())).append("</span><br/>\n");
+            sb.append("<div class=\"role-title\">").append(esc(profile.getTitle())).append("</div>\n");
         }
         StringBuilder contact = new StringBuilder();
         if (notBlank(profile.getLocation())) contact.append(esc(profile.getLocation()));
         if (notBlank(profile.getEmail())) {
-            if (contact.length() > 0) contact.append(" | ");
+            if (contact.length() > 0) contact.append("<span class=\"sep\">|</span>");
             contact.append(esc(profile.getEmail()));
         }
         if (notBlank(profile.getPhone())) {
-            if (contact.length() > 0) contact.append(" | ");
+            if (contact.length() > 0) contact.append("<span class=\"sep\">|</span>");
             contact.append(esc(profile.getPhone()));
         }
         if (contact.length() > 0) {
             sb.append("<div class=\"contact-line\">").append(contact).append("</div>\n");
         }
         sb.append("</div>\n");
+        return sb.toString();
+    }
 
-        // ── About ────────────────────────────────────────────────────────────
-        if (notBlank(profile.getAboutMe())) {
-            sb.append("<div class=\"section-heading\">About Me</div>\n");
-            sb.append("<div class=\"item-desc\">").append(richText(profile.getAboutMe())).append("</div>\n");
-        }
+    // ── Main column: Experience, Education, Projects, Publications ─────────────
+    private String buildMainColumn(ProfileMasterResponse data) {
+        StringBuilder sb = new StringBuilder();
 
-        // ── Experience ───────────────────────────────────────────────────────
         List<ExperienceResponse> experiences = data.getExperiences();
         if (nonEmpty(experiences)) {
             sb.append("<div class=\"section-heading\">Experience</div>\n");
@@ -137,7 +193,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             }
         }
 
-        // ── Education ────────────────────────────────────────────────────────
         List<EducationResponse> educations = data.getEducations();
         if (nonEmpty(educations)) {
             sb.append("<div class=\"section-heading\">Education</div>\n");
@@ -160,30 +215,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             }
         }
 
-        // ── Skills ───────────────────────────────────────────────────────────
-        List<SkillResponse> skills = data.getSkills();
-        if (nonEmpty(skills)) {
-            sb.append("<div class=\"section-heading\">Skills</div>\n");
-            Map<SkillCategoryEnum, List<SkillResponse>> grouped = skills.stream()
-                    .collect(Collectors.groupingBy(
-                            sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
-                            LinkedHashMap::new, Collectors.toList()));
-            for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
-                String catLabel = entry.getKey().getDisplayName();
-                String skillNames = entry.getValue().stream()
-                        .map(sk -> s(sk.getLogoName()))
-                        .filter(n -> !n.isEmpty())
-                        .collect(Collectors.joining(", "));
-                if (!skillNames.isEmpty()) {
-                    sb.append("<div class=\"item\">\n");
-                    sb.append("<span class=\"skill-cat\">").append(esc(catLabel)).append(": </span>");
-                    sb.append("<span class=\"skill-list\">").append(esc(skillNames)).append("</span>\n");
-                    sb.append("</div>\n");
-                }
-            }
-        }
-
-        // ── Projects ─────────────────────────────────────────────────────────
         List<ProjectResponse> projects = data.getProjects();
         if (nonEmpty(projects)) {
             sb.append("<div class=\"section-heading\">Projects</div>\n");
@@ -209,26 +240,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             }
         }
 
-        // ── Certifications ───────────────────────────────────────────────────
-        List<CertificationResponseDTO> certs = data.getCertifications();
-        if (nonEmpty(certs)) {
-            sb.append("<div class=\"section-heading\">Certifications</div>\n");
-            for (CertificationResponseDTO cert : certs) {
-                sb.append("<div class=\"item\">\n");
-                sb.append("<div class=\"item-title\">").append(esc(s(cert.getTitle()))).append("</div>\n");
-                String certSub = s(cert.getIssuer()) +
-                        (cert.getIssueDate() != null ? " | " + cert.getIssueDate() : "");
-                if (notBlank(certSub)) {
-                    sb.append("<div class=\"item-subtitle\">").append(esc(certSub)).append("</div>\n");
-                }
-                if (notBlank(cert.getCredentialUrl())) {
-                    sb.append("<div class=\"item-subtitle\">URL: <span class=\"link\">").append(esc(cert.getCredentialUrl())).append("</span></div>\n");
-                }
-                sb.append("</div>\n");
-            }
-        }
-
-        // ── Publications ─────────────────────────────────────────────────────
         List<PublicationResponseDTO> publications = data.getPublications();
         if (nonEmpty(publications)) {
             sb.append("<div class=\"section-heading\">Publications</div>\n");
@@ -248,15 +259,62 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             }
         }
 
-        // ── Achievements ─────────────────────────────────────────────────────
+        return sb.toString();
+    }
+
+    // ── Side column: Skills, Certifications, Achievements, Languages, Services ─
+    private String buildSideColumn(ProfileMasterResponse data) {
+        StringBuilder sb = new StringBuilder();
+
+        List<SkillResponse> skills = data.getSkills();
+        if (nonEmpty(skills)) {
+            sb.append("<div class=\"section-heading\">Skills</div>\n");
+            Map<SkillCategoryEnum, List<SkillResponse>> grouped = skills.stream()
+                    .collect(Collectors.groupingBy(
+                            sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
+                            LinkedHashMap::new, Collectors.toList()));
+            for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
+                List<String> names = entry.getValue().stream()
+                        .map(sk -> s(sk.getLogoName()))
+                        .filter(n -> !n.isEmpty())
+                        .collect(Collectors.toList());
+                if (!names.isEmpty()) {
+                    sb.append("<div class=\"skill-cat\">").append(esc(entry.getKey().getDisplayName())).append("</div>\n");
+                    sb.append("<div class=\"item\">\n");
+                    for (String name : names) {
+                        sb.append("<span class=\"pill\">").append(esc(name)).append("</span>");
+                    }
+                    sb.append("\n</div>\n");
+                }
+            }
+        }
+
+        List<CertificationResponseDTO> certs = data.getCertifications();
+        if (nonEmpty(certs)) {
+            sb.append("<div class=\"section-heading\">Certifications</div>\n");
+            for (CertificationResponseDTO cert : certs) {
+                sb.append("<div class=\"side-item\">\n");
+                sb.append("<div class=\"side-item-title\">").append(esc(s(cert.getTitle()))).append("</div>\n");
+                String certSub = s(cert.getIssuer()) +
+                        (cert.getIssueDate() != null ? " | " + cert.getIssueDate() : "");
+                if (notBlank(certSub)) {
+                    sb.append("<div class=\"side-item-sub\">").append(esc(certSub)).append("</div>\n");
+                }
+                if (notBlank(cert.getCredentialUrl())) {
+                    sb.append("<div class=\"side-item-sub\"><span class=\"link\">").append(esc(cert.getCredentialUrl())).append("</span></div>\n");
+                }
+                sb.append("</div>\n");
+            }
+        }
+
         List<AchievementResponseDTO> achievements = data.getAchievements();
         if (nonEmpty(achievements)) {
             sb.append("<div class=\"section-heading\">Achievements</div>\n");
             for (AchievementResponseDTO ach : achievements) {
-                sb.append("<div class=\"item\">\n");
-                sb.append("<div class=\"item-title\">").append(esc(s(ach.getTitle()))).append("</div>\n");
+                sb.append("<div class=\"side-item\">\n");
+                sb.append("<div class=\"side-item-title\">").append(esc(s(ach.getTitle()))).append("</div>\n");
                 if (ach.getAchievedAt() != null) {
-                    sb.append("<div class=\"item-subtitle\">").append(esc(ach.getAchievedAt().toString())).append("</div>\n");
+                    sb.append("<div class=\"side-item-sub\">").append(esc(ach.getAchievedAt().toString())).append("</div>\n");
                 }
                 if (notBlank(ach.getDescription())) {
                     sb.append("<div class=\"item-desc\">").append(richText(ach.getDescription())).append("</div>\n");
@@ -265,37 +323,91 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             }
         }
 
-        // ── Languages ────────────────────────────────────────────────────────
         List<ProfileLanguageResponse> languages = data.getLanguages();
         if (nonEmpty(languages)) {
             sb.append("<div class=\"section-heading\">Languages</div>\n");
-            sb.append("<div class=\"item\">\n");
-            String langList = languages.stream()
-                    .map(l -> s(l.getLanguageName()) + (l.getProficiency() != null ? " — " + l.getProficiency().getDisplayName() : ""))
-                    .collect(Collectors.joining(", "));
-            sb.append("<span class=\"skill-list\">").append(esc(langList)).append("</span>\n");
-            sb.append("</div>\n");
-        }
-
-        // ── Services ─────────────────────────────────────────────────────────
-        List<ServiceResponse> services = data.getServices();
-        if (nonEmpty(services)) {
-            sb.append("<div class=\"section-heading\">Services</div>\n");
-            for (ServiceResponse svc : services) {
-                sb.append("<div class=\"item\">\n");
-                sb.append("<div class=\"item-title\">").append(esc(s(svc.getTitle()))).append("</div>\n");
-                if (notBlank(svc.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(richText(svc.getDescription())).append("</div>\n");
-                }
-                if (notBlank(svc.getPriceRange())) {
-                    sb.append("<div class=\"item-subtitle\">Price: ").append(esc(svc.getPriceRange())).append("</div>\n");
+            for (ProfileLanguageResponse lang : languages) {
+                sb.append("<div class=\"lang-row\"><span class=\"lang-name\">").append(esc(s(lang.getLanguageName()))).append("</span>");
+                if (lang.getProficiency() != null) {
+                    sb.append(" — ").append(esc(lang.getProficiency().getDisplayName()));
                 }
                 sb.append("</div>\n");
             }
         }
 
-        sb.append("</body>\n</html>");
+        List<ServiceResponse> services = data.getServices();
+        if (nonEmpty(services)) {
+            sb.append("<div class=\"section-heading\">Services</div>\n");
+            for (ServiceResponse svc : services) {
+                sb.append("<div class=\"side-item\">\n");
+                sb.append("<div class=\"side-item-title\">").append(esc(s(svc.getTitle()))).append("</div>\n");
+                if (notBlank(svc.getDescription())) {
+                    sb.append("<div class=\"item-desc\">").append(richText(svc.getDescription())).append("</div>\n");
+                }
+                if (notBlank(svc.getPriceRange())) {
+                    sb.append("<div class=\"side-item-sub\">Price: ").append(esc(svc.getPriceRange())).append("</div>\n");
+                }
+                sb.append("</div>\n");
+            }
+        }
+
         return sb.toString();
+    }
+
+    // ── Theme ────────────────────────────────────────────────────────────────
+
+    /**
+     * Resolves accent colors from the profile's own selected portfolio color theme
+     * (falls back to a neutral navy palette if no theme is mapped) so the exported
+     * resume visually matches the profile's live portfolio site.
+     */
+    private static final class Theme {
+        final String headerBg;
+        final String headerAccentText;
+        final String primary500;
+        final String primary600;
+        final String primary700;
+        final String primary200;
+        final String primary50;
+        final String neutral50;
+        final String neutral200;
+
+        private Theme(String headerBg, String headerAccentText, String primary500, String primary600,
+                      String primary700, String primary200, String primary50, String neutral50, String neutral200) {
+            this.headerBg = headerBg;
+            this.headerAccentText = headerAccentText;
+            this.primary500 = primary500;
+            this.primary600 = primary600;
+            this.primary700 = primary700;
+            this.primary200 = primary200;
+            this.primary50 = primary50;
+            this.neutral50 = neutral50;
+            this.neutral200 = neutral200;
+        }
+
+        static Theme from(ColorThemeResponseDTO colorTheme) {
+            Map<String, String> shades = new LinkedHashMap<>();
+            if (colorTheme != null && colorTheme.getPalette() != null && colorTheme.getPalette().getColorGroups() != null) {
+                for (ColorGroupDTO group : colorTheme.getPalette().getColorGroups()) {
+                    if (group.getColorShades() == null) continue;
+                    for (ColorShadeDTO shade : group.getColorShades()) {
+                        if (shade.getColorName() != null && shade.getColorCode() != null) {
+                            shades.put(shade.getColorName(), shade.getColorCode());
+                        }
+                    }
+                }
+            }
+            String secondary900 = shades.getOrDefault("secondary900", "#1e3a5f");
+            String primary500 = shades.getOrDefault("primary500", "#2f6fb0");
+            String primary600 = shades.getOrDefault("primary600", "#265a8d");
+            String primary700 = shades.getOrDefault("primary700", "#1e3a5f");
+            String primary200 = shades.getOrDefault("primary200", "#bcd6ee");
+            String primary50 = shades.getOrDefault("primary50", "#eaf3fb");
+            String neutral50 = shades.getOrDefault("neutral50", "#f7f8fa");
+            String neutral200 = shades.getOrDefault("neutral200", "#e2e2e2");
+            String accent500 = shades.getOrDefault("accent500", primary500);
+            return new Theme(secondary900, accent500, primary500, primary600, primary700, primary200, primary50, neutral50, neutral200);
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
