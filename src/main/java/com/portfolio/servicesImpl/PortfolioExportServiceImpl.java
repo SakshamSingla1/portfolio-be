@@ -60,7 +60,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         Profile profile = profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + username));
 
-        ProfileMasterResponse data = profileMasterService.getByProfileId(profile.getId());
+        ProfileMasterResponse data = profileMasterService.getForResumeExport(profile.getId());
 
         try {
             String html = buildHtml(data);
