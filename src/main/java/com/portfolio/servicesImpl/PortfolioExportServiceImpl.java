@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -263,7 +264,9 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (!nonEmpty(experiences)) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"section-heading\">Experience</div>\n");
-        for (ExperienceResponse exp : experiences) {
+        for (ExperienceResponse exp : sortByDateDesc(experiences,
+                e -> nullSafe(parseDateSafe(e.getEndDate()), LocalDate.MAX),
+                e -> nullSafe(parseDateSafe(e.getStartDate()), LocalDate.MIN))) {
             sb.append("<div class=\"item\">\n");
             String dates = formatMonthYear(exp.getStartDate()) + " – " + (notBlank(exp.getEndDate()) ? formatMonthYear(exp.getEndDate()) : "Present");
             sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(exp.getJobTitle()))).append("</span>")
@@ -314,7 +317,9 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (!nonEmpty(educations)) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"section-heading\">Education</div>\n");
-        for (EducationResponse edu : educations) {
+        for (EducationResponse edu : sortByDateDesc(educations,
+                e -> e.getEndYear() != null ? e.getEndYear() : Integer.MAX_VALUE,
+                e -> e.getStartYear() != null ? e.getStartYear() : Integer.MIN_VALUE)) {
             sb.append("<div class=\"item\">\n");
             String degreeField = (edu.getDegree() != null ? edu.getDegree().getDisplayName() : "") +
                     (notBlank(edu.getFieldOfStudy()) ? " in " + edu.getFieldOfStudy() : "");
@@ -339,7 +344,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (!nonEmpty(certs)) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"section-heading\">Certifications</div>\n");
-        for (CertificationResponseDTO cert : certs) {
+        for (CertificationResponseDTO cert : sortByDateDesc(certs,
+                c -> nullSafe(c.getIssueDate(), LocalDate.MIN))) {
             sb.append("<div class=\"item\">\n");
             sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(cert.getTitle()))).append("</span>")
                     .append("<span class=\"right\">").append(esc(formatMonthYear(cert.getIssueDate()))).append("</span></div>\n");
@@ -359,7 +365,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (!nonEmpty(publications)) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"section-heading\">Publications</div>\n");
-        for (PublicationResponseDTO pub : publications) {
+        for (PublicationResponseDTO pub : sortByDateDesc(publications,
+                p -> nullSafe(p.getPublishedDate(), LocalDate.MIN))) {
             sb.append("<div class=\"item\">\n");
             String typeLabel = notBlank(pub.getType()) ? " (" + pub.getType() + ")" : "";
             sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(pub.getTitle()) + typeLabel)).append("</span>")
@@ -380,7 +387,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (!nonEmpty(achievements)) return "";
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"section-heading\">Achievements</div>\n");
-        for (AchievementResponseDTO ach : achievements) {
+        for (AchievementResponseDTO ach : sortByDateDesc(achievements,
+                a -> nullSafe(a.getAchievedAt(), LocalDate.MIN))) {
             sb.append("<div class=\"item\">\n");
             sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(ach.getTitle()))).append("</span>")
                     .append("<span class=\"right\">").append(esc(formatMonthYear(ach.getAchievedAt()))).append("</span></div>\n");
@@ -475,6 +483,35 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private String formatMonthYear(LocalDate date) {
         return date != null ? date.format(MONTH_YEAR) : "";
+    }
+
+    private LocalDate parseDateSafe(String isoDate) {
+        if (isoDate == null || isoDate.isBlank()) return null;
+        try {
+            return LocalDate.parse(isoDate);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private <T> T nullSafe(T value, T fallback) {
+        return value != null ? value : fallback;
+    }
+
+    // Sorts a section's entries latest-first: by primary date/year descending, ties broken by
+    // secondary date/year descending (e.g. Experience end date, then start date).
+    private <T, K extends Comparable<K>> List<T> sortByDateDesc(
+            List<T> list, java.util.function.Function<T, K> primaryKey, java.util.function.Function<T, K> secondaryKey) {
+        return list.stream()
+                .sorted(Comparator.comparing(primaryKey).thenComparing(secondaryKey).reversed())
+                .collect(Collectors.toList());
+    }
+
+    // Single-key variant, for sections with only one meaningful date (Certifications, Publications, Achievements).
+    private <T, K extends Comparable<K>> List<T> sortByDateDesc(List<T> list, java.util.function.Function<T, K> key) {
+        return list.stream()
+                .sorted(Comparator.comparing(key).reversed())
+                .collect(Collectors.toList());
     }
 
     /**
