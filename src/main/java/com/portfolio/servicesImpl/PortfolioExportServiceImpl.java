@@ -1,6 +1,9 @@
 package com.portfolio.servicesImpl;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
@@ -79,6 +82,9 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append(".item-title { font-weight: bold; font-size: 10pt; color: #1a1a1a; }\n");
         sb.append(".item-subtitle { font-size: 9pt; color: #555555; }\n");
         sb.append(".item-desc { font-size: 9pt; margin-top: 2px; color: #333333; }\n");
+        sb.append(".item-desc p { margin: 0 0 4px 0; }\n");
+        sb.append(".item-desc ul, .item-desc ol { margin: 2px 0 2px 16px; padding: 0; }\n");
+        sb.append(".item-desc li { margin-bottom: 2px; }\n");
         sb.append(".skill-cat { font-weight: bold; font-size: 9pt; color: #1e3a5f; }\n");
         sb.append(".skill-list { font-size: 9pt; color: #333333; }\n");
         sb.append(".link { color: #1e3a5f; font-size: 9pt; }\n");
@@ -110,7 +116,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         // ── About ────────────────────────────────────────────────────────────
         if (notBlank(profile.getAboutMe())) {
             sb.append("<div class=\"section-heading\">About Me</div>\n");
-            sb.append("<p class=\"item-desc\">").append(esc(profile.getAboutMe())).append("</p>\n");
+            sb.append("<div class=\"item-desc\">").append(richText(profile.getAboutMe())).append("</div>\n");
         }
 
         // ── Experience ───────────────────────────────────────────────────────
@@ -125,7 +131,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 if (notBlank(exp.getLocation())) sb.append(" | ").append(esc(exp.getLocation()));
                 sb.append("</div>\n");
                 if (notBlank(exp.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(exp.getDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(exp.getDescription())).append("</div>\n");
                 }
                 sb.append("</div>\n");
             }
@@ -148,7 +154,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                     sb.append("<div class=\"item-subtitle\">").append(esc(eduSub)).append("</div>\n");
                 }
                 if (notBlank(edu.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(edu.getDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(edu.getDescription())).append("</div>\n");
                 }
                 sb.append("</div>\n");
             }
@@ -185,7 +191,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 sb.append("<div class=\"item\">\n");
                 sb.append("<div class=\"item-title\">").append(esc(s(proj.getProjectName()))).append("</div>\n");
                 if (notBlank(proj.getProjectDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(proj.getProjectDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(proj.getProjectDescription())).append("</div>\n");
                 }
                 if (proj.getSkills() != null && !proj.getSkills().isEmpty()) {
                     String techStack = proj.getSkills().stream()
@@ -236,7 +242,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                     sb.append("<div class=\"item-subtitle\">").append(esc(pubSub)).append("</div>\n");
                 }
                 if (notBlank(pub.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(pub.getDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(pub.getDescription())).append("</div>\n");
                 }
                 sb.append("</div>\n");
             }
@@ -253,7 +259,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                     sb.append("<div class=\"item-subtitle\">").append(esc(ach.getAchievedAt().toString())).append("</div>\n");
                 }
                 if (notBlank(ach.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(ach.getDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(ach.getDescription())).append("</div>\n");
                 }
                 sb.append("</div>\n");
             }
@@ -279,7 +285,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 sb.append("<div class=\"item\">\n");
                 sb.append("<div class=\"item-title\">").append(esc(s(svc.getTitle()))).append("</div>\n");
                 if (notBlank(svc.getDescription())) {
-                    sb.append("<div class=\"item-desc\">").append(esc(svc.getDescription())).append("</div>\n");
+                    sb.append("<div class=\"item-desc\">").append(richText(svc.getDescription())).append("</div>\n");
                 }
                 if (notBlank(svc.getPriceRange())) {
                     sb.append("<div class=\"item-subtitle\">Price: ").append(esc(svc.getPriceRange())).append("</div>\n");
@@ -301,6 +307,24 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
+    }
+
+    /**
+     * Renders a rich-text field (authored via the Jodit WYSIWYG editor and stored as HTML)
+     * for embedding in the XHTML export. Sanitizes to a safe subset of formatting tags and
+     * re-serializes as well-formed XHTML, since openhtmltopdf requires strict XML syntax.
+     */
+    private String richText(String value) {
+        if (value == null || value.isBlank()) return "";
+        Safelist safelist = Safelist.relaxed()
+                .addTags("u", "s", "strike")
+                .addAttributes("span", "style")
+                .addAttributes("p", "style")
+                .addAttributes("li", "style");
+        String cleaned = Jsoup.clean(value, safelist);
+        Document doc = Jsoup.parse(cleaned);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml).prettyPrint(false);
+        return doc.body().html();
     }
 
     private String s(String value) {
