@@ -34,6 +34,9 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -47,6 +50,7 @@ import java.util.stream.Collectors;
 public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private static final int EXPERIENCE_MAX_BULLETS = 8;
+    private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
 
     private final ProfileMasterService profileMasterService;
     private final ProfileDao profileDao;
@@ -92,18 +96,15 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
         sb.append(buildHeader(profile, data.getSocialLinks(), theme));
 
-        if (notBlank(profile.getAboutMe())) {
-            sb.append("<div class=\"summary\">\n");
-            sb.append("<div class=\"summary-label\">Professional Summary</div>\n");
-            sb.append("<div class=\"summary-text\">").append(richText(profile.getAboutMe())).append("</div>\n");
-            sb.append("</div>\n");
-        }
-
         sb.append("<div class=\"content\">\n");
-        sb.append(buildExperience(data));
-        sb.append(buildEducation(data));
+        if (notBlank(profile.getAboutMe())) {
+            sb.append("<div class=\"section-heading\">Professional Summary</div>\n");
+            sb.append("<div class=\"summary-text\">").append(richText(profile.getAboutMe())).append("</div>\n");
+        }
         sb.append(buildSkills(data));
+        sb.append(buildExperience(data));
         sb.append(buildProjects(data));
+        sb.append(buildEducation(data));
         sb.append(buildCertifications(data));
         sb.append(buildPublications(data));
         sb.append(buildAchievements(data));
@@ -117,21 +118,21 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private String buildCss(Theme t) {
         StringBuilder css = new StringBuilder();
-        css.append("@page { size: A4; margin: 0mm 14mm 12mm 14mm; }\n");
+        css.append("@page { size: A4; margin: 14mm 14mm 12mm 14mm; }\n");
         css.append("* { box-sizing: border-box; }\n");
-        css.append("body { font-family: Arial, Helvetica, sans-serif; font-size: 9.3pt; line-height: 1.4; color: #262626; background: #ffffff; margin: 0; padding: 0; }\n");
+        css.append("body { font-family: 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.35; color: #111111; background: #ffffff; margin: 0; padding: 0; }\n");
 
-        // Header band (page top margin is zero so this can bleed edge-to-edge without clipping)
-        css.append(".header { background-color: ").append(t.headerBg).append("; color: #ffffff; padding: 14px 14mm; margin: 0 -14mm 0 -14mm; }\n");
-        css.append(".name { font-size: 21pt; font-weight: bold; color: #ffffff; letter-spacing: 0.3px; }\n");
-        css.append(".role-title { font-size: 11pt; color: ").append(t.headerAccentText).append("; margin-top: 2px; }\n");
-        css.append(".contact-line { font-size: 8.8pt; color: #ffffff; margin-top: 8px; }\n");
-        css.append(".contact-item { display: inline-block; margin-right: 16px; }\n");
-        css.append(".contact-item .icon { margin-right: 5px; color: ").append(t.headerAccentText).append("; }\n");
+        // Header — centered, plain white, classic ATS-friendly style
+        css.append(".header { text-align: center; }\n");
+        css.append(".name { font-size: 20pt; font-weight: bold; letter-spacing: 0.3px; }\n");
+        css.append(".contact-line { font-size: 9.3pt; margin-top: 5px; }\n");
+        css.append(".contact-item, .social-item { display: inline-block; margin: 0 8px; }\n");
+        css.append(".contact-item .icon, .social-item .icon { margin-right: 3px; color: ").append(t.accent).append("; }\n");
+        css.append(".social-item a { color: ").append(t.accent).append("; text-decoration: none; }\n");
 
         // Icon fonts (Font Awesome Free, bundled — see resources/fonts/FONT-AWESOME-LICENSE.txt).
-        // Fonts are registered programmatically via builder.useFont(...) in exportPdf(), not @font-face,
-        // since there's no base URL configured for resolving a relative font src here.
+        // Registered programmatically via builder.useFont(...) in exportPdf(), not @font-face,
+        // since there's no base URL configured here for resolving a relative font src.
         css.append(".icon-phone::before { font-family: 'FASolid'; content: '\\f095'; }\n");
         css.append(".icon-envelope::before { font-family: 'FASolid'; content: '\\f0e0'; }\n");
         css.append(".icon-location::before { font-family: 'FASolid'; content: '\\f3c5'; }\n");
@@ -141,41 +142,34 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".icon-gitlab::before { font-family: 'FABrands'; content: '\\f296'; }\n");
         css.append(".icon-bitbucket::before { font-family: 'FABrands'; content: '\\f171'; }\n");
 
-        // Social links row
-        css.append(".social-line { font-size: 8.6pt; margin-top: 5px; }\n");
-        css.append(".social-item { display: inline-block; margin-right: 16px; }\n");
-        css.append(".social-item .icon { margin-right: 5px; color: ").append(t.headerAccentText).append("; }\n");
-        css.append(".social-item a { color: #ffffff; text-decoration: none; }\n");
+        css.append(".content { margin-top: 10px; }\n");
 
-        // Summary band
-        css.append(".summary { padding: 8px 0 2px 0; border-bottom: 1px solid ").append(t.neutral200).append("; margin-bottom: 2px; }\n");
-        css.append(".summary-label { font-size: 8.3pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: ").append(t.primary600).append("; margin-bottom: 2px; }\n");
-        css.append(".summary-text { font-size: 9.2pt; color: #333333; }\n");
-        css.append(".summary-text p { margin: 0 0 3px 0; }\n");
-
-        css.append(".content { margin-top: 4px; }\n");
-
-        // Section headings
-        css.append(".section-heading { font-size: 10.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.6px; color: ").append(t.primary700).append("; border-left: 3px solid ").append(t.primary500).append("; padding-left: 7px; margin-top: 11px; margin-bottom: 6px; }\n");
+        // Section headings — bold, uppercase, horizontal rule underneath (classic LaTeX-resume look)
+        css.append(".section-heading { font-size: 11.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 0.75pt solid #000000; padding-bottom: 2px; margin-top: 11px; margin-bottom: 6px; }\n");
         css.append(".content > .section-heading:first-child { margin-top: 0; }\n");
 
-        // Items
+        css.append(".summary-text { font-size: 9.8pt; color: #1a1a1a; margin-bottom: 4px; }\n");
+        css.append(".summary-text p { margin: 0 0 3px 0; }\n");
+
+        // Title-left / date-right row, reused for Experience, Projects, Education, Certifications, Publications
+        css.append(".row { display: table; width: 100%; }\n");
+        css.append(".row .left { display: table-cell; text-align: left; font-weight: bold; font-size: 10pt; color: #111111; }\n");
+        css.append(".row .right { display: table-cell; text-align: right; font-size: 9.5pt; color: #111111; white-space: nowrap; padding-left: 8px; }\n");
+        css.append(".subtitle-italic { font-style: italic; font-size: 9.5pt; color: #1a1a1a; margin-top: 1px; }\n");
+
         css.append(".item { margin-bottom: 7px; }\n");
-        css.append(".item-title { font-weight: bold; font-size: 9.8pt; color: #1a1a1a; }\n");
-        css.append(".item-subtitle { font-size: 8.5pt; color: #666666; margin-top: 1px; }\n");
-        css.append(".item-desc { font-size: 8.9pt; margin-top: 2px; color: #3a3a3a; }\n");
+        css.append(".item-title { font-weight: bold; font-size: 10pt; color: #111111; }\n");
+        css.append(".item-desc { font-size: 9.5pt; margin-top: 2px; color: #1a1a1a; }\n");
         css.append(".item-desc p { margin: 0 0 3px 0; }\n");
         css.append(".item-desc ul, .item-desc ol { margin: 2px 0 2px 15px; padding: 0; }\n");
         css.append(".item-desc li { margin-bottom: 2px; }\n");
-        css.append(".link { color: ").append(t.primary600).append("; font-size: 8.5pt; }\n");
+        css.append(".link { color: ").append(t.accent).append("; font-size: 9.3pt; }\n");
 
-        // Skill pills
-        css.append(".skill-row { margin-bottom: 5px; }\n");
-        css.append(".skill-cat { font-weight: bold; font-size: 8.6pt; color: ").append(t.primary700).append("; text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px; }\n");
-        css.append(".pill { display: inline; background-color: ").append(t.primary50).append("; color: ").append(t.primary700).append("; border: 1px solid ").append(t.primary200).append("; border-radius: 3px; padding: 2px 6px; margin: 0 4px 4px 0; font-size: 8.2pt; }\n");
+        // Skills — plain label:value lines, no pills (matches classic ATS-optimized format)
+        css.append(".skill-row { font-size: 9.7pt; margin-bottom: 2px; }\n");
+        css.append(".skill-cat { font-weight: bold; }\n");
 
-        css.append(".lang-row { font-size: 8.7pt; color: #3a3a3a; margin-bottom: 3px; display: inline-block; margin-right: 14px; }\n");
-        css.append(".lang-name { font-weight: bold; color: #1a1a1a; }\n");
+        css.append(".lang-line { font-size: 9.7pt; }\n");
         return css.toString();
     }
 
@@ -187,6 +181,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     );
 
     private static final Map<PlatformEnum, String> PLATFORM_ICON = new EnumMap<>(PlatformEnum.class);
+    private static final Map<PlatformEnum, String> PLATFORM_LABEL = new EnumMap<>(PlatformEnum.class);
     static {
         PLATFORM_ICON.put(PlatformEnum.LINKEDIN, "icon-linkedin");
         PLATFORM_ICON.put(PlatformEnum.GITHUB, "icon-github");
@@ -194,15 +189,19 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         PLATFORM_ICON.put(PlatformEnum.BITBUCKET, "icon-bitbucket");
         PLATFORM_ICON.put(PlatformEnum.PORTFOLIO, "icon-globe");
         PLATFORM_ICON.put(PlatformEnum.WEBSITE, "icon-globe");
+
+        PLATFORM_LABEL.put(PlatformEnum.LINKEDIN, "LinkedIn");
+        PLATFORM_LABEL.put(PlatformEnum.GITHUB, "GitHub");
+        PLATFORM_LABEL.put(PlatformEnum.GITLAB, "GitLab");
+        PLATFORM_LABEL.put(PlatformEnum.BITBUCKET, "Bitbucket");
+        PLATFORM_LABEL.put(PlatformEnum.PORTFOLIO, "Portfolio");
+        PLATFORM_LABEL.put(PlatformEnum.WEBSITE, "Website");
     }
 
     private String buildHeader(ProfileResponse profile, List<SocialLinkResponseDTO> socialLinks, Theme t) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"header\">\n");
         sb.append("<div class=\"name\">").append(esc(s(profile.getFullName()))).append("</div>\n");
-        if (notBlank(profile.getTitle())) {
-            sb.append("<div class=\"role-title\">").append(esc(profile.getTitle())).append("</div>\n");
-        }
 
         StringBuilder contact = new StringBuilder();
         if (notBlank(profile.getPhone())) {
@@ -211,6 +210,21 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         if (notBlank(profile.getEmail())) {
             contact.append("<span class=\"contact-item\"><i class=\"icon icon-envelope\"></i>").append(esc(profile.getEmail())).append("</span>");
         }
+        if (nonEmpty(socialLinks)) {
+            for (PlatformEnum platform : IMPORTANT_PLATFORMS) {
+                socialLinks.stream()
+                        .filter(l -> l.getPlatform() == platform && l.getStatus() == StatusEnum.ACTIVE && notBlank(l.getUrl()))
+                        .findFirst()
+                        .ifPresent(l -> {
+                            String icon = PLATFORM_ICON.getOrDefault(platform, "icon-globe");
+                            String label = PLATFORM_LABEL.getOrDefault(platform, platform.name());
+                            contact.append("<span class=\"social-item\"><i class=\"icon ").append(icon).append("\"></i>")
+                                    .append("<a href=\"").append(esc(l.getUrl())).append("\">")
+                                    .append(esc(label))
+                                    .append("</a></span>");
+                        });
+            }
+        }
         if (notBlank(profile.getLocation())) {
             contact.append("<span class=\"contact-item\"><i class=\"icon icon-location\"></i>").append(esc(profile.getLocation())).append("</span>");
         }
@@ -218,34 +232,30 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             sb.append("<div class=\"contact-line\">").append(contact).append("</div>\n");
         }
 
-        if (nonEmpty(socialLinks)) {
-            StringBuilder social = new StringBuilder();
-            for (PlatformEnum platform : IMPORTANT_PLATFORMS) {
-                socialLinks.stream()
-                        .filter(l -> l.getPlatform() == platform && l.getStatus() == StatusEnum.ACTIVE && notBlank(l.getUrl()))
-                        .findFirst()
-                        .ifPresent(l -> {
-                            String icon = PLATFORM_ICON.getOrDefault(platform, "icon-globe");
-                            social.append("<span class=\"social-item\"><i class=\"icon ").append(icon).append("\"></i>")
-                                    .append("<a href=\"").append(esc(l.getUrl())).append("\">")
-                                    .append(esc(displayUrl(l.getUrl())))
-                                    .append("</a></span>");
-                        });
-            }
-            if (social.length() > 0) {
-                sb.append("<div class=\"social-line\">").append(social).append("</div>\n");
-            }
-        }
-
         sb.append("</div>\n");
         return sb.toString();
     }
 
-    // Strips the protocol and trailing slash for a cleaner display, e.g. "github.com/SakshamSingla1".
-    private String displayUrl(String url) {
-        String v = url.replaceFirst("^https?://(www\\.)?", "");
-        if (v.endsWith("/")) v = v.substring(0, v.length() - 1);
-        return v;
+    private String buildSkills(ProfileMasterResponse data) {
+        List<SkillResponse> skills = data.getSkills();
+        if (!nonEmpty(skills)) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div class=\"section-heading\">Skills</div>\n");
+        Map<SkillCategoryEnum, List<SkillResponse>> grouped = skills.stream()
+                .collect(Collectors.groupingBy(
+                        sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
+                        LinkedHashMap::new, Collectors.toList()));
+        for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
+            String names = entry.getValue().stream()
+                    .map(sk -> s(sk.getLogoName()))
+                    .filter(n -> !n.isEmpty())
+                    .collect(Collectors.joining(", "));
+            if (!names.isEmpty()) {
+                sb.append("<div class=\"skill-row\"><span class=\"skill-cat\">").append(esc(entry.getKey().getDisplayName())).append(":</span> ")
+                        .append(esc(names)).append("</div>\n");
+            }
+        }
+        return sb.toString();
     }
 
     private String buildExperience(ProfileMasterResponse data) {
@@ -255,13 +265,43 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("<div class=\"section-heading\">Experience</div>\n");
         for (ExperienceResponse exp : experiences) {
             sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(exp.getJobTitle()))).append(" — ").append(esc(s(exp.getCompanyName()))).append("</div>\n");
-            String dates = s(exp.getStartDate()) + (notBlank(exp.getEndDate()) ? " – " + exp.getEndDate() : " – Present");
-            sb.append("<div class=\"item-subtitle\">").append(esc(dates));
-            if (notBlank(exp.getLocation())) sb.append(" | ").append(esc(exp.getLocation()));
-            sb.append("</div>\n");
+            String dates = formatMonthYear(exp.getStartDate()) + " – " + (notBlank(exp.getEndDate()) ? formatMonthYear(exp.getEndDate()) : "Present");
+            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(exp.getJobTitle()))).append("</span>")
+                    .append("<span class=\"right\">").append(esc(dates)).append("</span></div>\n");
+            String companyLine = s(exp.getCompanyName()) + (notBlank(exp.getLocation()) ? " — " + exp.getLocation() : "");
+            if (notBlank(companyLine)) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(companyLine)).append("</div>\n");
+            }
             if (notBlank(exp.getDescription())) {
                 sb.append("<div class=\"item-desc\">").append(richTextLimited(exp.getDescription(), EXPERIENCE_MAX_BULLETS)).append("</div>\n");
+            }
+            sb.append("</div>\n");
+        }
+        return sb.toString();
+    }
+
+    private String buildProjects(ProfileMasterResponse data) {
+        List<ProjectResponse> projects = data.getProjects();
+        if (!nonEmpty(projects)) return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("<div class=\"section-heading\">Projects</div>\n");
+        for (ProjectResponse proj : projects) {
+            sb.append("<div class=\"item\">\n");
+            sb.append("<div class=\"item-title\">").append(esc(s(proj.getProjectName()))).append("</div>\n");
+            if (proj.getSkills() != null && !proj.getSkills().isEmpty()) {
+                String techStack = proj.getSkills().stream()
+                        .map(sk -> s(sk.getLogoName()))
+                        .filter(n -> !n.isEmpty())
+                        .collect(Collectors.joining(", "));
+                if (!techStack.isEmpty()) {
+                    sb.append("<div class=\"subtitle-italic\">").append(esc(techStack)).append("</div>\n");
+                }
+            }
+            if (notBlank(proj.getProjectDescription())) {
+                sb.append("<div class=\"item-desc\">").append(richText(proj.getProjectDescription())).append("</div>\n");
+            }
+            if (notBlank(proj.getProjectLink())) {
+                sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(proj.getProjectLink())).append("</span></div>\n");
             }
             sb.append("</div>\n");
         }
@@ -276,68 +316,18 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("<div class=\"section-heading\">Education</div>\n");
         for (EducationResponse edu : educations) {
             sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(edu.getInstitution()))).append("</div>\n");
             String degreeField = (edu.getDegree() != null ? edu.getDegree().getDisplayName() : "") +
                     (notBlank(edu.getFieldOfStudy()) ? " in " + edu.getFieldOfStudy() : "");
             String yearRange = edu.getStartYear() != null
                     ? String.valueOf(edu.getStartYear()) + (edu.getEndYear() != null ? " – " + edu.getEndYear() : "")
                     : "";
-            String eduSub = degreeField + (!yearRange.isEmpty() ? " | " + yearRange : "");
-            if (notBlank(eduSub)) {
-                sb.append("<div class=\"item-subtitle\">").append(esc(eduSub)).append("</div>\n");
+            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(edu.getInstitution()))).append("</span>")
+                    .append("<span class=\"right\">").append(esc(yearRange)).append("</span></div>\n");
+            if (notBlank(degreeField)) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(degreeField)).append("</div>\n");
             }
-            sb.append("</div>\n");
-        }
-        return sb.toString();
-    }
-
-    private String buildSkills(ProfileMasterResponse data) {
-        List<SkillResponse> skills = data.getSkills();
-        if (!nonEmpty(skills)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Skills</div>\n");
-        Map<SkillCategoryEnum, List<SkillResponse>> grouped = skills.stream()
-                .collect(Collectors.groupingBy(
-                        sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
-                        LinkedHashMap::new, Collectors.toList()));
-        for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
-            List<String> names = entry.getValue().stream()
-                    .map(sk -> s(sk.getLogoName()))
-                    .filter(n -> !n.isEmpty())
-                    .collect(Collectors.toList());
-            if (!names.isEmpty()) {
-                sb.append("<div class=\"skill-row\"><span class=\"skill-cat\">").append(esc(entry.getKey().getDisplayName())).append(":</span> ");
-                for (String name : names) {
-                    sb.append("<span class=\"pill\">").append(esc(name)).append("</span>");
-                }
-                sb.append("</div>\n");
-            }
-        }
-        return sb.toString();
-    }
-
-    private String buildProjects(ProfileMasterResponse data) {
-        List<ProjectResponse> projects = data.getProjects();
-        if (!nonEmpty(projects)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Projects</div>\n");
-        for (ProjectResponse proj : projects) {
-            sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(proj.getProjectName()))).append("</div>\n");
-            if (notBlank(proj.getProjectDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richText(proj.getProjectDescription())).append("</div>\n");
-            }
-            if (proj.getSkills() != null && !proj.getSkills().isEmpty()) {
-                String techStack = proj.getSkills().stream()
-                        .map(sk -> s(sk.getLogoName()))
-                        .filter(n -> !n.isEmpty())
-                        .collect(Collectors.joining(", "));
-                if (!techStack.isEmpty()) {
-                    sb.append("<div class=\"item-subtitle\">Tech: ").append(esc(techStack)).append("</div>\n");
-                }
-            }
-            if (notBlank(proj.getProjectLink())) {
-                sb.append("<div class=\"item-subtitle\">URL: <span class=\"link\">").append(esc(proj.getProjectLink())).append("</span></div>\n");
+            if (notBlank(edu.getGrade())) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(edu.getGrade())).append("</div>\n");
             }
             sb.append("</div>\n");
         }
@@ -351,14 +341,13 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("<div class=\"section-heading\">Certifications</div>\n");
         for (CertificationResponseDTO cert : certs) {
             sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(cert.getTitle()))).append("</div>\n");
-            String certSub = s(cert.getIssuer()) +
-                    (cert.getIssueDate() != null ? " | " + cert.getIssueDate() : "");
-            if (notBlank(certSub)) {
-                sb.append("<div class=\"item-subtitle\">").append(esc(certSub)).append("</div>\n");
+            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(cert.getTitle()))).append("</span>")
+                    .append("<span class=\"right\">").append(esc(formatMonthYear(cert.getIssueDate()))).append("</span></div>\n");
+            if (notBlank(cert.getIssuer())) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(cert.getIssuer())).append("</div>\n");
             }
             if (notBlank(cert.getCredentialUrl())) {
-                sb.append("<div class=\"item-subtitle\"><span class=\"link\">").append(esc(cert.getCredentialUrl())).append("</span></div>\n");
+                sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(cert.getCredentialUrl())).append("</span></div>\n");
             }
             sb.append("</div>\n");
         }
@@ -373,11 +362,10 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         for (PublicationResponseDTO pub : publications) {
             sb.append("<div class=\"item\">\n");
             String typeLabel = notBlank(pub.getType()) ? " (" + pub.getType() + ")" : "";
-            sb.append("<div class=\"item-title\">").append(esc(s(pub.getTitle()) + typeLabel)).append("</div>\n");
-            String pubSub = s(pub.getPublisher()) +
-                    (pub.getPublishedDate() != null ? " | " + pub.getPublishedDate() : "");
-            if (notBlank(pubSub)) {
-                sb.append("<div class=\"item-subtitle\">").append(esc(pubSub)).append("</div>\n");
+            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(pub.getTitle()) + typeLabel)).append("</span>")
+                    .append("<span class=\"right\">").append(esc(formatMonthYear(pub.getPublishedDate()))).append("</span></div>\n");
+            if (notBlank(pub.getPublisher())) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(pub.getPublisher())).append("</div>\n");
             }
             if (notBlank(pub.getDescription())) {
                 sb.append("<div class=\"item-desc\">").append(richText(pub.getDescription())).append("</div>\n");
@@ -394,10 +382,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("<div class=\"section-heading\">Achievements</div>\n");
         for (AchievementResponseDTO ach : achievements) {
             sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(ach.getTitle()))).append("</div>\n");
-            if (ach.getAchievedAt() != null) {
-                sb.append("<div class=\"item-subtitle\">").append(esc(ach.getAchievedAt().toString())).append("</div>\n");
-            }
+            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(ach.getTitle()))).append("</span>")
+                    .append("<span class=\"right\">").append(esc(formatMonthYear(ach.getAchievedAt()))).append("</span></div>\n");
             if (notBlank(ach.getDescription())) {
                 sb.append("<div class=\"item-desc\">").append(richText(ach.getDescription())).append("</div>\n");
             }
@@ -409,17 +395,10 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private String buildLanguages(ProfileMasterResponse data) {
         List<ProfileLanguageResponse> languages = data.getLanguages();
         if (!nonEmpty(languages)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Languages</div>\n<div class=\"item\">\n");
-        for (ProfileLanguageResponse lang : languages) {
-            sb.append("<span class=\"lang-row\"><span class=\"lang-name\">").append(esc(s(lang.getLanguageName()))).append("</span>");
-            if (lang.getProficiency() != null) {
-                sb.append(" — ").append(esc(lang.getProficiency().getDisplayName()));
-            }
-            sb.append("</span>");
-        }
-        sb.append("\n</div>\n");
-        return sb.toString();
+        String line = languages.stream()
+                .map(l -> s(l.getLanguageName()) + (l.getProficiency() != null ? " (" + l.getProficiency().getDisplayName() + ")" : ""))
+                .collect(Collectors.joining(", "));
+        return "<div class=\"section-heading\">Languages</div>\n<div class=\"lang-line\">" + esc(line) + "</div>\n";
     }
 
     private String buildServices(ProfileMasterResponse data) {
@@ -430,11 +409,11 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         for (ServiceResponse svc : services) {
             sb.append("<div class=\"item\">\n");
             sb.append("<div class=\"item-title\">").append(esc(s(svc.getTitle()))).append("</div>\n");
+            if (notBlank(svc.getPriceRange())) {
+                sb.append("<div class=\"subtitle-italic\">").append(esc(svc.getPriceRange())).append("</div>\n");
+            }
             if (notBlank(svc.getDescription())) {
                 sb.append("<div class=\"item-desc\">").append(richText(svc.getDescription())).append("</div>\n");
-            }
-            if (notBlank(svc.getPriceRange())) {
-                sb.append("<div class=\"item-subtitle\">Price: ").append(esc(svc.getPriceRange())).append("</div>\n");
             }
             sb.append("</div>\n");
         }
@@ -444,32 +423,15 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     // ── Theme ────────────────────────────────────────────────────────────────
 
     /**
-     * Resolves accent colors from the profile's own selected portfolio color theme
-     * (falls back to a neutral navy palette if no theme is mapped) so the exported
-     * resume visually matches the profile's live portfolio site.
+     * Resolves a single accent color (used only for header icons/links) from the profile's own
+     * selected portfolio color theme, falling back to a neutral blue if none is mapped. Everything
+     * else in this classic ATS-style layout stays plain black for maximum parser compatibility.
      */
     private static final class Theme {
-        final String headerBg;
-        final String headerAccentText;
-        final String primary500;
-        final String primary600;
-        final String primary700;
-        final String primary200;
-        final String primary50;
-        final String neutral50;
-        final String neutral200;
+        final String accent;
 
-        private Theme(String headerBg, String headerAccentText, String primary500, String primary600,
-                      String primary700, String primary200, String primary50, String neutral50, String neutral200) {
-            this.headerBg = headerBg;
-            this.headerAccentText = headerAccentText;
-            this.primary500 = primary500;
-            this.primary600 = primary600;
-            this.primary700 = primary700;
-            this.primary200 = primary200;
-            this.primary50 = primary50;
-            this.neutral50 = neutral50;
-            this.neutral200 = neutral200;
+        private Theme(String accent) {
+            this.accent = accent;
         }
 
         static Theme from(ColorThemeResponseDTO colorTheme) {
@@ -484,16 +446,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                     }
                 }
             }
-            String secondary900 = shades.getOrDefault("secondary900", "#1e3a5f");
-            String primary500 = shades.getOrDefault("primary500", "#2f6fb0");
-            String primary600 = shades.getOrDefault("primary600", "#265a8d");
-            String primary700 = shades.getOrDefault("primary700", "#1e3a5f");
-            String primary200 = shades.getOrDefault("primary200", "#bcd6ee");
-            String primary50 = shades.getOrDefault("primary50", "#eaf3fb");
-            String neutral50 = shades.getOrDefault("neutral50", "#f7f8fa");
-            String neutral200 = shades.getOrDefault("neutral200", "#e2e2e2");
-            String accent500 = shades.getOrDefault("accent500", primary500);
-            return new Theme(secondary900, accent500, primary500, primary600, primary700, primary200, primary50, neutral50, neutral200);
+            String accent = shades.getOrDefault("primary600", "#265a8d");
+            return new Theme(accent);
         }
     }
 
@@ -506,6 +460,21 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 .replace("<", "&lt;")
                 .replace(">", "&gt;")
                 .replace("\"", "&quot;");
+    }
+
+    // Formats an ISO "yyyy-MM-dd" string (as produced by Experience's LocalDate.toString()) as
+    // "MMM yyyy" (e.g. "Apr 2025"). Falls back to the raw string if it can't be parsed.
+    private String formatMonthYear(String isoDate) {
+        if (isoDate == null || isoDate.isBlank()) return "";
+        try {
+            return LocalDate.parse(isoDate).format(MONTH_YEAR);
+        } catch (DateTimeParseException e) {
+            return isoDate;
+        }
+    }
+
+    private String formatMonthYear(LocalDate date) {
+        return date != null ? date.format(MONTH_YEAR) : "";
     }
 
     /**
