@@ -144,7 +144,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             for (EducationResponse edu : educations) {
                 sb.append("<div class=\"item\">\n");
                 sb.append("<div class=\"item-title\">").append(esc(s(edu.getInstitution()))).append("</div>\n");
-                String degreeField = (edu.getDegree() != null ? edu.getDegree().name() : "") +
+                String degreeField = (edu.getDegree() != null ? edu.getDegree().getDisplayName() : "") +
                         (notBlank(edu.getFieldOfStudy()) ? " in " + edu.getFieldOfStudy() : "");
                 String yearRange = edu.getStartYear() != null
                         ? String.valueOf(edu.getStartYear()) + (edu.getEndYear() != null ? " – " + edu.getEndYear() : "")
@@ -169,7 +169,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                             sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
                             LinkedHashMap::new, Collectors.toList()));
             for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
-                String catLabel = entry.getKey().name().replace('_', ' ');
+                String catLabel = entry.getKey().getDisplayName();
                 String skillNames = entry.getValue().stream()
                         .map(sk -> s(sk.getLogoName()))
                         .filter(n -> !n.isEmpty())
@@ -271,7 +271,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             sb.append("<div class=\"section-heading\">Languages</div>\n");
             sb.append("<div class=\"item\">\n");
             String langList = languages.stream()
-                    .map(l -> s(l.getLanguageName()) + (l.getProficiency() != null ? " — " + l.getProficiency().name() : ""))
+                    .map(l -> s(l.getLanguageName()) + (l.getProficiency() != null ? " — " + l.getProficiency().getDisplayName() : ""))
                     .collect(Collectors.joining(", "));
             sb.append("<span class=\"skill-list\">").append(esc(langList)).append("</span>\n");
             sb.append("</div>\n");
