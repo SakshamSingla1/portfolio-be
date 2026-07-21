@@ -16,9 +16,12 @@ import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.dtos.Publication.PublicationResponseDTO;
 import com.portfolio.dtos.Services.ServiceResponse;
 import com.portfolio.dtos.Skill.SkillResponse;
+import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.SkillCategoryEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.ProfileMasterService;
@@ -31,6 +34,8 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +62,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             String html = buildHtml(data);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-solid-900.ttf"), "FASolid");
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-brands-400.ttf"), "FABrands");
             builder.withHtmlContent(html, null);
             builder.toStream(baos);
             builder.run();
@@ -83,7 +90,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         sb.append("</head>\n");
         sb.append("<body>\n");
 
-        sb.append(buildHeader(profile, theme));
+        sb.append(buildHeader(profile, data.getSocialLinks(), theme));
 
         if (notBlank(profile.getAboutMe())) {
             sb.append("<div class=\"summary\">\n");
@@ -118,8 +125,27 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".header { background-color: ").append(t.headerBg).append("; color: #ffffff; padding: 14px 14mm; margin: 0 -14mm 0 -14mm; }\n");
         css.append(".name { font-size: 21pt; font-weight: bold; color: #ffffff; letter-spacing: 0.3px; }\n");
         css.append(".role-title { font-size: 11pt; color: ").append(t.headerAccentText).append("; margin-top: 2px; }\n");
-        css.append(".contact-line { font-size: 8.8pt; color: #ffffff; margin-top: 6px; }\n");
-        css.append(".contact-line span.sep { color: ").append(t.headerAccentText).append("; padding: 0 6px; }\n");
+        css.append(".contact-line { font-size: 8.8pt; color: #ffffff; margin-top: 8px; }\n");
+        css.append(".contact-item { display: inline-block; margin-right: 16px; }\n");
+        css.append(".contact-item .icon { margin-right: 5px; color: ").append(t.headerAccentText).append("; }\n");
+
+        // Icon fonts (Font Awesome Free, bundled — see resources/fonts/FONT-AWESOME-LICENSE.txt).
+        // Fonts are registered programmatically via builder.useFont(...) in exportPdf(), not @font-face,
+        // since there's no base URL configured for resolving a relative font src here.
+        css.append(".icon-phone::before { font-family: 'FASolid'; content: '\\f095'; }\n");
+        css.append(".icon-envelope::before { font-family: 'FASolid'; content: '\\f0e0'; }\n");
+        css.append(".icon-location::before { font-family: 'FASolid'; content: '\\f3c5'; }\n");
+        css.append(".icon-globe::before { font-family: 'FASolid'; content: '\\f0ac'; }\n");
+        css.append(".icon-github::before { font-family: 'FABrands'; content: '\\f09b'; }\n");
+        css.append(".icon-linkedin::before { font-family: 'FABrands'; content: '\\f0e1'; }\n");
+        css.append(".icon-gitlab::before { font-family: 'FABrands'; content: '\\f296'; }\n");
+        css.append(".icon-bitbucket::before { font-family: 'FABrands'; content: '\\f171'; }\n");
+
+        // Social links row
+        css.append(".social-line { font-size: 8.6pt; margin-top: 5px; }\n");
+        css.append(".social-item { display: inline-block; margin-right: 16px; }\n");
+        css.append(".social-item .icon { margin-right: 5px; color: ").append(t.headerAccentText).append("; }\n");
+        css.append(".social-item a { color: #ffffff; text-decoration: none; }\n");
 
         // Summary band
         css.append(".summary { padding: 8px 0 2px 0; border-bottom: 1px solid ").append(t.neutral200).append("; margin-bottom: 2px; }\n");
@@ -153,28 +179,73 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         return css.toString();
     }
 
-    private String buildHeader(ProfileResponse profile, Theme t) {
+    // Platforms worth showing on a resume header — everything else (LeetCode, Twitter, Instagram,
+    // YouTube, etc.) is left off intentionally, per "only the important ones".
+    private static final List<PlatformEnum> IMPORTANT_PLATFORMS = Arrays.asList(
+            PlatformEnum.LINKEDIN, PlatformEnum.GITHUB, PlatformEnum.PORTFOLIO, PlatformEnum.WEBSITE,
+            PlatformEnum.GITLAB, PlatformEnum.BITBUCKET
+    );
+
+    private static final Map<PlatformEnum, String> PLATFORM_ICON = new EnumMap<>(PlatformEnum.class);
+    static {
+        PLATFORM_ICON.put(PlatformEnum.LINKEDIN, "icon-linkedin");
+        PLATFORM_ICON.put(PlatformEnum.GITHUB, "icon-github");
+        PLATFORM_ICON.put(PlatformEnum.GITLAB, "icon-gitlab");
+        PLATFORM_ICON.put(PlatformEnum.BITBUCKET, "icon-bitbucket");
+        PLATFORM_ICON.put(PlatformEnum.PORTFOLIO, "icon-globe");
+        PLATFORM_ICON.put(PlatformEnum.WEBSITE, "icon-globe");
+    }
+
+    private String buildHeader(ProfileResponse profile, List<SocialLinkResponseDTO> socialLinks, Theme t) {
         StringBuilder sb = new StringBuilder();
         sb.append("<div class=\"header\">\n");
         sb.append("<div class=\"name\">").append(esc(s(profile.getFullName()))).append("</div>\n");
         if (notBlank(profile.getTitle())) {
             sb.append("<div class=\"role-title\">").append(esc(profile.getTitle())).append("</div>\n");
         }
+
         StringBuilder contact = new StringBuilder();
-        if (notBlank(profile.getLocation())) contact.append(esc(profile.getLocation()));
-        if (notBlank(profile.getEmail())) {
-            if (contact.length() > 0) contact.append("<span class=\"sep\">|</span>");
-            contact.append(esc(profile.getEmail()));
-        }
         if (notBlank(profile.getPhone())) {
-            if (contact.length() > 0) contact.append("<span class=\"sep\">|</span>");
-            contact.append(esc(profile.getPhone()));
+            contact.append("<span class=\"contact-item\"><i class=\"icon icon-phone\"></i>").append(esc(profile.getPhone())).append("</span>");
+        }
+        if (notBlank(profile.getEmail())) {
+            contact.append("<span class=\"contact-item\"><i class=\"icon icon-envelope\"></i>").append(esc(profile.getEmail())).append("</span>");
+        }
+        if (notBlank(profile.getLocation())) {
+            contact.append("<span class=\"contact-item\"><i class=\"icon icon-location\"></i>").append(esc(profile.getLocation())).append("</span>");
         }
         if (contact.length() > 0) {
             sb.append("<div class=\"contact-line\">").append(contact).append("</div>\n");
         }
+
+        if (nonEmpty(socialLinks)) {
+            StringBuilder social = new StringBuilder();
+            for (PlatformEnum platform : IMPORTANT_PLATFORMS) {
+                socialLinks.stream()
+                        .filter(l -> l.getPlatform() == platform && l.getStatus() == StatusEnum.ACTIVE && notBlank(l.getUrl()))
+                        .findFirst()
+                        .ifPresent(l -> {
+                            String icon = PLATFORM_ICON.getOrDefault(platform, "icon-globe");
+                            social.append("<span class=\"social-item\"><i class=\"icon ").append(icon).append("\"></i>")
+                                    .append("<a href=\"").append(esc(l.getUrl())).append("\">")
+                                    .append(esc(displayUrl(l.getUrl())))
+                                    .append("</a></span>");
+                        });
+            }
+            if (social.length() > 0) {
+                sb.append("<div class=\"social-line\">").append(social).append("</div>\n");
+            }
+        }
+
         sb.append("</div>\n");
         return sb.toString();
+    }
+
+    // Strips the protocol and trailing slash for a cleaner display, e.g. "github.com/SakshamSingla1".
+    private String displayUrl(String url) {
+        String v = url.replaceFirst("^https?://(www\\.)?", "");
+        if (v.endsWith("/")) v = v.substring(0, v.length() - 1);
+        return v;
     }
 
     private String buildExperience(ProfileMasterResponse data) {
