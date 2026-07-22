@@ -17,7 +17,7 @@ import java.util.Optional;
 @Repository
 public interface SocialLinkRepository extends JpaRepository<SocialLinks, Long> {
 
-    Optional<SocialLinks> findByPlatformAndUrl(PlatformEnum platform, String url);
+    List<SocialLinks> findByPlatform(PlatformEnum platform);
 
     Optional<SocialLinks> findByProfileIdAndPlatformAndStatus(Long profileId, PlatformEnum platform, StatusEnum status);
 

@@ -58,7 +58,9 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     public ProfileMasterResponse getProfileMasterData(String host)
             throws GenericException {
         String domain = normalizeDomain(host);
-        SocialLinks socialLink = socialLinksDao.findByPlatformAndUrl(PlatformEnum.PORTFOLIO, domain)
+        SocialLinks socialLink = socialLinksDao.findByPlatform(PlatformEnum.PORTFOLIO).stream()
+                .filter(link -> domain.equals(stripToHost(link.getUrl())))
+                .findFirst()
                 .orElseThrow(
                         () -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND, "Social Link not found"));
         return buildResponse(socialLink.getProfileId(), true);
@@ -207,9 +209,17 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
         if (host == null || host.isBlank()) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Invalid domain");
         }
-        return host
-                .toLowerCase()
-                .replace("www.", "")
-                .trim();
+        return stripToHost(host);
+    }
+
+    private String stripToHost(String value) {
+        if (value == null) return "";
+        String result = value.trim().toLowerCase().replaceFirst("^https?://", "");
+        int slashIndex = result.indexOf('/');
+        if (slashIndex >= 0) result = result.substring(0, slashIndex);
+        int colonIndex = result.indexOf(':');
+        if (colonIndex >= 0) result = result.substring(0, colonIndex);
+        if (result.startsWith("www.")) result = result.substring(4);
+        return result;
     }
 }

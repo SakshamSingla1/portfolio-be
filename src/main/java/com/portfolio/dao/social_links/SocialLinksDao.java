@@ -35,8 +35,8 @@ public class SocialLinksDao {
         socialLinkRepository.deleteById(id);
     }
 
-    public Optional<SocialLinks> findByPlatformAndUrl(PlatformEnum platform, String url) {
-        return socialLinkRepository.findByPlatformAndUrl(platform, url);
+    public List<SocialLinks> findByPlatform(PlatformEnum platform) {
+        return socialLinkRepository.findByPlatform(platform);
     }
 
     public Optional<SocialLinks> findByProfileIdAndPlatformAndStatus(Long profileId, PlatformEnum platform, StatusEnum status) {
