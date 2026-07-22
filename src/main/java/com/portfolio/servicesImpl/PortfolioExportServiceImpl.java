@@ -50,7 +50,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PortfolioExportServiceImpl implements PortfolioExportService {
 
-    private static final int EXPERIENCE_MAX_BULLETS = 8;
+    private static final int EXPERIENCE_MAX_BULLETS = 6;
+    private static final int PROJECT_DESCRIPTION_MAX_CHARS = 280;
     private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
 
     private final ProfileMasterService profileMasterService;
@@ -301,7 +302,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 }
             }
             if (notBlank(proj.getProjectDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richText(proj.getProjectDescription())).append("</div>\n");
+                sb.append("<div class=\"item-desc\">").append(plainTextLimited(proj.getProjectDescription(), PROJECT_DESCRIPTION_MAX_CHARS)).append("</div>\n");
             }
             if (notBlank(proj.getProjectLink())) {
                 sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(proj.getProjectLink())).append("</span></div>\n");
@@ -552,6 +553,16 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         }
         doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml).prettyPrint(false);
         return doc.body().html();
+    }
+
+    private String plainTextLimited(String value, int maxChars) {
+        if (value == null || value.isBlank()) return "";
+        String text = Jsoup.parse(value).text();
+        if (text.length() <= maxChars) return esc(text);
+        String truncated = text.substring(0, maxChars);
+        int lastSpace = truncated.lastIndexOf(' ');
+        if (lastSpace > 0) truncated = truncated.substring(0, lastSpace);
+        return esc(truncated.trim()) + "…";
     }
 
     private String s(String value) {
