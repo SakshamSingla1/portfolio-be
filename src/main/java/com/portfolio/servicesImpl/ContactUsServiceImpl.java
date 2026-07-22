@@ -8,10 +8,12 @@ import com.portfolio.entities.ContactUs;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.NotificationTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ContactUsService;
 import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
+import com.portfolio.services.NotificationService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ public class ContactUsServiceImpl implements ContactUsService{
     private final ProfileDao profileDao;
     private final NTService ntService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
     private final Helper helper;
 
     @Override
@@ -62,6 +65,13 @@ public class ContactUsServiceImpl implements ContactUsService{
                 // notification failure is non-fatal; contact-us record is already saved
             }
         }
+        notificationService.create(
+                request.getProfileId(),
+                NotificationTypeEnum.CONTACT_MESSAGE,
+                "New contact message",
+                safe(request.getName()) + " sent you a message",
+                "/messages"
+        );
         return toDto(saved);
     }
 

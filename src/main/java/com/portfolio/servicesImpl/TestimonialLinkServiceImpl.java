@@ -11,9 +11,11 @@ import com.portfolio.entities.Profile;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.entities.TestimonialRequestLink;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.NotificationTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.EmailService;
+import com.portfolio.services.NotificationService;
 import com.portfolio.services.TestimonialLinkService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
     private final ProfileDao profileDao;
     private final TestimonialDao testimonialDao;
     private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
     private String publicBaseUrl;
@@ -133,6 +136,14 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
 
         link.setUsedAt(LocalDateTime.now());
         testimonialRequestLinkDao.save(link);
+
+        notificationService.create(
+                link.getProfileId(),
+                NotificationTypeEnum.TESTIMONIAL_SUBMITTED,
+                "New testimonial submitted",
+                req.getName() + " submitted a testimonial",
+                "/testimonials"
+        );
 
         try {
             String subject = "New testimonial submitted";
