@@ -113,11 +113,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration publicApi = new CorsConfiguration();
-        publicApi.setAllowedOriginPatterns(List.of(
-                "https://*.portfoliosbuilder.com",
-                "http://localhost:5173",
-                "http://localhost:5174"
-        ));
+        publicApi.setAllowedOriginPatterns(List.of("*"));
         publicApi.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
