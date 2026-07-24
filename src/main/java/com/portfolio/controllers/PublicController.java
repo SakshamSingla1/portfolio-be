@@ -14,9 +14,14 @@ import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
+import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.dtos.TestimonialLink.TestimonialLinkPublicResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialSubmitRequest;
+import com.portfolio.entities.Profile;
+import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ResourceTypeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -27,6 +32,7 @@ import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
 import com.portfolio.services.ContactUsService;
+import com.portfolio.services.SocialLinkService;
 import com.portfolio.services.TestimonialLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,6 +65,7 @@ public class PublicController {
     private final ProfileDao profileDao;
     private final TestimonialLinkService testimonialLinkService;
     private final PortfolioExportService portfolioExportService;
+    private final SocialLinkService socialLinkService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
     private String portfolioPublicBaseUrl;
@@ -141,10 +148,10 @@ public class PublicController {
     @Operation(summary = "Download QR code", description = "Generates and returns a downloadable PNG QR code for the portfolio URL of the given username.")
     @GetMapping("/qr/{username}")
     public ResponseEntity<byte[]> getQrCode(@PathVariable String username) throws Exception {
-        profileDao.findByUserName(username)
-                .orElseThrow(() -> new GenericException(null, "Profile not found"));
+        Profile profile = profileDao.findByUserName(username)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
-        String portfolioUrl = portfolioPublicBaseUrl + "/" + username;
+        String portfolioUrl = resolvePortfolioUrl(profile.getId(), username);
         QRCodeWriter writer = new QRCodeWriter();
         Map<EncodeHintType, Object> hints = Map.of(EncodeHintType.MARGIN, 1);
         BitMatrix matrix = writer.encode(portfolioUrl, BarcodeFormat.QR_CODE, 400, 400, hints);
@@ -157,6 +164,15 @@ public class PublicController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"portfolio-qr-" + username + ".png\"")
                 .body(out.toByteArray());
+    }
+
+    private String resolvePortfolioUrl(Long profileId, String username) {
+        return socialLinkService.getByProfile(profileId).stream()
+                .filter(l -> PlatformEnum.PORTFOLIO.equals(l.getPlatform()) && StatusEnum.ACTIVE.equals(l.getStatus()))
+                .map(SocialLinkResponseDTO::getUrl)
+                .filter(u -> u != null && !u.isBlank())
+                .findFirst()
+                .orElse(portfolioPublicBaseUrl + "/" + username);
     }
 
     @Operation(summary = "Explore discoverable portfolios", description = "Returns all publicly discoverable profiles, optionally filtered by a search term or skill.")

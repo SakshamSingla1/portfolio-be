@@ -25,7 +25,8 @@ public class NotFoundFilter extends OncePerRequestFilter {
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/actuator") ||
-                path.startsWith("/api/internal")) {
+                path.startsWith("/api/internal") ||
+                path.startsWith("/embed")) {
             filterChain.doFilter(request, response);
             return;
         }
