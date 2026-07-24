@@ -1,5 +1,6 @@
 package com.portfolio.servicesImpl;
 
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Achievements.AchievementResponseDTO;
@@ -54,6 +55,14 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private static final int PROJECT_DESCRIPTION_MAX_CHARS = 280;
     private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
 
+    // Registered under this family name (see exportPdf) instead of relying on the CSS 'Times New
+    // Roman'/serif name resolving to whatever font a given host has installed. Without an explicitly
+    // embedded TTF, openhtmltopdf falls back to its built-in base-14 AFM "Times-Roman" substitute,
+    // which has broken kerning for several glyph pairs (e.g. "Fr", "Ja") that shows up as a stray
+    // gap mid-word. Liberation Serif is metrically compatible with Times New Roman, so line breaks
+    // and page-fit are unaffected.
+    private static final String BODY_FONT_FAMILY = "PortfolioSerif";
+
     private final ProfileMasterService profileMasterService;
     private final ProfileDao profileDao;
 
@@ -70,6 +79,10 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
             PdfRendererBuilder builder = new PdfRendererBuilder();
             builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-solid-900.ttf"), "FASolid");
             builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-brands-400.ttf"), "FABrands");
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Regular.ttf"), BODY_FONT_FAMILY, 400, FontStyle.NORMAL, true);
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Bold.ttf"), BODY_FONT_FAMILY, 700, FontStyle.NORMAL, true);
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Italic.ttf"), BODY_FONT_FAMILY, 400, FontStyle.ITALIC, true);
+            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-BoldItalic.ttf"), BODY_FONT_FAMILY, 700, FontStyle.ITALIC, true);
             builder.withHtmlContent(html, null);
             builder.toStream(baos);
             builder.run();
@@ -122,7 +135,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         StringBuilder css = new StringBuilder();
         css.append("@page { size: A4; margin: 14mm 14mm 12mm 14mm; }\n");
         css.append("* { box-sizing: border-box; }\n");
-        css.append("body { font-family: 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.35; color: #111111; background: #ffffff; margin: 0; padding: 0; }\n");
+        css.append("body { font-family: '").append(BODY_FONT_FAMILY).append("', 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.35; color: #111111; background: #ffffff; margin: 0; padding: 0; }\n");
 
         // Header — centered, plain white, classic ATS-friendly style
         css.append(".header { text-align: center; }\n");
