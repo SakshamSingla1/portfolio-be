@@ -30,10 +30,17 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
 
     @Override
     public ProfileThemeResponse getThemeByProfileId(Long profileId) throws GenericException {
-        ProfileThemeMapping mapping = profileThemeMappingDao.findByProfileId(profileId)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Theme mapping not found for profile: " + profileId));
+        // The mapping and profile lookups are independent of each other — fetching them
+        // concurrently instead of sequentially avoids paying two full cross-region round trips
+        // back-to-back (this call sits on the resume export's critical path).
+        java.util.concurrent.CompletableFuture<java.util.Optional<ProfileThemeMapping>> mappingF =
+                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileThemeMappingDao.findByProfileId(profileId));
+        java.util.concurrent.CompletableFuture<java.util.Optional<Profile>> profileF =
+                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileDao.findById(profileId));
 
-        Profile profile = profileDao.findById(profileId)
+        ProfileThemeMapping mapping = mappingF.join()
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Theme mapping not found for profile: " + profileId));
+        Profile profile = profileF.join()
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + profileId));
 
         ColorTheme theme = colorThemeDao.findById(mapping.getThemeId())

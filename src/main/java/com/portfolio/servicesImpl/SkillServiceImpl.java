@@ -91,10 +91,8 @@ public class SkillServiceImpl implements SkillService {
 
     @Override
     public List<SkillResponse> getByProfile(Long profileId){
-        return skillDao.findByProfileId(profileId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        List<Skill> skills = skillDao.findByProfileId(profileId);
+        return mapToResponseBatch(skills);
     }
 
     @Override
@@ -111,6 +109,25 @@ public class SkillServiceImpl implements SkillService {
         String logoUrl = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(skill.getLogoId(), ResourceTypeEnum.LOGO)
                 .map(FileAsset::getPath)
                 .orElse(null);
+        return buildResponse(skill, logoUrl);
+    }
+
+    // Batches the logo lookup into a single query instead of one per skill — getByProfile(profileId)
+    // was doing N sequential round trips (one per skill) to resolve each logo's file asset, which
+    // dominated the resume PDF export's latency for profiles with more than a couple of skills.
+    private List<SkillResponse> mapToResponseBatch(List<Skill> skills) {
+        if (skills.isEmpty()) return List.of();
+        List<Long> logoIds = skills.stream().map(Skill::getLogoId).distinct().toList();
+        java.util.Map<Long, String> logoUrlById = fileAssetDao
+                .findByResourceIdInAndResourceTypeAndIsPrimaryTrue(logoIds, ResourceTypeEnum.LOGO)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(FileAsset::getResourceId, FileAsset::getPath, (a, b) -> a));
+        return skills.stream()
+                .map(skill -> buildResponse(skill, logoUrlById.get(skill.getLogoId())))
+                .toList();
+    }
+
+    private SkillResponse buildResponse(Skill skill, String logoUrl) {
         return SkillResponse.builder()
                 .id(skill.getId())
                 .logoId(skill.getLogoId())

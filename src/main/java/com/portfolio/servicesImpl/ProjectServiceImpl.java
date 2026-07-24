@@ -153,10 +153,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public List<ProjectResponse> getByProfile(Long profileId) {
-        return projectDao.findByProfileId(profileId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        return mapToResponseBatch(projectDao.findByProfileId(profileId));
     }
 
     private void saveProjectImages(Long projectId, Long profileId, List<ProjectImageRequest> images) {
@@ -239,6 +236,48 @@ public class ProjectServiceImpl implements ProjectService {
             return new SkillDropdown(skill.getId(), skill.getLogoName(), logoUrl);
         }).toList();
 
+        return buildResponse(project, images, skillDropdowns);
+    }
+
+    // Batches images/skills/logos across all of a profile's projects into a handful of queries
+    // instead of the per-project (and per-skill-within-project) round trips mapToResponse does —
+    // that nested N+1 dominated the resume PDF export's latency for profiles with several projects.
+    private List<ProjectResponse> mapToResponseBatch(List<Project> projects) {
+        if (projects.isEmpty()) return List.of();
+
+        List<Long> projectIds = projects.stream().map(Project::getId).toList();
+        java.util.Map<Long, List<FileAsset>> imagesByProjectId = fileAssetDao
+                .findByResourceIdInAndResourceType(projectIds, ResourceTypeEnum.PROJECT)
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(FileAsset::getResourceId));
+        imagesByProjectId.values().forEach(list -> list.sort(java.util.Comparator.comparingInt(FileAsset::getSortOrder)));
+
+        List<Long> skillIds = projects.stream()
+                .flatMap(p -> p.getSkillIds() == null ? java.util.stream.Stream.<String>empty() : p.getSkillIds().stream())
+                .map(Long::valueOf)
+                .distinct()
+                .toList();
+        java.util.Map<Long, Skill> skillById = skillIds.isEmpty() ? java.util.Map.of()
+                : skillDao.findAllById(skillIds).stream().collect(java.util.stream.Collectors.toMap(Skill::getId, s -> s));
+
+        List<Long> logoIds = skillById.values().stream().map(Skill::getLogoId).distinct().toList();
+        java.util.Map<Long, String> logoUrlById = logoIds.isEmpty() ? java.util.Map.of()
+                : fileAssetDao.findByResourceIdInAndResourceTypeAndIsPrimaryTrue(logoIds, ResourceTypeEnum.LOGO).stream()
+                        .collect(java.util.stream.Collectors.toMap(FileAsset::getResourceId, FileAsset::getPath, (a, b) -> a));
+
+        return projects.stream().map(project -> {
+            List<FileAsset> images = imagesByProjectId.getOrDefault(project.getId(), List.of());
+            List<SkillDropdown> skillDropdowns = (project.getSkillIds() == null ? List.<String>of() : project.getSkillIds()).stream()
+                    .map(Long::valueOf)
+                    .map(skillById::get)
+                    .filter(java.util.Objects::nonNull)
+                    .map(skill -> new SkillDropdown(skill.getId(), skill.getLogoName(), logoUrlById.get(skill.getLogoId())))
+                    .toList();
+            return buildResponse(project, images, skillDropdowns);
+        }).toList();
+    }
+
+    private ProjectResponse buildResponse(Project project, List<FileAsset> images, List<SkillDropdown> skillDropdowns) {
         return ProjectResponse.builder()
                 .id(project.getId())
                 .projectName(project.getProjectName())
