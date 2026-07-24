@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private static final int EXPERIENCE_MAX_BULLETS = 6;
-    private static final int PROJECT_DESCRIPTION_MAX_CHARS = 280;
+    private static final int PROJECT_MAX_BULLETS = 3;
     private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
 
     // Registered under this family name (see exportPdf) instead of relying on the CSS 'Times New
@@ -133,9 +133,9 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private String buildCss(Theme t) {
         StringBuilder css = new StringBuilder();
-        css.append("@page { size: A4; margin: 14mm 14mm 12mm 14mm; }\n");
+        css.append("@page { size: A4; margin: 12mm 14mm 10mm 14mm; }\n");
         css.append("* { box-sizing: border-box; }\n");
-        css.append("body { font-family: '").append(BODY_FONT_FAMILY).append("', 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.35; color: #111111; background: #ffffff; margin: 0; padding: 0; }\n");
+        css.append("body { font-family: '").append(BODY_FONT_FAMILY).append("', 'Times New Roman', Times, serif; font-size: 10pt; line-height: 1.3; color: #111111; background: #ffffff; margin: 0; padding: 0; }\n");
 
         // Header — centered, plain white, classic ATS-friendly style
         css.append(".header { text-align: center; }\n");
@@ -160,7 +160,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".content { margin-top: 10px; }\n");
 
         // Section headings — bold, uppercase, horizontal rule underneath (classic LaTeX-resume look)
-        css.append(".section-heading { font-size: 11.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 0.75pt solid #000000; padding-bottom: 2px; margin-top: 11px; margin-bottom: 6px; }\n");
+        css.append(".section-heading { font-size: 11.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 0.75pt solid #000000; padding-bottom: 2px; margin-top: 9px; margin-bottom: 5px; }\n");
         css.append(".content > .section-heading:first-child { margin-top: 0; }\n");
 
         css.append(".summary-text { font-size: 9.8pt; color: #1a1a1a; margin-bottom: 4px; }\n");
@@ -172,7 +172,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".row .right { display: table-cell; text-align: right; font-size: 9.5pt; color: #111111; white-space: nowrap; padding-left: 8px; }\n");
         css.append(".subtitle-italic { font-style: italic; font-size: 9.5pt; color: #1a1a1a; margin-top: 1px; }\n");
 
-        css.append(".item { margin-bottom: 7px; }\n");
+        css.append(".item { margin-bottom: 5px; }\n");
         css.append(".item-title { font-weight: bold; font-size: 10pt; color: #111111; }\n");
         css.append(".item-desc { font-size: 9.5pt; margin-top: 2px; color: #1a1a1a; }\n");
         css.append(".item-desc p { margin: 0 0 3px 0; }\n");
@@ -315,7 +315,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 }
             }
             if (notBlank(proj.getProjectDescription())) {
-                sb.append("<div class=\"item-desc\">").append(plainTextLimited(proj.getProjectDescription(), PROJECT_DESCRIPTION_MAX_CHARS)).append("</div>\n");
+                sb.append("<div class=\"item-desc\">").append(richTextLimited(proj.getProjectDescription(), PROJECT_MAX_BULLETS)).append("</div>\n");
             }
             if (notBlank(proj.getProjectLink())) {
                 sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(proj.getProjectLink())).append("</span></div>\n");
@@ -566,16 +566,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         }
         doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml).prettyPrint(false);
         return doc.body().html();
-    }
-
-    private String plainTextLimited(String value, int maxChars) {
-        if (value == null || value.isBlank()) return "";
-        String text = Jsoup.parse(value).text();
-        if (text.length() <= maxChars) return esc(text);
-        String truncated = text.substring(0, maxChars);
-        int lastSpace = truncated.lastIndexOf(' ');
-        if (lastSpace > 0) truncated = truncated.substring(0, lastSpace);
-        return esc(truncated.trim()) + "…";
     }
 
     private String s(String value) {
