@@ -8,6 +8,7 @@ import com.portfolio.entities.NotificationTemplate;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.Map;
 
@@ -23,5 +24,12 @@ public interface NTService {
 
     Page<NotificationTemplateVariablesListResponseDTO> getVariablesByCriteria(String search, Pageable pageable);
 
+    /**
+     * Sends the templated email on a background thread (see AsyncConfig). Callers must
+     * persist any DB state (OTP, reset token, contact record) before calling this — a
+     * template-lookup failure here is only logged, not propagated to the caller, since
+     * the caller has typically already returned its response by the time this runs.
+     */
+    @Async("notificationExecutor")
     void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException;
 }

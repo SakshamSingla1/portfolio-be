@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -107,6 +108,7 @@ public class NTServiceImpl implements NTService {
     }
 
     @Override
+    @Async("notificationExecutor")
     public void sendNotification(String templateName, Map<String, Object> variables, String toEmail) throws GenericException {
         NotificationTemplate nt = ntDao.findByTemplate(templateName)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found: " + templateName));

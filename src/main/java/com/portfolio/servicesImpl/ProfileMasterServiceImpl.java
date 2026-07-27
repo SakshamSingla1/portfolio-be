@@ -23,6 +23,7 @@ import com.portfolio.services.GithubIntegrationService;
 import com.portfolio.services.ProfileLanguageService;
 import com.portfolio.services.ServiceOfferingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -55,6 +56,7 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     private final ExecutorService profileAggregationExecutor;
 
     @Override
+    @Cacheable(cacheNames = "profileMasterByHost", key = "#host")
     public ProfileMasterResponse getProfileMasterData(String host)
             throws GenericException {
         String domain = normalizeDomain(host);
@@ -67,11 +69,13 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
     }
 
     @Override
+    @Cacheable(cacheNames = "profileMasterByProfileId", key = "#profileId")
     public ProfileMasterResponse getByProfileId(Long profileId) throws GenericException {
         return buildResponse(profileId, true);
     }
 
     @Override
+    @Cacheable(cacheNames = "profileMasterResumeExport", key = "#profileId")
     public ProfileMasterResponse getForResumeExport(Long profileId) throws GenericException {
         return buildResponse(profileId, false);
     }
