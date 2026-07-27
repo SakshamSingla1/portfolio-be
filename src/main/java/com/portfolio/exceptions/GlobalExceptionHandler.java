@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -185,6 +186,15 @@ public class GlobalExceptionHandler {
         ResponseModel<Void> body = new ResponseModel<>("HTTP method " + ex.getMethod() + " is not supported for this endpoint", null, ExceptionCodeEnum.BAD_REQUEST.getValue());
         body.toFailure();
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ResponseModel<Void>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("AccessDeniedException: {}", ex.getMessage());
+        ResponseModel<Void> body = new ResponseModel<>("You do not have permission to perform this action.", null,
+                ExceptionCodeEnum.FORBIDDEN.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     @ExceptionHandler(Exception.class)
