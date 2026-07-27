@@ -170,6 +170,7 @@ public class AdminServiceImpl implements AdminService {
             throw new GenericException(ExceptionCodeEnum.INVALID_CREDENTIALS, "Invalid OTP");
         }
         profile.setEmailVerified(VerificationStatusEnum.VERIFIED);
+        profile.setPhoneVerified(VerificationStatusEnum.VERIFIED);
         profile.setStatus(StatusEnum.ACTIVE);
         profile.setUpdatedAt(LocalDateTime.now());
         profileDao.save(profile);
