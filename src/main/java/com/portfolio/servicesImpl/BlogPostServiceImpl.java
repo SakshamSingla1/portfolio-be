@@ -96,6 +96,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BlogPostResponse getById(Long id) throws GenericException {
         return blogPostDao.findById(id)
                 .map(this::mapToFullResponse)
@@ -118,6 +119,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<BlogPostSummary> getByProfile(Long profileId, BlogStatusEnum status, String search,
                                               String sortBy, String sortDir, Pageable pageable) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC,
@@ -165,6 +167,7 @@ public class BlogPostServiceImpl implements BlogPostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<BlogPostSummary> getPublishedByUsername(String username, String search,
                                                         String sortBy, String sortDir,
                                                         Pageable pageable) throws GenericException {
