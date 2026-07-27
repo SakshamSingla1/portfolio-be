@@ -1,6 +1,7 @@
 package com.portfolio.servicesImpl;
 
 import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.social_links.SocialLinksDao;
 import com.portfolio.dao.testimonial.TestimonialDao;
 import com.portfolio.dao.testimonial_request.TestimonialRequestLinkDao;
 import com.portfolio.dtos.TestimonialLink.CreateTestimonialLinkRequest;
@@ -8,10 +9,12 @@ import com.portfolio.dtos.TestimonialLink.TestimonialLinkPublicResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialLinkResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialSubmitRequest;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.SocialLinks;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.entities.TestimonialRequestLink;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.NotificationTypeEnum;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.EmailService;
@@ -36,11 +39,12 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
     private final TestimonialRequestLinkDao testimonialRequestLinkDao;
     private final ProfileDao profileDao;
     private final TestimonialDao testimonialDao;
+    private final SocialLinksDao socialLinksDao;
     private final EmailService emailService;
     private final NotificationService notificationService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
-    private String publicBaseUrl;
+    private String defaultPublicBaseUrl;
 
     @Override
     @Transactional
@@ -163,10 +167,17 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
                 .requesterName(link.getRequesterName())
                 .requesterEmail(link.getRequesterEmail())
                 .token(link.getToken())
-                .shareUrl(publicBaseUrl + "/testimonial/" + link.getToken())
+                .shareUrl(resolvePublicBaseUrl(link.getProfileId()) + "/testimonial/" + link.getToken())
                 .expiresAt(link.getExpiresAt())
                 .usedAt(link.getUsedAt())
                 .createdAt(link.getCreatedAt())
                 .build();
+    }
+
+    private String resolvePublicBaseUrl(Long profileId) {
+        return socialLinksDao.findByProfileIdAndPlatformAndStatus(profileId, PlatformEnum.PORTFOLIO, StatusEnum.ACTIVE)
+                .map(SocialLinks::getUrl)
+                .map(url -> url.endsWith("/") ? url.substring(0, url.length() - 1) : url)
+                .orElse(defaultPublicBaseUrl);
     }
 }
