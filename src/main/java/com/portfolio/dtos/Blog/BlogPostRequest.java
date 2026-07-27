@@ -13,7 +13,8 @@ import java.util.List;
 @Builder
 public class BlogPostRequest {
 
-    @NotNull(message = "Profile ID is required")
+    // Not validated here: the controller derives this from the auth token and
+    // overwrites it after @Valid has already run, so the client never sends it.
     private Long profileId;
 
     @NotBlank(message = "Title is required")
