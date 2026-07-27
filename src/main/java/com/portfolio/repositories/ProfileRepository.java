@@ -30,6 +30,8 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     boolean existsByPhone(String phone);
 
+    boolean existsByRoleId(Long roleId);
+
     @Query(value = """
                 SELECT NEW com.portfolio.dtos.User.UserResponse(
                     p.id, p.fullName, p.userName, p.email, p.roleId,

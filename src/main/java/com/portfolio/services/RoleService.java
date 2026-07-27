@@ -21,4 +21,5 @@ public interface RoleService {
     RoleListResponseDTO getRoleByName(String name) throws GenericException;
     RoleListResponseDTO getRoleById(Long id) throws GenericException;
     List<RoleMappedModule> findDistinctModulesByRoleId(Long roleId);
+    void deleteRole(Long id) throws GenericException;
 }

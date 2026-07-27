@@ -42,6 +42,13 @@ public class RoleController {
         return ApiResponse.respond(responseDTO, ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
 
+    @Operation(summary = "Delete role", description = "Deletes a role by ID, provided it is not currently assigned to any user. Requires SUPER_ADMIN role.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseModel<String>> deleteRole(@PathVariable Long id) throws GenericException {
+        roleService.deleteRole(id);
+        return ApiResponse.respond("Role deleted successfully", "Role deleted successfully", "Failed to delete role");
+    }
+
     @Operation(summary = "Get role with permissions by ID", description = "Fetches a role along with its full permission set by role ID.")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseModel<RolePermissionResponseDTO>> getRolePermissionsByRoleId(@PathVariable Long id)

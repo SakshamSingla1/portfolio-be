@@ -1,5 +1,6 @@
 package com.portfolio.servicesImpl;
 
+import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dao.role.RolePermissionDao;
 import com.portfolio.dtos.Role.*;
@@ -27,6 +28,7 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleDao roleDao;
     private final RolePermissionDao rolePermissionDao;
+    private final ProfileDao profileDao;
     private final Helper helper;
 
     @Override
@@ -154,6 +156,19 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public List<RoleMappedModule> findDistinctModulesByRoleId(Long roleId){
         return roleDao.findDistinctModulesByRoleId(roleId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteRole(Long id) throws GenericException {
+        Role role = roleDao.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.ROLE_NOT_FOUND, "Role not found"));
+        if (profileDao.existsByRoleId(id)) {
+            throw new GenericException(ExceptionCodeEnum.BAD_REQUEST,
+                    "Role is currently assigned to one or more users and cannot be deleted");
+        }
+        rolePermissionDao.deleteByRoleId(id);
+        roleDao.deleteById(role.getId());
     }
 
     private RoleListResponseDTO mapToRoleListResponseDTO(Role role) {

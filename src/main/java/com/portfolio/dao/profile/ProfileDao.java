@@ -63,6 +63,10 @@ public class ProfileDao {
         return profileRepository.existsByPhone(phone);
     }
 
+    public boolean existsByRoleId(Long roleId) {
+        return profileRepository.existsByRoleId(roleId);
+    }
+
     public Page<UserResponse> findByCriteria(
             String search, List<StatusEnum> statuses, List<Long> roleIds, Pageable pageable) {
         return profileRepository.findByCriteria(search, statuses, roleIds, pageable);
