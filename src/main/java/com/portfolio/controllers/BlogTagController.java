@@ -27,44 +27,28 @@ public class BlogTagController {
 
     @Operation(summary = "Create a blog tag")
     @PostMapping
-    public ResponseEntity<ResponseModel<BlogTagResponse>> create(@Valid @RequestBody BlogTagRequest request) {
-        try {
-            return ApiResponse.successResponse(blogTagService.create(request), "Tag created successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<BlogTagResponse>> create(@Valid @RequestBody BlogTagRequest request) throws GenericException {
+        return ApiResponse.successResponse(blogTagService.create(request), "Tag created successfully");
     }
 
     @Operation(summary = "Update a blog tag")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<BlogTagResponse>> update(
             @PathVariable Long id,
-            @Valid @RequestBody BlogTagRequest request) {
-        try {
-            return ApiResponse.successResponse(blogTagService.update(id, request), "Tag updated successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+            @Valid @RequestBody BlogTagRequest request) throws GenericException {
+        return ApiResponse.successResponse(blogTagService.update(id, request), "Tag updated successfully");
     }
 
     @Operation(summary = "Get a blog tag by ID")
     @GetMapping("/{id}")
-    public ResponseEntity<ResponseModel<BlogTagResponse>> getById(@PathVariable Long id) {
-        try {
-            return ApiResponse.successResponse(blogTagService.getById(id), "Tag fetched successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<BlogTagResponse>> getById(@PathVariable Long id) throws GenericException {
+        return ApiResponse.successResponse(blogTagService.getById(id), "Tag fetched successfully");
     }
 
     @Operation(summary = "Delete a blog tag")
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Long id) {
-        try {
-            return ApiResponse.successResponse(blogTagService.delete(id), "Tag deleted successfully");
-        } catch (GenericException e) {
-            return ApiResponse.failureResponse(null, e.getMessage());
-        }
+    public ResponseEntity<ResponseModel<String>> delete(@PathVariable Long id) throws GenericException {
+        return ApiResponse.successResponse(blogTagService.delete(id), "Tag deleted successfully");
     }
 
     @Operation(summary = "Get all blog tags")

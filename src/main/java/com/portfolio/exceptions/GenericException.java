@@ -16,6 +16,7 @@ public class GenericException extends Exception{
     public String referenceId;
 
     public GenericException(ExceptionCodeEnum exceptionCode, String errorMessage) {
+        super(errorMessage);
         this.exceptionCode = exceptionCode;
         this.errorMessage = errorMessage;
     }

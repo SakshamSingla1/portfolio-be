@@ -58,6 +58,7 @@ public class ProfileLanguageController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> delete(@PathVariable Long id) throws GenericException {
-        return ApiResponse.respond(profileLanguageService.delete(id), "Language deleted", "Failed to delete language");
+        profileLanguageService.delete(id);
+        return ApiResponse.successResponse(null, "Language deleted");
     }
 }

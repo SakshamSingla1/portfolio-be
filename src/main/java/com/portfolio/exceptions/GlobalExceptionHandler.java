@@ -37,7 +37,9 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.PASSWORD_MISMATCH,
             ExceptionCodeEnum.PASSWORD_IS_EMPTY,
             ExceptionCodeEnum.PASSWORD_RESET_FAILED,
-            ExceptionCodeEnum.FORMAT_ERROR
+            ExceptionCodeEnum.FORMAT_ERROR,
+            ExceptionCodeEnum.TESTIMONIAL_REQUEST_EXPIRED,
+            ExceptionCodeEnum.TESTIMONIAL_REQUEST_ALREADY_USED
     );
 
     private static final Set<ExceptionCodeEnum> CONFLICT_CODES = Set.of(
@@ -58,7 +60,9 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.DUPLICATE_ROLE_PERMISSION,
             ExceptionCodeEnum.DUPLICATE_SKILL,
             ExceptionCodeEnum.DUPLICATE_EXPERIENCE,
-            ExceptionCodeEnum.DUPLICATE_DEGREE
+            ExceptionCodeEnum.DUPLICATE_DEGREE,
+            ExceptionCodeEnum.DUPLICATE_BLOG_POST,
+            ExceptionCodeEnum.DUPLICATE_BLOG_TAG
     );
 
     private static final Set<ExceptionCodeEnum> NOT_FOUND_CODES = Set.of(
@@ -85,7 +89,14 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.LANDING_STEP_NOT_FOUND,
             ExceptionCodeEnum.LANDING_AUDIENCE_CARD_NOT_FOUND,
             ExceptionCodeEnum.LANDING_TESTIMONIAL_NOT_FOUND,
-            ExceptionCodeEnum.DATA_NOT_FOUND
+            ExceptionCodeEnum.DATA_NOT_FOUND,
+            ExceptionCodeEnum.NOTIFICATION_NOT_FOUND,
+            ExceptionCodeEnum.PROFILE_LANGUAGE_NOT_FOUND,
+            ExceptionCodeEnum.BLOG_POST_NOT_FOUND,
+            ExceptionCodeEnum.BLOG_TAG_NOT_FOUND,
+            ExceptionCodeEnum.SERVICE_NOT_FOUND,
+            ExceptionCodeEnum.PUBLICATION_NOT_FOUND,
+            ExceptionCodeEnum.TESTIMONIAL_REQUEST_NOT_FOUND
     );
 
     @ExceptionHandler(GenericException.class)
@@ -147,6 +158,15 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         log.warn("ConstraintViolationException: {}", message);
         ResponseModel<Void> body = new ResponseModel<>("Validation failed: " + message, null, ExceptionCodeEnum.VALIDATION_FAILED.getValue());
+        body.toFailure();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ResponseModel<Void>> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        String message = "Invalid value for parameter '" + ex.getName() + "'";
+        log.warn("MethodArgumentTypeMismatchException: {}", message);
+        ResponseModel<Void> body = new ResponseModel<>(message, null, ExceptionCodeEnum.BAD_REQUEST.getValue());
         body.toFailure();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

@@ -46,8 +46,7 @@ public class GithubController {
     public ResponseEntity<ResponseModel<GithubIntegrationResponse>> getIntegration(
             @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        return ApiResponse.respond(githubIntegrationService.getIntegration(profileId),
-                "Integration fetched", "Failed to fetch integration");
+        return ApiResponse.successResponse(githubIntegrationService.getIntegration(profileId), "Integration fetched");
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -56,7 +55,7 @@ public class GithubController {
             @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         githubIntegrationService.syncRepos(profileId);
-        return ApiResponse.respond(null, "Sync completed", "Sync failed");
+        return ApiResponse.successResponse(null, "Sync completed");
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -65,7 +64,7 @@ public class GithubController {
             @RequestHeader(value = "Authorization", required = false) String auth) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         githubIntegrationService.disconnect(profileId);
-        return ApiResponse.respond(null, "Disconnected", "Failed to disconnect");
+        return ApiResponse.successResponse(null, "Disconnected");
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -77,6 +76,6 @@ public class GithubController {
             @RequestParam(required = false) Integer sortOrder) throws Exception {
         Long profileId = helper.getProfileIdFromHeader(auth);
         githubIntegrationService.updateRepo(repoId, isVisible, sortOrder, profileId);
-        return ApiResponse.respond(null, "Repo updated", "Failed to update repo");
+        return ApiResponse.successResponse(null, "Repo updated");
     }
 }

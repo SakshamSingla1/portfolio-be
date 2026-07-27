@@ -81,7 +81,7 @@ public class FileController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<Void>> delete(@PathVariable Long id) throws Exception {
         fileService.delete(id);
-        return ApiResponse.respond(null, "File deleted successfully", "Failed to delete file");
+        return ApiResponse.successResponse(null, "File deleted successfully");
     }
 
     @Operation(summary = "Delete all files for a resource", description = "Deletes all file assets associated with a specific resource type and ID.")
@@ -91,6 +91,6 @@ public class FileController {
             @PathVariable Long resourceId
     ) throws Exception {
         fileService.deleteByResource(resourceId, resourceType);
-        return ApiResponse.respond(null, "Files deleted successfully", "Failed to delete files");
+        return ApiResponse.successResponse(null, "Files deleted successfully");
     }
 }
