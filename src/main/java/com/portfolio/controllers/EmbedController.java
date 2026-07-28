@@ -153,7 +153,10 @@ public class EmbedController {
                 htmlEscape(websiteUrl)));
         }
 
-        String portfolioUrl = "https://portfoliosbuilder.com/" + username;
+        String portfolioUrl = findActiveSocialUrl(links, PlatformEnum.PORTFOLIO);
+        if (portfolioUrl == null) {
+            portfolioUrl = "https://portfoliosbuilder.com/" + username;
+        }
 
         String template = """
                 <!DOCTYPE html>
