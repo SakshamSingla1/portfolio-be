@@ -11,6 +11,7 @@ import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.entities.*;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.NotificationTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -51,6 +52,7 @@ public class AdminServiceImpl implements AdminService {
     private final JwtUtil jwtUtil;
     private final Helper helper;
     private final NTService ntService;
+    private final NotificationService notificationService;
     private final ColorThemeService colorThemeService;
     private final RoleService roleService;
     private final ProfileThemeMappingDao profileThemeMappingDao;
@@ -202,6 +204,23 @@ public class AdminServiceImpl implements AdminService {
         } catch (Exception e) {
             log.error("Failed to create portfolio social link for profile {}: {}", profile.getId(), e.getMessage(), e);
         }
+
+        try {
+            ntService.sendNotification(
+                    "WELCOME-EMAIL",
+                    Map.of("fullName", profile.getFullName()),
+                    profile.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send welcome email to profile {}: {}", profile.getId(), e.getMessage());
+        }
+        notificationService.create(
+                profile.getId(),
+                NotificationTypeEnum.WELCOME,
+                "Welcome to PortfoliosBuilder",
+                "Your email is verified. Start building your portfolio now.",
+                "/dashboard"
+        );
 
         return "OTP verified successfully";
     }
@@ -394,6 +413,27 @@ public class AdminServiceImpl implements AdminService {
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         profileDao.save(user);
+
+        try {
+            ntService.sendNotification(
+                    "PASSWORD-CHANGED",
+                    Map.of(
+                            "fullName", user.getFullName(),
+                            "changedAt", LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy 'at' h:mm a"))
+                    ),
+                    user.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send password-changed confirmation email: {}", e.getMessage());
+        }
+        notificationService.create(
+                user.getId(),
+                NotificationTypeEnum.PASSWORD_CHANGED,
+                "Password changed",
+                "Your password was changed successfully",
+                "/settings"
+        );
+
         return "Password changed successfully";
     }
 
@@ -464,10 +504,29 @@ public class AdminServiceImpl implements AdminService {
                     "Email already attached with a profile"
             );
         }
+        String oldEmail = user.getEmail();
         user.setEmail(dto.getNewEmail());
         user.setUpdatedAt(LocalDateTime.now());
         profileDao.save(user);
         otpStoreDao.deleteByProfileId(user.getId());
+
+        try {
+            ntService.sendNotification(
+                    "EMAIL-CHANGED",
+                    Map.of("fullName", user.getFullName(), "newEmail", dto.getNewEmail()),
+                    oldEmail
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send email-changed security notice for profile {}: {}", user.getId(), e.getMessage());
+        }
+        notificationService.create(
+                user.getId(),
+                NotificationTypeEnum.EMAIL_CHANGED,
+                "Email address updated",
+                "Your account email was changed to " + dto.getNewEmail(),
+                "/settings"
+        );
+
         return "Email updated successfully";
     }
 
@@ -557,12 +616,30 @@ public class AdminServiceImpl implements AdminService {
             profile.setTwoFactorEnabled(false);
             profile.setTotpSecret(null);
             profileDao.save(profile);
+            sendTwoFactorStatusNotification(profile, false);
             return "Two-factor authentication disabled";
         } else {
             profile.setTwoFactorEnabled(true);
             profileDao.save(profile);
+            sendTwoFactorStatusNotification(profile, true);
             return "Two-factor authentication enabled";
         }
+    }
+
+    private void sendTwoFactorStatusNotification(Profile profile, boolean enabled) {
+        String template = enabled ? "TWO-FACTOR-ENABLED" : "TWO-FACTOR-DISABLED";
+        try {
+            ntService.sendNotification(template, Map.of("fullName", profile.getFullName()), profile.getEmail());
+        } catch (Exception e) {
+            log.warn("Failed to send {} email for profile {}: {}", template, profile.getId(), e.getMessage());
+        }
+        notificationService.create(
+                profile.getId(),
+                enabled ? NotificationTypeEnum.TWO_FACTOR_ENABLED : NotificationTypeEnum.TWO_FACTOR_DISABLED,
+                enabled ? "Two-factor authentication enabled" : "Two-factor authentication disabled",
+                enabled ? "Your account now requires an authenticator code at login" : "Your account no longer requires an authenticator code at login",
+                "/settings"
+        );
     }
 
 

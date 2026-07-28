@@ -11,7 +11,6 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.NotificationTypeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ContactUsService;
-import com.portfolio.services.EmailService;
 import com.portfolio.services.NTService;
 import com.portfolio.services.NotificationService;
 import com.portfolio.utils.Helper;
@@ -31,7 +30,6 @@ public class ContactUsServiceImpl implements ContactUsService{
     private final ContactUsDao contactUsDao;
     private final ProfileDao profileDao;
     private final NTService ntService;
-    private final EmailService emailService;
     private final NotificationService notificationService;
     private final Helper helper;
 
@@ -108,33 +106,20 @@ public class ContactUsServiceImpl implements ContactUsService{
         if (!contact.getProfileId().equals(profile.getId())) {
             throw new GenericException(ExceptionCodeEnum.UNAUTHORIZED, "Not authorized to reply to this message");
         }
-        String subject = "Re: Your message to " + safe(profile.getFullName());
-        String html = buildReplyHtml(safe(profile.getFullName()), safe(contact.getName()), safe(contact.getMessage()), safe(replyMessage));
-        emailService.sendEmail(contact.getEmail(), subject, html);
+        ntService.sendNotification(
+                "CONTACT-REPLY",
+                Map.of(
+                        "profileName", safe(profile.getFullName()),
+                        "contactName", safe(contact.getName()),
+                        "replyMessage", safe(replyMessage),
+                        "originalMessage", safe(contact.getMessage())
+                ),
+                contact.getEmail()
+        );
         contact.setReplyMessage(replyMessage);
         contact.setRepliedAt(LocalDateTime.now());
         contact.setStatus(ContactUsStatusEnum.REPLIED);
         return toDto(contactUsDao.save(contact));
-    }
-
-    private String buildReplyHtml(String profileName, String contactName, String originalMessage, String replyMessage) {
-        return """
-                <!DOCTYPE html>
-                <html>
-                <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto;padding:32px 24px;background:#f9fafb;">
-                  <div style="background:#ffffff;border-radius:12px;padding:32px;border:1px solid #e5e7eb;">
-                    <h2 style="margin:0 0 8px;color:#111827;font-size:20px;">Message from %s</h2>
-                    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;">Hi %s, %s replied to your message.</p>
-                    <div style="background:#f3f4f6;border-radius:8px;padding:20px;margin-bottom:24px;">
-                      <p style="margin:0;color:#111827;font-size:15px;line-height:1.6;white-space:pre-wrap;">%s</p>
-                    </div>
-                    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
-                    <p style="margin:0 0 8px;color:#9ca3af;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Your original message</p>
-                    <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6;white-space:pre-wrap;">%s</p>
-                  </div>
-                </body>
-                </html>
-                """.formatted(profileName, contactName, profileName, replyMessage, originalMessage);
     }
 
     private ContactUsResponse toDto(ContactUs contact) {

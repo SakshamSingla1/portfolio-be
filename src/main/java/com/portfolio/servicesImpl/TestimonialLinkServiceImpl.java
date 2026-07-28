@@ -17,7 +17,7 @@ import com.portfolio.enums.NotificationTypeEnum;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.services.EmailService;
+import com.portfolio.services.NTService;
 import com.portfolio.services.NotificationService;
 import com.portfolio.services.TestimonialLinkService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -40,7 +41,7 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
     private final ProfileDao profileDao;
     private final TestimonialDao testimonialDao;
     private final SocialLinksDao socialLinksDao;
-    private final EmailService emailService;
+    private final NTService ntService;
     private final NotificationService notificationService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
@@ -150,11 +151,15 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
         );
 
         try {
-            String subject = "New testimonial submitted";
-            String html = "<p>Hi " + profile.getFullName() + ",</p>" +
-                    "<p><strong>" + req.getName() + "</strong> has submitted a testimonial for your portfolio.</p>" +
-                    "<p>Log in to your admin panel to review and approve it.</p>";
-            emailService.sendEmail(profile.getEmail(), subject, html);
+            ntService.sendNotification(
+                    "TESTIMONIAL-SUBMITTED",
+                    Map.of(
+                            "fullName", profile.getFullName(),
+                            "requesterName", req.getName(),
+                            "message", req.getMessage()
+                    ),
+                    profile.getEmail()
+            );
         } catch (Exception e) {
             log.warn("Failed to send testimonial notification email: {}", e.getMessage());
         }
