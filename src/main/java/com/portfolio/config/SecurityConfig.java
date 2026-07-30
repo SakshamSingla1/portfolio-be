@@ -135,6 +135,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/v1/public/**", publicApi);
+        source.registerCorsConfiguration("/embed/**", publicApi);
         source.registerCorsConfiguration("/api/v1/**", adminApi);
         return source;
     }
