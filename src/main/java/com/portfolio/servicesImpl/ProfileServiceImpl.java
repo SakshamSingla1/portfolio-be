@@ -252,24 +252,8 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
-        String oldRoleName = getRoleNameById(profile.getRoleId());
         profile.setRoleId(Long.parseLong(request.getRole()));
         profileDao.save(profile);
-
-        try {
-            String newRoleName = getRoleNameById(profile.getRoleId());
-            ntService.sendNotification(
-                    "ROLE-CHANGED",
-                    Map.of(
-                            "fullName", profile.getFullName(),
-                            "oldRole", oldRoleName != null ? oldRoleName : "—",
-                            "newRole", newRoleName != null ? newRoleName : "—"
-                    ),
-                    profile.getEmail()
-            );
-        } catch (Exception e) {
-            log.warn("Failed to send role-changed email for profile {}: {}", id, e.getMessage());
-        }
 
         return mapToUserResponse(profile);
     }
