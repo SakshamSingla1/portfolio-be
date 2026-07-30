@@ -111,6 +111,17 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Order(4)
+    public SecurityFilterChain embedFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/embed/**")
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+        return http.build();
+    }
+
+    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration publicApi = new CorsConfiguration();
         publicApi.setAllowedOriginPatterns(List.of("*"));
