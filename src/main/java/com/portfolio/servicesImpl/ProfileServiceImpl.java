@@ -21,9 +21,11 @@ import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.FileService;
+import com.portfolio.services.NTService;
 import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,8 +35,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -45,6 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final FileAssetDao fileAssetDao;
     private final Helper helper;
     private final RoleDao roleDao;
+    private final NTService ntService;
 
     @Override
     @Transactional(readOnly = true)
@@ -229,6 +234,16 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setStatus(request.getStatus());
         profileDao.save(profile);
 
+        try {
+            ntService.sendNotification(
+                    "ACCOUNT-STATUS-CHANGED",
+                    Map.of("fullName", profile.getFullName(), "status", request.getStatus().name()),
+                    profile.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send account-status-changed email for profile {}: {}", id, e.getMessage());
+        }
+
         return mapToUserResponse(profile);
     }
 
@@ -237,8 +252,24 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = profileDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
 
+        String oldRoleName = getRoleNameById(profile.getRoleId());
         profile.setRoleId(Long.parseLong(request.getRole()));
         profileDao.save(profile);
+
+        try {
+            String newRoleName = getRoleNameById(profile.getRoleId());
+            ntService.sendNotification(
+                    "ROLE-CHANGED",
+                    Map.of(
+                            "fullName", profile.getFullName(),
+                            "oldRole", oldRoleName != null ? oldRoleName : "—",
+                            "newRole", newRoleName != null ? newRoleName : "—"
+                    ),
+                    profile.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send role-changed email for profile {}: {}", id, e.getMessage());
+        }
 
         return mapToUserResponse(profile);
     }
@@ -297,6 +328,16 @@ public class ProfileServiceImpl implements ProfileService {
         profile.setStatus(StatusEnum.DELETED);
         profile.setUpdatedAt(LocalDateTime.now());
         profileDao.save(profile);
+
+        try {
+            ntService.sendNotification(
+                    "ACCOUNT-DELETED",
+                    Map.of("fullName", profile.getFullName()),
+                    profile.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send account-deleted email for profile {}: {}", id, e.getMessage());
+        }
     }
 
     @Override

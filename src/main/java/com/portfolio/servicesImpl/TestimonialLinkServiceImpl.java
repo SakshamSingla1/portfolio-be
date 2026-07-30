@@ -62,7 +62,28 @@ public class TestimonialLinkServiceImpl implements TestimonialLinkService {
                 .build();
 
         TestimonialRequestLink saved = testimonialRequestLinkDao.save(link);
-        return mapToResponse(saved);
+        TestimonialLinkResponse response = mapToResponse(saved);
+
+        if (req.getRequesterEmail() != null && !req.getRequesterEmail().isBlank()) {
+            try {
+                Profile owner = profileDao.findById(profileId).orElse(null);
+                if (owner != null) {
+                    ntService.sendNotification(
+                            "TESTIMONIAL-REQUEST-INVITE",
+                            Map.of(
+                                    "requesterName", req.getRequesterName() != null ? req.getRequesterName() : "there",
+                                    "ownerName", owner.getFullName(),
+                                    "shareUrl", response.getShareUrl()
+                            ),
+                            req.getRequesterEmail()
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("Failed to send testimonial-request invite for profile {}: {}", profileId, e.getMessage());
+            }
+        }
+
+        return response;
     }
 
     @Override

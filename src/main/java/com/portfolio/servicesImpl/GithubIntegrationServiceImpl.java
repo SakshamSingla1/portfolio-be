@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portfolio.dao.github.GithubIntegrationDao;
 import com.portfolio.dao.github.GithubRepoDao;
+import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.dtos.GitHub.GithubIntegrationResponse;
@@ -12,6 +14,7 @@ import com.portfolio.dtos.GitHub.GitHubStatsDTO;
 import com.portfolio.entities.GithubIntegration;
 import com.portfolio.entities.GithubRepo;
 import com.portfolio.services.GithubIntegrationService;
+import com.portfolio.services.NTService;
 import com.portfolio.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,9 +41,11 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
 
     private final GithubIntegrationDao integrationDao;
     private final GithubRepoDao repoDao;
+    private final ProfileDao profileDao;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final EncryptionUtil encryptionUtil;
+    private final NTService ntService;
 
     @Value("${github.oauth.client-id:}")
     private String clientId;
@@ -92,12 +97,44 @@ public class GithubIntegrationServiceImpl implements GithubIntegrationService {
         integration.setUpdatedAt(now);
         integrationDao.save(integration);
 
+        try {
+            Profile profile = profileDao.findById(profileId).orElse(null);
+            if (profile != null) {
+                ntService.sendNotification(
+                        "GITHUB-CONNECTED",
+                        Map.of("fullName", profile.getFullName(), "githubUsername", username),
+                        profile.getEmail()
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send GitHub-connected email for profile {}: {}", profileId, e.getMessage());
+        }
+
         // Sync in background after saving
         Long savedProfileId = profileId;
         CompletableFuture.runAsync(() -> {
             try { syncRepos(savedProfileId); }
-            catch (Exception e) { log.warn("Background sync failed for profile {}: {}", savedProfileId, e.getMessage()); }
+            catch (Exception e) {
+                log.warn("Background sync failed for profile {}: {}", savedProfileId, e.getMessage());
+                notifySyncFailure(savedProfileId);
+            }
         });
+    }
+
+    @Override
+    public void notifySyncFailure(Long profileId) {
+        try {
+            Profile profile = profileDao.findById(profileId).orElse(null);
+            if (profile != null) {
+                ntService.sendNotification(
+                        "GITHUB-SYNC-FAILED",
+                        Map.of("fullName", profile.getFullName()),
+                        profile.getEmail()
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send GitHub-sync-failed email for profile {}: {}", profileId, e.getMessage());
+        }
     }
 
     // ── Sync ─────────────────────────────────────────────────────────────────

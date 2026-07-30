@@ -23,6 +23,7 @@ public class GithubSyncScheduler {
                 log.info("Synced GitHub repos for profile {}", integration.getProfileId());
             } catch (Exception e) {
                 log.warn("GitHub sync failed for profile {}: {}", integration.getProfileId(), e.getMessage());
+                githubIntegrationService.notifySyncFailure(integration.getProfileId());
             }
         });
     }

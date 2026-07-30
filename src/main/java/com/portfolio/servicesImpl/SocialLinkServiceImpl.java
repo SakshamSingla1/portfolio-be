@@ -4,12 +4,16 @@ import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.social_links.SocialLinksDao;
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
+import com.portfolio.entities.Profile;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.services.NTService;
 import com.portfolio.services.SocialLinkService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,13 +22,31 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SocialLinkServiceImpl implements SocialLinkService {
     private final SocialLinksDao socialLinksDao;
     private final ProfileDao profileDao;
+    private final NTService ntService;
+
+    private void notifyDomainUpdated(Long profileId, String newUrl) {
+        try {
+            Profile profile = profileDao.findById(profileId).orElse(null);
+            if (profile != null) {
+                ntService.sendNotification(
+                        "PORTFOLIO-DOMAIN-UPDATED",
+                        Map.of("fullName", profile.getFullName(), "domainUrl", newUrl),
+                        profile.getEmail()
+                );
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send portfolio-domain-updated email for profile {}: {}", profileId, e.getMessage());
+        }
+    }
 
     @Override
     public SocialLinkResponseDTO createLink(SocialLinkRequestDTO requestDTO) throws GenericException {
@@ -63,11 +85,19 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     public SocialLinkResponseDTO updateLink(Long id, SocialLinkRequestDTO requestDTO) throws GenericException {
         SocialLinks socialLinks = socialLinksDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SOCIAL_LINK_NOT_FOUND,"Social link not found"));
+        String previousUrl = socialLinks.getUrl();
         socialLinks.setUrl(requestDTO.getUrl());
         socialLinks.setOrder(requestDTO.getOrder() != null ? Integer.parseInt(requestDTO.getOrder()) : null);
         socialLinks.setStatus(requestDTO.getStatus());
         socialLinks.setUpdatedAt(LocalDateTime.now());
         SocialLinks updated = socialLinksDao.save(socialLinks);
+
+        if (updated.getPlatform() == PlatformEnum.PORTFOLIO
+                && updated.getUrl() != null
+                && !updated.getUrl().equals(previousUrl)) {
+            notifyDomainUpdated(updated.getProfileId(), updated.getUrl());
+        }
+
         return mapToResponse(updated);
     }
 

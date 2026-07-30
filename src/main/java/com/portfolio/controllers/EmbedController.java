@@ -65,19 +65,19 @@ public class EmbedController {
         String imageUrl = p.getProfileImageUrl();
         boolean openToWork = p.isAvailableForWork();
 
-        // --- Avatar: image or coloured initial circle ---
+        // --- Avatar: image or gradient initial circle ---
         String imageHtml;
         if (imageUrl != null && !imageUrl.isBlank()) {
             imageHtml = String.format(
                 "<img src=\"%s\" alt=\"%s\" "
-                + "style=\"width:60px;height:60px;border-radius:50%%;object-fit:cover;\" />",
+                + "style=\"width:64px;height:64px;border-radius:50%%;object-fit:cover;border:2px solid #ecfdf5;\" />",
                 imageUrl, fullName);
         } else {
             String initial = fullName.isEmpty() ? "?" : fullName.substring(0, 1).toUpperCase();
             imageHtml = String.format(
-                "<div style=\"width:60px;height:60px;border-radius:50%%;background:#3b82f6;"
+                "<div style=\"width:64px;height:64px;border-radius:50%%;background:linear-gradient(135deg,#059669,#047857);"
                 + "display:flex;align-items:center;justify-content:center;"
-                + "font-size:24px;font-weight:700;color:#fff;\">%s</div>",
+                + "font-size:26px;font-weight:700;color:#fff;\">%s</div>",
                 initial);
         }
 
@@ -92,6 +92,31 @@ public class EmbedController {
         String locationHtml = location.isEmpty() ? "" : String.format(
             "<div style=\"color:#6b7280;font-size:12px;margin-top:4px;\">&#128205;&nbsp;%s</div>",
             location);
+
+        // --- Stats row: projects / experience / GitHub stars, whichever apply ---
+        StringBuilder statsHtml = new StringBuilder();
+        List<Object[]> stats = new java.util.ArrayList<>();
+        int projectCount = data.getProjects() != null ? data.getProjects().size() : 0;
+        int experienceCount = data.getExperiences() != null ? data.getExperiences().size() : 0;
+        var githubStats = data.getGithubStats();
+        if (projectCount > 0) stats.add(new Object[]{String.valueOf(projectCount), "Projects"});
+        if (experienceCount > 0) stats.add(new Object[]{String.valueOf(experienceCount), "Roles"});
+        if (githubStats != null && githubStats.getTotalStars() > 0) {
+            stats.add(new Object[]{String.valueOf(githubStats.getTotalStars()), "GitHub Stars"});
+        }
+        if (!stats.isEmpty()) {
+            statsHtml.append("<div style=\"display:flex;gap:8px;margin-top:14px;\">");
+            for (Object[] stat : stats) {
+                statsHtml.append(String.format(
+                    "<div style=\"flex:1;background:#f9fafb;border:1px solid #f3f4f6;border-radius:10px;"
+                    + "padding:8px 6px;text-align:center;\">"
+                    + "<div style=\"font-size:16px;font-weight:800;color:#047857;\">%s</div>"
+                    + "<div style=\"font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.03em;\">%s</div>"
+                    + "</div>",
+                    stat[0], stat[1]));
+            }
+            statsHtml.append("</div>");
+        }
 
         // --- Skills chips (first 6 with a name) ---
         List<SkillResponse> skills = data.getSkills();
@@ -108,7 +133,7 @@ public class EmbedController {
                 skillsHtml.append("<div style=\"display:flex;flex-wrap:wrap;gap:6px;\">");
                 for (SkillResponse skill : named) {
                     skillsHtml.append(String.format(
-                        "<span style=\"background:#eff6ff;color:#3b82f6;font-size:11px;"
+                        "<span style=\"background:#ecfdf5;color:#059669;font-size:11px;"
                         + "font-weight:500;padding:3px 10px;border-radius:50px;"
                         + "white-space:nowrap;\">%s</span>",
                         htmlEscape(skill.getLogoName())));
@@ -177,7 +202,16 @@ public class EmbedController {
                       background: #ffffff;
                       box-shadow: 0 4px 24px rgba(0,0,0,0.10);
                       border-radius: 16px;
-                      padding: 24px 24px 16px 24px;
+                      display: flex; flex-direction: column;
+                      overflow: hidden;
+                    }
+                    .accent-bar {
+                      height: 4px; flex-shrink: 0;
+                      background: linear-gradient(90deg, #059669, #047857);
+                    }
+                    .card-body {
+                      flex: 1; min-height: 0;
+                      padding: 20px 24px 16px 24px;
                       display: flex; flex-direction: column;
                       overflow: hidden;
                     }
@@ -198,7 +232,7 @@ public class EmbedController {
                       align-items: center; flex-wrap: wrap; gap: 6px;
                     }
                     .view-btn {
-                      background: #3b82f6; color: #fff; font-size: 12px;
+                      background: linear-gradient(135deg, #059669, #047857); color: #fff; font-size: 12px;
                       font-weight: 600; padding: 6px 14px; border-radius: 50px;
                       text-decoration: none; white-space: nowrap;
                     }
@@ -207,21 +241,25 @@ public class EmbedController {
                 </head>
                 <body>
                   <div class="card">
-                    <div class="header">
-                      <div class="avatar">%s</div>
-                      <div class="info">
-                        <div class="name">%s</div>
-                        <div class="headline">%s</div>
-                        %s
-                        %s
+                    <div class="accent-bar"></div>
+                    <div class="card-body">
+                      <div class="header">
+                        <div class="avatar">%s</div>
+                        <div class="info">
+                          <div class="name">%s</div>
+                          <div class="headline">%s</div>
+                          %s
+                          %s
+                        </div>
                       </div>
+                      %s
+                      %s
+                      <div class="footer-row">
+                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">%s</div>
+                        <a href="%s" target="_blank" rel="noopener" class="view-btn">View Portfolio &#8594;</a>
+                      </div>
+                      <div class="powered">Powered by PortfoliosBuilder</div>
                     </div>
-                    %s
-                    <div class="footer-row">
-                      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">%s</div>
-                      <a href="%s" target="_blank" rel="noopener" class="view-btn">View Portfolio &#8594;</a>
-                    </div>
-                    <div class="powered">Powered by PortfoliosBuilder</div>
                   </div>
                 </body>
                 </html>
@@ -234,6 +272,7 @@ public class EmbedController {
             title,           // .headline
             badgeHtml,       // open-to-work badge
             locationHtml,    // location row
+            statsHtml,       // stats row
             skillsHtml,      // skills section
             socialHtml,      // social links
             portfolioUrl     // view portfolio href

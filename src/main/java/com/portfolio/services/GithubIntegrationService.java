@@ -13,6 +13,7 @@ public interface GithubIntegrationService {
     void handleCallback(String code, String state);
     GithubIntegrationResponse getIntegration(Long profileId);
     void syncRepos(Long profileId);
+    void notifySyncFailure(Long profileId);
     void disconnect(Long profileId);
     void updateRepo(Long repoId, Boolean isVisible, Integer sortOrder, Long profileId) throws GenericException;
     Optional<GitHubStatsDTO> getCachedStats(Long profileId);
