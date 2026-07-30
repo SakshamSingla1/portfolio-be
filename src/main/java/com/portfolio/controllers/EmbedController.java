@@ -38,6 +38,15 @@ public class EmbedController {
 
     @GetMapping("/embed/{username}")
     public ResponseEntity<String> getEmbedWidget(@PathVariable String username) {
+        return respond(username, this::buildEmbedHtml);
+    }
+
+    @GetMapping("/embed/{username}/email")
+    public ResponseEntity<String> getEmbedWidgetForEmail(@PathVariable String username) {
+        return respond(username, this::buildEmailSafeHtml);
+    }
+
+    private ResponseEntity<String> respond(String username, java.util.function.BiFunction<CardData, String, String> renderer) {
         try {
             Long profileId = profileDao.findByUserName(username)
                     .map(p -> p.getId())
@@ -52,7 +61,8 @@ public class EmbedController {
                 return ResponseEntity.notFound().<String>build();
             }
 
-            String html = buildEmbedHtml(data, username);
+            CardData card = computeCardData(data, username);
+            String html = renderer.apply(card, username);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.valueOf("text/html;charset=UTF-8"));
@@ -65,87 +75,40 @@ public class EmbedController {
         }
     }
 
-    private String buildEmbedHtml(ProfileMasterResponse data, String username) {
+    /** Everything both renderers need, computed once. */
+    private record CardData(
+        String fullName, String title, String location, boolean openToWork,
+        String imageUrl, String bioPlain, List<String> skills,
+        String githubUrl, String linkedinUrl, String websiteUrl, String portfolioUrl,
+        String primary400, String primary500, String primary600, String primary700
+    ) {}
+
+    private CardData computeCardData(ProfileMasterResponse data, String username) {
         ProfileResponse p = data.getProfile();
 
-        String fullName = p.getFullName() != null ? htmlEscape(p.getFullName()) : "";
-        String title    = p.getTitle()    != null ? htmlEscape(p.getTitle())    : "";
-        String location = p.getLocation() != null ? htmlEscape(p.getLocation()) : "";
-        String imageUrl = p.getProfileImageUrl();
+        String fullName = p.getFullName() != null ? p.getFullName() : "";
+        String title    = p.getTitle()    != null ? p.getTitle()    : "";
+        String location = p.getLocation() != null ? p.getLocation() : "";
         boolean openToWork = p.isAvailableForWork();
 
-        // --- Theme colors: use the profile's own chosen palette, emerald as a sane fallback ---
-        String primary400 = themeColor(data.getColorTheme(), "primary400", "#34d399");
-        String primary500 = themeColor(data.getColorTheme(), "primary500", "#059669");
-        String primary600 = themeColor(data.getColorTheme(), "primary600", "#047857");
-        String primary700 = themeColor(data.getColorTheme(), "primary700", "#065f46");
-        String themeVars = String.format(
-            "--primary400:%s;--primary500:%s;--primary600:%s;--primary700:%s;",
-            primary400, primary500, primary600, primary700);
-
-        // --- Avatar: image or gradient initial circle ---
-        String imageHtml;
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            imageHtml = String.format(
-                "<img src=\"%s\" alt=\"%s\" />",
-                imageUrl, fullName);
-        } else {
-            String initial = fullName.isEmpty() ? "?" : fullName.substring(0, 1).toUpperCase();
-            imageHtml = String.format(
-                "<div class=\"avatar-fallback\">%s</div>",
-                initial);
-        }
-
-        // --- Meta row: location pin + open-to-work pulse badge ---
-        StringBuilder metaHtml = new StringBuilder();
-        if (!location.isEmpty()) {
-            metaHtml.append(String.format(
-                "<span class=\"location\"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" "
-                + "stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
-                + "<path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z\"></path><circle cx=\"12\" cy=\"10\" r=\"3\">"
-                + "</circle></svg>%s</span>",
-                location));
-        }
-        if (openToWork) {
-            metaHtml.append(
-                "<span class=\"badge\"><span class=\"pulse-wrap\"><span class=\"pulse-ring\"></span>"
-                + "<span class=\"pulse-dot\"></span></span>Open to Work</span>");
-        }
-
-        // --- Bio: strip HTML from aboutMe (it's stored as rich text) and truncate ---
-        String bioHtml = "";
+        String bioPlain = "";
         String aboutMe = p.getAboutMe();
         if (aboutMe != null && !aboutMe.isBlank()) {
             String plain = aboutMe.replaceAll("<[^>]+>", " ").replaceAll("&nbsp;", " ")
                 .replaceAll("\\s+", " ").trim();
             if (!plain.isEmpty()) {
-                if (plain.length() > 150) {
-                    plain = plain.substring(0, 150).trim() + "…";
-                }
-                bioHtml = String.format("<div class=\"bio\">%s</div>", htmlEscape(plain));
+                bioPlain = plain.length() > 150 ? plain.substring(0, 150).trim() + "…" : plain;
             }
         }
 
-        // --- Skills chips (first 10 with a name) ---
-        List<SkillResponse> skills = data.getSkills();
-        StringBuilder skillsHtml = new StringBuilder();
-        if (skills != null && !skills.isEmpty()) {
-            List<SkillResponse> named = skills.stream()
-                .filter(s -> s.getLogoName() != null && !s.getLogoName().isBlank())
+        List<String> skills = data.getSkills() != null
+            ? data.getSkills().stream()
+                .map(SkillResponse::getLogoName)
+                .filter(n -> n != null && !n.isBlank())
                 .limit(10)
-                .toList();
-            if (!named.isEmpty()) {
-                skillsHtml.append("<div><div class=\"section-label\">Skills</div><div class=\"skills\">");
-                for (SkillResponse skill : named) {
-                    skillsHtml.append(String.format(
-                        "<span class=\"skill-chip\">%s</span>",
-                        htmlEscape(skill.getLogoName())));
-                }
-                skillsHtml.append("</div></div>");
-            }
-        }
+                .toList()
+            : List.of();
 
-        // --- Social icon buttons ---
         List<SocialLinkResponseDTO> links = data.getSocialLinks();
         String githubUrl   = findActiveSocialUrl(links, PlatformEnum.GITHUB);
         String linkedinUrl = findActiveSocialUrl(links, PlatformEnum.LINKEDIN);
@@ -153,33 +116,87 @@ public class EmbedController {
         if (websiteUrl == null) {
             websiteUrl = findActiveSocialUrl(links, PlatformEnum.PORTFOLIO);
         }
+        String portfolioUrl = findActiveSocialUrl(links, PlatformEnum.PORTFOLIO);
+        if (portfolioUrl == null) {
+            portfolioUrl = "https://portfoliosbuilder.com/" + username;
+        }
+
+        return new CardData(
+            fullName, title, location, openToWork,
+            p.getProfileImageUrl(), bioPlain, skills,
+            githubUrl, linkedinUrl, websiteUrl, portfolioUrl,
+            themeColor(data.getColorTheme(), "primary400", "#34d399"),
+            themeColor(data.getColorTheme(), "primary500", "#059669"),
+            themeColor(data.getColorTheme(), "primary600", "#047857"),
+            themeColor(data.getColorTheme(), "primary700", "#065f46")
+        );
+    }
+
+    // ── Rich, interactive version — for iframe embeds on websites you control ──
+
+    private String buildEmbedHtml(CardData c, String username) {
+        String fullName = htmlEscape(c.fullName());
+        String title = htmlEscape(c.title());
+        String location = htmlEscape(c.location());
+
+        String themeVars = String.format(
+            "--primary400:%s;--primary500:%s;--primary600:%s;--primary700:%s;",
+            c.primary400(), c.primary500(), c.primary600(), c.primary700());
+
+        String imageHtml;
+        if (c.imageUrl() != null && !c.imageUrl().isBlank()) {
+            imageHtml = String.format("<img src=\"%s\" alt=\"%s\" />", c.imageUrl(), fullName);
+        } else {
+            String initial = fullName.isEmpty() ? "?" : fullName.substring(0, 1).toUpperCase();
+            imageHtml = String.format("<div class=\"avatar-fallback\">%s</div>", initial);
+        }
+
+        StringBuilder metaHtml = new StringBuilder();
+        if (!location.isEmpty()) {
+            metaHtml.append(String.format(
+                "<span class=\"location\"><svg width=\"11\" height=\"11\" viewBox=\"0 0 24 24\" fill=\"none\" "
+                + "stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+                + "<path d=\"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z\"></path><circle cx=\"12\" cy=\"10\" r=\"3\">"
+                + "</circle></svg>%s</span>", location));
+        }
+        if (c.openToWork()) {
+            metaHtml.append(
+                "<span class=\"badge\"><span class=\"pulse-wrap\"><span class=\"pulse-ring\"></span>"
+                + "<span class=\"pulse-dot\"></span></span>Open to Work</span>");
+        }
+
+        String bioHtml = c.bioPlain().isEmpty() ? "" : String.format("<div class=\"bio\">%s</div>", htmlEscape(c.bioPlain()));
+
+        StringBuilder skillsHtml = new StringBuilder();
+        if (!c.skills().isEmpty()) {
+            skillsHtml.append("<div><div class=\"section-label\">Skills</div><div class=\"skills\">");
+            for (String skill : c.skills()) {
+                skillsHtml.append(String.format("<span class=\"skill-chip\">%s</span>", htmlEscape(skill)));
+            }
+            skillsHtml.append("</div></div>");
+        }
 
         StringBuilder socialHtml = new StringBuilder();
-        if (githubUrl != null) {
+        if (c.githubUrl() != null) {
             socialHtml.append(String.format(
                 "<a class=\"social-btn\" href=\"%s\" target=\"_blank\" rel=\"noopener\" title=\"GitHub\">"
                 + "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"%s\"/></svg></a>",
-                htmlEscape(githubUrl), GITHUB_ICON_PATH));
+                htmlEscape(c.githubUrl()), GITHUB_ICON_PATH));
         }
-        if (linkedinUrl != null) {
+        if (c.linkedinUrl() != null) {
             socialHtml.append(String.format(
                 "<a class=\"social-btn\" href=\"%s\" target=\"_blank\" rel=\"noopener\" title=\"LinkedIn\">"
                 + "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"%s\"/></svg></a>",
-                htmlEscape(linkedinUrl), LINKEDIN_ICON_PATH));
+                htmlEscape(c.linkedinUrl()), LINKEDIN_ICON_PATH));
         }
-        if (websiteUrl != null) {
+        if (c.websiteUrl() != null) {
             socialHtml.append(String.format(
                 "<a class=\"social-btn\" href=\"%s\" target=\"_blank\" rel=\"noopener\" title=\"Website\">"
                 + "<svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" "
                 + "stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\">"
                 + "</circle><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"></line><path d=\"M12 2a15.3 15.3 0 0 1 4 10 "
                 + "15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"></path></svg></a>",
-                htmlEscape(websiteUrl)));
-        }
-
-        String portfolioUrl = findActiveSocialUrl(links, PlatformEnum.PORTFOLIO);
-        if (portfolioUrl == null) {
-            portfolioUrl = "https://portfoliosbuilder.com/" + username;
+                htmlEscape(c.websiteUrl())));
         }
 
         String template = """
@@ -342,16 +359,116 @@ public class EmbedController {
                 """;
 
         return String.format(template,
-            fullName,        // <title>
-            themeVars,       // .card inline style (CSS vars)
-            imageHtml,       // avatar
-            fullName,        // .name
-            title,           // .headline
-            metaHtml,        // location + badge
-            bioHtml,         // bio excerpt
-            skillsHtml,      // skills section
-            socialHtml,      // social icon buttons
-            portfolioUrl     // view portfolio href
+            fullName, themeVars, imageHtml, fullName, title, metaHtml, bioHtml, skillsHtml, socialHtml, c.portfolioUrl()
+        );
+    }
+
+    // ── Email-safe version — table layout, inline styles only, no <style>/SVG/CSS ──
+    // vars, so pasting this into Gmail/Outlook compose (or any rich-text editor)
+    // keeps the layout and every link clickable instead of being stripped/broken.
+
+    private String buildEmailSafeHtml(CardData c, String username) {
+        String fullName = htmlEscape(c.fullName());
+        String title = htmlEscape(c.title());
+        String location = htmlEscape(c.location());
+        String primary600 = c.primary600();
+        String primary700 = c.primary700();
+
+        String avatarHtml;
+        if (c.imageUrl() != null && !c.imageUrl().isBlank()) {
+            avatarHtml = String.format(
+                "<img src=\"%s\" width=\"60\" height=\"60\" alt=\"%s\" "
+                + "style=\"border-radius:50%%;display:block;object-fit:cover;border:2px solid #ffffff;\" />",
+                c.imageUrl(), fullName);
+        } else {
+            String initial = fullName.isEmpty() ? "?" : fullName.substring(0, 1).toUpperCase();
+            avatarHtml = String.format(
+                "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" width=\"60\" height=\"60\" "
+                + "style=\"background:%s;border-radius:50%%;\"><tr><td align=\"center\" valign=\"middle\" "
+                + "style=\"font-size:24px;font-weight:700;color:#ffffff;font-family:Arial,sans-serif;\">%s</td></tr></table>",
+                primary600, initial);
+        }
+
+        String badgeHtml = c.openToWork()
+            ? "&nbsp;&nbsp;<span style=\"background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;"
+              + "padding:3px 9px;border-radius:20px;\">&#9679;&nbsp;Open to Work</span>"
+            : "";
+        String locationHtml = location.isEmpty() ? "" : "&#128205;&nbsp;" + location;
+
+        String bioHtml = c.bioPlain().isEmpty() ? "" : String.format(
+            "<tr><td style=\"padding-top:14px;font-size:12.5px;line-height:1.55;color:#475569;font-family:Arial,sans-serif;\">%s</td></tr>",
+            htmlEscape(c.bioPlain()));
+
+        StringBuilder skillsHtml = new StringBuilder();
+        if (!c.skills().isEmpty()) {
+            StringBuilder chips = new StringBuilder();
+            for (String skill : c.skills()) {
+                chips.append(String.format(
+                    "<span style=\"display:inline-block;background:#f8fafc;border:1px solid #eef2f7;color:#334155;"
+                    + "font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;"
+                    + "font-family:Arial,sans-serif;\">%s</span>",
+                    htmlEscape(skill)));
+            }
+            skillsHtml.append(String.format(
+                "<tr><td style=\"padding-top:16px;\">"
+                + "<div style=\"font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;"
+                + "letter-spacing:1px;margin-bottom:8px;font-family:Arial,sans-serif;\">Skills</div>"
+                + "<div>%s</div></td></tr>", chips));
+        }
+
+        StringBuilder linksHtml = new StringBuilder();
+        if (c.githubUrl() != null) {
+            linksHtml.append(String.format(
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">GitHub</a>",
+                htmlEscape(c.githubUrl())));
+        }
+        if (c.linkedinUrl() != null) {
+            if (linksHtml.length() > 0) linksHtml.append("&nbsp;&nbsp;|&nbsp;&nbsp;");
+            linksHtml.append(String.format(
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">LinkedIn</a>",
+                htmlEscape(c.linkedinUrl())));
+        }
+        if (c.websiteUrl() != null) {
+            if (linksHtml.length() > 0) linksHtml.append("&nbsp;&nbsp;|&nbsp;&nbsp;");
+            linksHtml.append(String.format(
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">Website</a>",
+                htmlEscape(c.websiteUrl())));
+        }
+
+        String templ = """
+                <table role="presentation" cellpadding="0" cellspacing="0" width="440" style="max-width:440px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;font-family:Arial,sans-serif;">
+                  <tr><td style="height:4px;background:%s;font-size:0;line-height:0;border-radius:16px 16px 0 0;">&nbsp;</td></tr>
+                  <tr><td style="padding:22px 24px 18px 24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%%">
+                      <tr>
+                        <td width="60" valign="top">%s</td>
+                        <td style="padding-left:14px;" valign="top">
+                          <div style="font-size:18px;font-weight:800;color:#0f172a;font-family:Arial,sans-serif;">%s</div>
+                          <div style="font-size:13px;color:#64748b;margin-top:2px;font-family:Arial,sans-serif;">%s</div>
+                          <div style="font-size:11.5px;color:#94a3b8;margin-top:6px;font-family:Arial,sans-serif;">%s%s</div>
+                        </td>
+                      </tr>
+                      %s
+                      %s
+                      <tr><td style="padding-top:16px;border-top:1px solid #f1f5f9;margin-top:16px;">&nbsp;</td></tr>
+                      <tr><td>
+                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>
+                          <td valign="middle">%s</td>
+                          <td align="right" valign="middle">
+                            <a href="%s" style="display:inline-block;background:%s;color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:9px 18px;border-radius:20px;font-family:Arial,sans-serif;">View Portfolio &#8594;</a>
+                          </td>
+                        </tr></table>
+                      </td></tr>
+                      <tr><td style="padding-top:10px;text-align:center;font-size:9.5px;color:#cbd5e1;font-family:Arial,sans-serif;">Powered by PortfoliosBuilder</td></tr>
+                    </table>
+                  </td></tr>
+                </table>
+                """;
+
+        return String.format(templ,
+            "linear-gradient(90deg," + primary600 + "," + primary700 + ")",
+            avatarHtml, fullName, title, locationHtml, badgeHtml,
+            bioHtml, skillsHtml, linksHtml, c.portfolioUrl(), primary600
         );
     }
 
