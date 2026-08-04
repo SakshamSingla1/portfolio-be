@@ -61,4 +61,15 @@ public class ContactUsController {
         return ApiResponse.respond(response, "Reply sent successfully", ApiResponse.FAILED);
     }
 
+    @Operation(summary = "Delete contact message", description = "Permanently deletes a contact message belonging to the authenticated user's profile.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseModel<Void>> delete(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @PathVariable Long id
+    ) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        contactUsService.deleteContactUs(id, profileId);
+        return ApiResponse.successResponse(null, "Message deleted successfully");
+    }
+
 }

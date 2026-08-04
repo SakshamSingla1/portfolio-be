@@ -1,11 +1,22 @@
 package com.portfolio.services;
 
+import com.portfolio.dtos.Admin.AdminCreateUserRequest;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface AdminService {
     AuthResponseDTO register(AuthRegisterDTO registerDTO) throws GenericException;
+
+    /**
+     * Creates a fully-active user account directly (no OTP step) — the admin creating
+     * the account is vouching for it, so email/phone are marked verified immediately.
+     * Mirrors the same activation setup {@link #verifyOtp} performs after self-registration
+     * (default theme mapping, portfolio social link, welcome notification) so the account
+     * isn't missing anything a normally-onboarded user would have.
+     * Returns the new profile's ID.
+     */
+    Long createUserByAdmin(AdminCreateUserRequest dto) throws GenericException;
 
     String sendOtp(PhoneOtpRequestDTO requestDTO) throws GenericException;
 

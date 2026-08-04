@@ -64,6 +64,13 @@ public class NTController {
                 "Notification template updated", "Failed to update notification template");
     }
 
+    @Operation(summary = "Delete notification template", description = "Permanently deletes a notification template by ID.")
+    @DeleteMapping("/api/v1/notification-templates/{id}")
+    public ResponseEntity<ResponseModel<Void>> delete(@PathVariable Long id) throws GenericException {
+        ntService.deleteNT(id);
+        return ApiResponse.successResponse(null, "Notification template deleted successfully");
+    }
+
     // ── Notification Template Variables ──────────────────────────────────
 
     @Operation(summary = "Get template variables", description = "Returns a paginated list of available template variables that can be used in notification template bodies.")

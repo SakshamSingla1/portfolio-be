@@ -122,6 +122,17 @@ public class ContactUsServiceImpl implements ContactUsService{
         return toDto(contactUsDao.save(contact));
     }
 
+    @Override
+    @Transactional
+    public void deleteContactUs(Long id, Long profileId) throws GenericException {
+        ContactUs contact = contactUsDao.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.CONTACT_US_NOT_FOUND, "Message not found"));
+        if (!contact.getProfileId().equals(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.FORBIDDEN, "You do not have permission to delete this message");
+        }
+        contactUsDao.deleteById(id);
+    }
+
     private ContactUsResponse toDto(ContactUs contact) {
         return ContactUsResponse.builder()
                 .id(contact.getId())

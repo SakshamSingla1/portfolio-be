@@ -92,6 +92,14 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
         return profileThemeMappingDao.countByThemeId(themeId);
     }
 
+    @Override
+    public void deleteThemeForProfile(Long profileId) throws GenericException {
+        if (!profileThemeMappingDao.existsByProfileId(profileId)) {
+            throw new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Theme mapping not found for profile: " + profileId);
+        }
+        profileThemeMappingDao.deleteByProfileId(profileId);
+    }
+
     private ProfileThemeResponse mapToResponse(ProfileThemeMapping mapping, Profile profile, ColorTheme theme) {
         return ProfileThemeResponse.builder()
                 .id(mapping.getId())

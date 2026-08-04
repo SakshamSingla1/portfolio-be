@@ -63,4 +63,15 @@ public class NotificationController {
         notificationService.markAllAsRead(profileId);
         return ApiResponse.successResponse(null, "All notifications marked as read");
     }
+
+    @Operation(summary = "Delete notification", description = "Permanently deletes a single notification belonging to the authenticated user's profile.")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ResponseModel<Void>> delete(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @PathVariable Long id
+    ) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        notificationService.delete(id, profileId);
+        return ApiResponse.successResponse(null, "Notification deleted successfully");
+    }
 }

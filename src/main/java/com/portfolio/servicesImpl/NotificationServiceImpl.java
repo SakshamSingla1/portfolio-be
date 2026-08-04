@@ -65,6 +65,14 @@ public class NotificationServiceImpl implements NotificationService {
         notificationDao.markAllAsRead(profileId);
     }
 
+    @Override
+    @Transactional
+    public void delete(Long id, Long profileId) throws GenericException {
+        notificationDao.findByIdAndProfileId(id, profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.NOTIFICATION_NOT_FOUND, "Notification not found"));
+        notificationDao.deleteById(id);
+    }
+
     private NotificationResponseDTO mapToResponse(Notification notification) {
         return NotificationResponseDTO.builder()
                 .id(notification.getId())

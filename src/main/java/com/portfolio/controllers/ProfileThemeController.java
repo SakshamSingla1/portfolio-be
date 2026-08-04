@@ -44,6 +44,15 @@ public class ProfileThemeController {
         return ApiResponse.respond(response, "Theme updated successfully", "Failed to update theme");
     }
 
+    @Operation(summary = "Reset profile theme", description = "Removes the custom theme mapping for the authenticated user's profile, reverting to the default theme.")
+    @DeleteMapping
+    public ResponseEntity<ResponseModel<Void>> deleteTheme(@RequestHeader(value = "Authorization", required = false) String auth)
+            throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        profileThemeService.deleteThemeForProfile(profileId);
+        return ApiResponse.successResponse(null, "Theme reset to default successfully");
+    }
+
     @Operation(summary = "Get profiles by theme", description = "Returns a list of all profiles currently using the specified theme ID.")
     @GetMapping("/theme/{themeId}")
     public ResponseEntity<ResponseModel<List<ProfileThemeResponse>>> getProfilesByThemeId(@PathVariable Long themeId)

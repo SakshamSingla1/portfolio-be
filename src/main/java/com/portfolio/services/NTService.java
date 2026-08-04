@@ -18,6 +18,8 @@ public interface NTService {
 
     NotificationTemplate updateNT(Long id, NTRequestDTO requestDTO) throws GenericException;
 
+    void deleteNT(Long id) throws GenericException;
+
     NTResponseDTO findNTById(Long id) throws GenericException;
 
     Page<NotificationTemplateListResponseDTO> getAllByCriteria(String search, String templateGroupIdString, Pageable pageable);

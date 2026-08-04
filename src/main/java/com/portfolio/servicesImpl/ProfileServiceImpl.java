@@ -34,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -301,6 +302,10 @@ public class ProfileServiceImpl implements ProfileService {
                 .emailVerified(profile.getEmailVerified())
                 .phoneVerified(profile.getPhoneVerified())
                 .profileImageUrl(profileImageUrl)
+                .createdAt(profile.getCreatedAt())
+                .updatedAt(profile.getUpdatedAt())
+                .createdBy(profile.getCreatedBy())
+                .updatedBy(profile.getUpdatedBy())
                 .build();
         return user;
     }
@@ -322,6 +327,34 @@ public class ProfileServiceImpl implements ProfileService {
         } catch (Exception e) {
             log.warn("Failed to send account-deleted email for profile {}: {}", id, e.getMessage());
         }
+    }
+
+    @Override
+    public List<UserResponse> bulkUpdateStatus(List<Long> ids, StatusEnum status) {
+        List<UserResponse> updated = new ArrayList<>();
+        StatusUpdateRequest request = StatusUpdateRequest.builder().status(status).build();
+        for (Long id : ids) {
+            try {
+                updated.add(updateUserStatus(id, request));
+            } catch (GenericException e) {
+                log.warn("Skipping bulk status update for user {}: {}", id, e.getMessage());
+            }
+        }
+        return updated;
+    }
+
+    @Override
+    public int bulkDeleteUsers(List<Long> ids) {
+        int deleted = 0;
+        for (Long id : ids) {
+            try {
+                deleteUser(id);
+                deleted++;
+            } catch (GenericException e) {
+                log.warn("Skipping bulk delete for user {}: {}", id, e.getMessage());
+            }
+        }
+        return deleted;
     }
 
     @Override

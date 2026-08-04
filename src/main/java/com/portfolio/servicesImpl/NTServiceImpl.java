@@ -84,6 +84,14 @@ public class NTServiceImpl implements NTService {
     }
 
     @Override
+    @Transactional
+    public void deleteNT(Long id) throws GenericException {
+        ntDao.findById(id)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));
+        ntDao.deleteById(id);
+    }
+
+    @Override
     public NTResponseDTO findNTById(Long id) throws GenericException {
         NotificationTemplate nt = ntDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.TEMPLATE_NOT_FOUND, "Notification template not found"));

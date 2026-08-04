@@ -11,4 +11,5 @@ public interface ProfileThemeService {
     ProfileThemeResponse setThemeForProfile(Long profileId, ProfileThemeRequest request) throws GenericException;
     List<ProfileThemeResponse> getProfilesByThemeId(Long themeId) throws GenericException;
     long countProfilesByThemeId(Long themeId);
+    void deleteThemeForProfile(Long profileId) throws GenericException;
 }

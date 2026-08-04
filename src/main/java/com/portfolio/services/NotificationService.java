@@ -17,4 +17,6 @@ public interface NotificationService {
     void markAsRead(Long id, Long profileId) throws GenericException;
 
     void markAllAsRead(Long profileId);
+
+    void delete(Long id, Long profileId) throws GenericException;
 }

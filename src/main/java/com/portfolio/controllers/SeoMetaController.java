@@ -48,4 +48,13 @@ public class SeoMetaController {
             @Valid @RequestBody SeoMetaRequestDTO dto) throws GenericException {
         return ApiResponse.respond(seoMetaService.upsert(auth, dto), ApiResponse.SUCCESS, ApiResponse.FAILED);
     }
+
+    @Operation(summary = "Delete SEO meta for a page", description = "Deletes the custom SEO metadata for a specific page, reverting it to defaults.")
+    @DeleteMapping("/{pageKey}")
+    public ResponseEntity<ResponseModel<Void>> delete(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @PathVariable PageKeyEnum pageKey) throws GenericException {
+        seoMetaService.delete(auth, pageKey);
+        return ApiResponse.successResponse(null, "SEO meta deleted successfully");
+    }
 }

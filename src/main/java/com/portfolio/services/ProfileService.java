@@ -39,5 +39,14 @@ public interface ProfileService {
 
     void deleteUser(Long id) throws GenericException;
 
+    /** Applies the same status change as {@link #updateUserStatus} to every listed user;
+     * unknown/invalid ids are skipped rather than failing the whole batch. Returns the
+     * users that were actually updated. */
+    java.util.List<UserResponse> bulkUpdateStatus(java.util.List<Long> ids, StatusEnum status);
+
+    /** Soft-deletes every listed user the same way {@link #deleteUser} does; unknown ids
+     * are skipped rather than failing the whole batch. Returns how many were deleted. */
+    int bulkDeleteUsers(java.util.List<Long> ids);
+
     ProfileResponse updateSettings(Long profileId, ProfileSettingsRequest req) throws GenericException;
 }

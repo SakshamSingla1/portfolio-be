@@ -11,4 +11,5 @@ public interface SeoMetaService {
     List<SeoMetaResponseDTO> getAllByProfile(String authHeader) throws GenericException;
     SeoMetaResponseDTO getByPageKey(String authHeader, PageKeyEnum pageKey) throws GenericException;
     SeoMetaResponseDTO upsert(String authHeader, SeoMetaRequestDTO dto) throws GenericException;
+    void delete(String authHeader, PageKeyEnum pageKey) throws GenericException;
 }

@@ -4,6 +4,7 @@ import com.portfolio.dao.authentication.OtpStoreDao;
 import com.portfolio.dao.authentication.PasswordResetTokenDao;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.profile_theme.ProfileThemeMappingDao;
+import com.portfolio.dtos.Admin.AdminCreateUserRequest;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
@@ -118,6 +119,82 @@ public class AdminServiceImpl implements AdminService {
                 .createdAt(user.getCreatedAt())
                 .message("User registered successfully. Please verify OTP sent to your email.")
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public Long createUserByAdmin(AdminCreateUserRequest dto) throws GenericException {
+        if (profileDao.existsByEmail(dto.getEmail()))
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_EMAIL, "User with same email already exists");
+
+        if (profileDao.existsByUserName(dto.getUserName()))
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same username already exists");
+
+        if (StringUtils.hasText(dto.getPhone()) && profileDao.existsByPhone(dto.getPhone()))
+            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same phone number already exists");
+
+        // Validates the role exists (throws if not) before we commit to it.
+        roleService.getRoleById(dto.getRoleId());
+
+        Profile profile = Profile.builder()
+                .fullName(dto.getFullName())
+                .userName(dto.getUserName())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .roleId(dto.getRoleId())
+                .phone(dto.getPhone())
+                .status(dto.getStatus() != null ? dto.getStatus() : StatusEnum.ACTIVE)
+                // An admin creating the account directly is vouching for it, so there is
+                // no OTP round-trip — mark verified immediately, matching what verifyOtp
+                // would set once a self-registered user completes theirs.
+                .emailVerified(VerificationStatusEnum.VERIFIED)
+                .phoneVerified(VerificationStatusEnum.VERIFIED)
+                .build();
+        profileDao.save(profile);
+
+        try {
+            profileThemeMappingDao.save(
+                    ProfileThemeMapping.builder()
+                            .profileId(profile.getId())
+                            .themeId(1L)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create theme mapping for admin-created profile {}: {}", profile.getId(), e.getMessage(), e);
+        }
+
+        try {
+            socialLinkService.createLink(
+                    SocialLinkRequestDTO.builder()
+                            .profileId(profile.getId())
+                            .platform(PlatformEnum.PORTFOLIO)
+                            .url("https://" + profile.getUserName() + ".portfoliosbuilder.com/")
+                            .order("1")
+                            .status(StatusEnum.ACTIVE)
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Failed to create portfolio social link for admin-created profile {}: {}", profile.getId(), e.getMessage(), e);
+        }
+
+        try {
+            ntService.sendNotification(
+                    "WELCOME-EMAIL",
+                    Map.of("fullName", profile.getFullName()),
+                    profile.getEmail()
+            );
+        } catch (Exception e) {
+            log.warn("Failed to send welcome email to admin-created profile {}: {}", profile.getId(), e.getMessage());
+        }
+        notificationService.create(
+                profile.getId(),
+                NotificationTypeEnum.WELCOME,
+                "Welcome to PortfoliosBuilder",
+                "Your account was created by an administrator. Start building your portfolio now.",
+                "/dashboard"
+        );
+
+        return profile.getId();
     }
 
     @Override

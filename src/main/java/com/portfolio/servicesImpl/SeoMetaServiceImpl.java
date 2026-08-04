@@ -4,6 +4,7 @@ import com.portfolio.dao.seo_meta.SeoMetaDao;
 import com.portfolio.dtos.SeoMeta.SeoMetaRequestDTO;
 import com.portfolio.dtos.SeoMeta.SeoMetaResponseDTO;
 import com.portfolio.entities.SeoMeta;
+import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.PageKeyEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -62,6 +63,15 @@ public class SeoMetaServiceImpl implements SeoMetaService {
         entity.setFollowLinks(dto.getFollowLinks() != null ? dto.getFollowLinks() : true);
 
         return toDTO(seoMetaDao.save(entity));
+    }
+
+    @Override
+    @Transactional
+    public void delete(String authHeader, PageKeyEnum pageKey) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(authHeader);
+        SeoMeta entity = seoMetaDao.findByProfileIdAndPageKey(profileId, pageKey)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "SEO meta not found for page: " + pageKey));
+        seoMetaDao.deleteById(entity.getId());
     }
 
     private SeoMetaResponseDTO toDTO(SeoMeta e) {

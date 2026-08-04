@@ -1,5 +1,8 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dtos.Admin.AdminCreateUserRequest;
+import com.portfolio.dtos.Admin.BulkStatusUpdateRequest;
+import com.portfolio.dtos.Admin.BulkUserIdsRequest;
 import com.portfolio.dtos.Admin.RoleUpdateRequest;
 import com.portfolio.dtos.Admin.StatusUpdateRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
@@ -10,6 +13,7 @@ import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
+import com.portfolio.services.AdminService;
 import com.portfolio.services.ProfileService;
 import com.portfolio.utils.Helper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +36,7 @@ import java.io.IOException;
 public class ProfileController {
 
         private final ProfileService profileService;
+        private final AdminService adminService;
         private final Helper helper;
 
         @Operation(summary = "Get profile", description = "Returns the full profile of the currently authenticated user.")
@@ -135,6 +140,19 @@ public class ProfileController {
                                 "Failed to fetch user");
         }
 
+        @Operation(summary = "Create user (Admin)", description = "Creates a new, immediately-active user account with a chosen role and status — no OTP verification step. Requires SUPER_ADMIN role.")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        @PostMapping("/users")
+        public ResponseEntity<ResponseModel<UserResponse>> createUser(
+                        @Valid @RequestBody AdminCreateUserRequest request) throws GenericException {
+                Long newUserId = adminService.createUserByAdmin(request);
+                UserResponse user = profileService.getUserById(newUserId);
+                return ApiResponse.respond(
+                                user,
+                                "User created successfully",
+                                "Failed to create user");
+        }
+
         @Operation(summary = "Update user status (Admin)", description = "Updates the account status (ACTIVE/INACTIVE/SUSPENDED) for a user by ID. Requires SUPER_ADMIN role.")
         @PreAuthorize("hasRole('SUPER_ADMIN')")
         @PutMapping("/users/{id}/status")
@@ -179,6 +197,30 @@ public class ProfileController {
         public ResponseEntity<ResponseModel<Void>> deleteUser(@PathVariable Long id) throws GenericException {
                 profileService.deleteUser(id);
                 return ApiResponse.successResponse(null, "User deleted successfully");
+        }
+
+        @Operation(summary = "Bulk update user status (Admin)", description = "Applies the same status to multiple users at once. Unknown/invalid ids are skipped rather than failing the whole batch. Requires SUPER_ADMIN role.")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        @PatchMapping("/users/bulk-status")
+        public ResponseEntity<ResponseModel<java.util.List<UserResponse>>> bulkUpdateStatus(
+                        @Valid @RequestBody BulkStatusUpdateRequest request) {
+                java.util.List<UserResponse> updated = profileService.bulkUpdateStatus(request.getIds(), request.getStatus());
+                return ApiResponse.respond(
+                                updated,
+                                updated.size() + " user(s) updated successfully",
+                                "Failed to bulk update user status");
+        }
+
+        @Operation(summary = "Bulk delete users (Admin)", description = "Soft-deletes multiple user accounts at once. Unknown/invalid ids are skipped rather than failing the whole batch. Requires SUPER_ADMIN role.")
+        @PreAuthorize("hasRole('SUPER_ADMIN')")
+        @DeleteMapping("/users/bulk")
+        public ResponseEntity<ResponseModel<Integer>> bulkDeleteUsers(
+                        @Valid @RequestBody BulkUserIdsRequest request) {
+                int deleted = profileService.bulkDeleteUsers(request.getIds());
+                return ApiResponse.respond(
+                                deleted,
+                                deleted + " user(s) deleted successfully",
+                                "Failed to bulk delete users");
         }
 
         @Operation(summary = "Update profile settings", description = "Toggles discoverability and weekly digest email for the authenticated user.")

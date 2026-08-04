@@ -36,4 +36,8 @@ public class NotificationDao {
     public void markAllAsRead(Long profileId) {
         notificationRepository.markAllAsRead(profileId);
     }
+
+    public void deleteById(Long id) {
+        notificationRepository.deleteById(id);
+    }
 }
