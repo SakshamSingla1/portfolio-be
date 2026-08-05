@@ -109,6 +109,10 @@ public class ProfileDao {
         return profileRepository.findAllByDigestEmailEnabledTrueAndStatus(StatusEnum.ACTIVE);
     }
 
+    public List<Profile> findAllByRoleIdAndStatus(Long roleId, StatusEnum status) {
+        return profileRepository.findAllByRoleIdAndStatus(roleId, status);
+    }
+
     public List<DiscoverProfileResponse> findDiscoverableProfiles(String search, String skill) {
         return profileRepository.findDiscoverableProfiles(
                         search == null ? "" : search,

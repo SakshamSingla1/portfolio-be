@@ -129,6 +129,8 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     List<Profile> findAllByDigestEmailEnabledTrueAndStatus(StatusEnum status);
 
+    List<Profile> findAllByRoleIdAndStatus(Long roleId, StatusEnum status);
+
     @Query(value = """
             SELECT p.id, p.full_name, p.user_name, p.title, p.location, fa.path,
                    (SELECT STRING_AGG(s.logo_name, ',' ORDER BY s.id)

@@ -1,10 +1,12 @@
 package com.portfolio.servicesImpl;
 
 import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.role.RoleDao;
 import com.portfolio.dao.social_links.SocialLinksDao;
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.Role;
 import com.portfolio.entities.SocialLinks;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.PlatformEnum;
@@ -24,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -31,7 +34,17 @@ import java.util.Optional;
 public class SocialLinkServiceImpl implements SocialLinkService {
     private final SocialLinksDao socialLinksDao;
     private final ProfileDao profileDao;
+    private final RoleDao roleDao;
     private final NTService ntService;
+
+    // Matches the bare apex domain (used by EmbedController's fallback) and any
+    // *.portfoliosbuilder.com subdomain (the normal per-user portfolio URL).
+    private static final Pattern PORTFOLIOSBUILDER_DOMAIN_PATTERN =
+            Pattern.compile("^https?://([a-z0-9-]+\\.)?portfoliosbuilder\\.com(/.*)?$", Pattern.CASE_INSENSITIVE);
+
+    private boolean isCustomDomain(String url) {
+        return url != null && !PORTFOLIOSBUILDER_DOMAIN_PATTERN.matcher(url.trim()).matches();
+    }
 
     private void notifyDomainUpdated(Long profileId, String newUrl) {
         try {
@@ -48,6 +61,46 @@ public class SocialLinkServiceImpl implements SocialLinkService {
         }
     }
 
+    // A user pointing their Portfolio link at a domain other than
+    // *.portfoliosbuilder.com means they intend to self-host — notify every
+    // SUPER_ADMIN so one of them can reach out with the self-hosting repo.
+    // One send per admin, each independently caught so one failure (or one
+    // missing mailbox) never blocks the others — same pattern used by
+    // WeeklyDigestScheduler for its multi-recipient broadcast.
+    private void notifySuperAdminsOfCustomDomain(Long profileId, String customUrl) {
+        try {
+            Profile profile = profileDao.findById(profileId).orElse(null);
+            if (profile == null) return;
+
+            Role superAdminRole = roleDao.findByName("SUPER_ADMIN").orElse(null);
+            if (superAdminRole == null) {
+                log.warn("SUPER_ADMIN role not found — cannot notify admins of custom domain for profile {}", profileId);
+                return;
+            }
+
+            List<Profile> superAdmins = profileDao.findAllByRoleIdAndStatus(superAdminRole.getId(), StatusEnum.ACTIVE);
+            for (Profile admin : superAdmins) {
+                try {
+                    ntService.sendNotification(
+                            "PORTFOLIO-CUSTOM-DOMAIN-DETECTED",
+                            Map.of(
+                                    "adminName", admin.getFullName(),
+                                    "userFullName", profile.getFullName(),
+                                    "userEmail", profile.getEmail(),
+                                    "customDomainUrl", customUrl
+                            ),
+                            admin.getEmail()
+                    );
+                } catch (Exception e) {
+                    log.warn("Failed to notify super admin {} of custom domain for profile {}: {}",
+                            admin.getId(), profileId, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to process custom-domain super-admin notification for profile {}: {}", profileId, e.getMessage());
+        }
+    }
+
     @Override
     public SocialLinkResponseDTO createLink(SocialLinkRequestDTO requestDTO) throws GenericException {
         if (!profileDao.existsById(requestDTO.getProfileId())) {
@@ -61,6 +114,9 @@ public class SocialLinkServiceImpl implements SocialLinkService {
             link.setUrl(requestDTO.getUrl());
             link.setOrder(requestDTO.getOrder() != null ? Integer.parseInt(requestDTO.getOrder()) : null);
             SocialLinks saved = socialLinksDao.save(link);
+            if (saved.getPlatform() == PlatformEnum.PORTFOLIO && isCustomDomain(saved.getUrl())) {
+                notifySuperAdminsOfCustomDomain(saved.getProfileId(), saved.getUrl());
+            }
             return mapToResponse(saved);
         }
         if (socialLinksDao.existsByProfileIdAndPlatformAndStatusNot(
@@ -78,6 +134,9 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 .build();
 
         SocialLinks saved = socialLinksDao.save(socialLinks);
+        if (saved.getPlatform() == PlatformEnum.PORTFOLIO && isCustomDomain(saved.getUrl())) {
+            notifySuperAdminsOfCustomDomain(saved.getProfileId(), saved.getUrl());
+        }
         return mapToResponse(saved);
     }
 
@@ -96,6 +155,9 @@ public class SocialLinkServiceImpl implements SocialLinkService {
                 && updated.getUrl() != null
                 && !updated.getUrl().equals(previousUrl)) {
             notifyDomainUpdated(updated.getProfileId(), updated.getUrl());
+            if (isCustomDomain(updated.getUrl())) {
+                notifySuperAdminsOfCustomDomain(updated.getProfileId(), updated.getUrl());
+            }
         }
 
         return mapToResponse(updated);
