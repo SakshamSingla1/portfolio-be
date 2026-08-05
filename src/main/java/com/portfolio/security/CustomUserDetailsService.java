@@ -24,7 +24,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         Profile profile = profileRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         
-        String roleName = "USER"; // Default role
+        String roleName = "USER";
         if (profile.getRoleId() != null) {
             Role role = roleRepository.findById(profile.getRoleId()).orElse(null);
             if (role != null && role.getName() != null) {

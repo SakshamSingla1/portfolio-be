@@ -92,7 +92,6 @@ public class EducationServiceImpl implements EducationService {
                 .toList();
     }
 
-    // ---------------- DTO MAPPING ----------------
     private EducationResponse mapToResponse(Education education) {
         return EducationResponse.builder()
                 .id(education.getId())

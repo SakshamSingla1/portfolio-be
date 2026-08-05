@@ -1,4 +1,3 @@
-// File: EducationController.java
 package com.portfolio.controllers;
 
 import com.portfolio.dtos.Education.EducationRequest;

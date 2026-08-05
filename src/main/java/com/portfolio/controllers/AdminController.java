@@ -106,7 +106,6 @@ public class AdminController {
         String newAccessToken = jwtUtil.generateAccessToken(profile.getEmail(), String.valueOf(profile.getId()));
         // Revoke old refresh token (token rotation)
         refreshTokenRepository.deleteByToken(refreshTokenValue);
-        // Issue a new refresh token
         String newRefreshToken = UUID.randomUUID().toString();
         refreshTokenRepository.save(RefreshToken.builder()
                 .profileId(storedToken.getProfileId())
@@ -114,10 +113,8 @@ public class AdminController {
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .revoked(false)
                 .build());
-        // Set new access token cookie
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", newAccessToken)
                 .httpOnly(true).secure(true).path("/").maxAge(36000).sameSite("Strict").build();
-        // Set new refresh token cookie
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", newRefreshToken)
                 .httpOnly(true).secure(true).path("/api/v1/auth/refresh").maxAge(7 * 24 * 3600).sameSite("Strict").build();
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -128,15 +125,12 @@ public class AdminController {
     @Operation(summary = "Logout user", description = "Clears auth cookies and revokes the refresh token in the database.")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        // Revoke refresh token from DB
         String refreshTokenValue = extractCookieValue(request, "refreshToken");
         if (refreshTokenValue != null) {
             refreshTokenRepository.deleteByToken(refreshTokenValue);
         }
-        // Clear access token cookie
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", "")
                 .httpOnly(true).secure(true).path("/").maxAge(0).sameSite("Strict").build();
-        // Clear refresh token cookie
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true).secure(true).path("/api/v1/auth/refresh").maxAge(0).sameSite("Strict").build();
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());

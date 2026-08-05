@@ -20,7 +20,6 @@ public class JwtUtil {
     @Value("${jwt.access-token.expiration}")
     private long accessTokenExpiration;
 
-    // ================= SIGNING KEY =================
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
@@ -72,7 +71,6 @@ public class JwtUtil {
         return userId.toString();
     }
 
-    // ================= VALIDATE =================
     public boolean validateToken(String token, String email) {
         try {
             Claims claims = getClaims(token);
@@ -83,7 +81,6 @@ public class JwtUtil {
         }
     }
 
-    // ================= CLAIMS =================
     private Claims getClaims(String token) {
 
         // ✅ absolutely critical

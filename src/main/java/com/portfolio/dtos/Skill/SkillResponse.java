@@ -1,4 +1,3 @@
-// SkillResponse.java
 package com.portfolio.dtos.Skill;
 
 import com.portfolio.enums.SkillCategoryEnum;

@@ -28,7 +28,6 @@ public class LogoServiceImpl implements LogoService {
     private final FileService fileService;
     private final FileAssetDao fileAssetDao;
 
-    // ================= CREATE =================
     @Override
     public LogoResponse create(LogoRequest request) throws GenericException {
 
@@ -46,7 +45,6 @@ public class LogoServiceImpl implements LogoService {
         return mapToResponse(savedLogo);
     }
 
-    // ================= UPDATE =================
     @Override
     public LogoResponse update(Long id, LogoRequest request) throws GenericException {
 
