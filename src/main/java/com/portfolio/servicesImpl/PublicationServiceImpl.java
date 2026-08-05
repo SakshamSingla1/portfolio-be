@@ -81,14 +81,18 @@ public class PublicationServiceImpl implements PublicationService {
 
     @Override
     public List<PublicationResponseDTO> getByProfile(Long profileId) {
-        return publicationDao.findByProfileId(profileId)
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+        List<Publication> publications = publicationDao.findByProfileId(profileId);
+        return helper.mapAuditList(publications, this::buildResponse);
     }
 
     private PublicationResponseDTO mapToResponse(Publication p) {
-        PublicationResponseDTO dto = PublicationResponseDTO.builder()
+        PublicationResponseDTO dto = buildResponse(p);
+        helper.setAudit(p, dto);
+        return dto;
+    }
+
+    private PublicationResponseDTO buildResponse(Publication p) {
+        return PublicationResponseDTO.builder()
                 .id(p.getId())
                 .profileId(p.getProfileId())
                 .title(p.getTitle())
@@ -100,7 +104,5 @@ public class PublicationServiceImpl implements PublicationService {
                 .coAuthors(p.getCoAuthors())
                 .sortOrder(p.getSortOrder())
                 .build();
-        helper.setAudit(p, dto);
-        return dto;
     }
 }

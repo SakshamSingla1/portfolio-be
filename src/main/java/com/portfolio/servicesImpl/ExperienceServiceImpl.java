@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -92,10 +94,47 @@ public class ExperienceServiceImpl implements ExperienceService {
 
     @Override
     public List<ExperienceResponse> getByProfile(Long profileId) {
-        return experienceDao.findByProfileId(profileId)
-                .stream()
-                .map(this::mapToResponse)
+        List<Experience> experiences = experienceDao.findByProfileId(profileId);
+        return mapToResponseBatch(experiences);
+    }
+
+    private List<ExperienceResponse> mapToResponseBatch(List<Experience> experiences) {
+        if (experiences.isEmpty()) return List.of();
+
+        List<Long> allSkillIds = experiences.stream()
+                .flatMap(e -> e.getSkillIds() == null ? java.util.stream.Stream.<String>empty() : e.getSkillIds().stream())
+                .map(Long::valueOf)
+                .distinct()
                 .toList();
+        Map<Long, SkillDropdown> skillById = allSkillIds.isEmpty() ? Map.<Long, SkillDropdown>of()
+                : skillDao.findDropdownByIds(allSkillIds).stream()
+                        .collect(Collectors.toMap(SkillDropdown::getId, s -> s));
+
+        return experiences.stream().map(exp -> buildResponse(exp, skillById)).toList();
+    }
+
+    private ExperienceResponse buildResponse(Experience exp, Map<Long, SkillDropdown> skillById) {
+        List<SkillDropdown> skills = (exp.getSkillIds() == null ? List.<String>of() : exp.getSkillIds()).stream()
+                .map(Long::valueOf)
+                .map(skillById::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        return ExperienceResponse.builder()
+                .id(exp.getId())
+                .companyName(exp.getCompanyName())
+                .jobTitle(exp.getJobTitle())
+                .location(exp.getLocation())
+                .startDate(exp.getStartDate().format(FORMATTER))
+                .endDate(exp.getEndDate() != null
+                        ? exp.getEndDate().format(FORMATTER)
+                        : null)
+                .employmentStatus(exp.getEmploymentStatus())
+                .description(exp.getDescription())
+                .skills(skills)
+                .createdAt(exp.getCreatedAt())
+                .updatedAt(exp.getUpdatedAt())
+                .build();
     }
 
     private LocalDate parseDate(String date) throws GenericException {

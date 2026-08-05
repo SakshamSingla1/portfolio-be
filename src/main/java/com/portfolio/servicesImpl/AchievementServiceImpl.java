@@ -25,7 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -122,11 +124,34 @@ public class AchievementServiceImpl implements AchievementService {
 
     @Override
     public List<AchievementResponseDTO> getByProfile(Long profileId) {
-        return achievementDao
-                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
+        List<Achievements> achievements = achievementDao
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE);
+        return mapToResponseBatch(achievements);
+    }
+
+    private List<AchievementResponseDTO> mapToResponseBatch(List<Achievements> achievements) {
+        if (achievements.isEmpty()) return List.of();
+
+        List<Long> ids = achievements.stream().map(Achievements::getId).toList();
+        Map<Long, FileAsset> proofByAchievementId = fileAssetDao
+                .findByResourceIdInAndResourceTypeAndIsPrimaryTrue(ids, ResourceTypeEnum.ACHIEVEMENT)
                 .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .collect(Collectors.toMap(FileAsset::getResourceId, a -> a, (a, b) -> a));
+
+        return helper.mapAuditList(achievements, c -> {
+            FileAsset asset = proofByAchievementId.get(c.getId());
+            return AchievementResponseDTO.builder()
+                    .id(c.getId())
+                    .title(c.getTitle())
+                    .issuer(c.getIssuer())
+                    .description(c.getDescription())
+                    .achievedAt(c.getAchievedAt())
+                    .proofUrl(asset != null ? asset.getPath() : null)
+                    .proofPublicId(asset != null ? asset.getPublicId() : null)
+                    .order(c.getOrder())
+                    .status(c.getStatus())
+                    .build();
+        });
     }
 
     private void linkFileAsset(Long resourceId, String publicId, String url) {

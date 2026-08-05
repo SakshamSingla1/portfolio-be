@@ -25,7 +25,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -116,11 +118,37 @@ public class TestimonialServiceImpl implements TestimonialService {
 
     @Override
     public List<TestimonialResponseDTO> getByProfile(Long profileId) {
-        return testimonialDao
-                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
+        List<Testimonial> testimonials = testimonialDao
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE);
+        return mapToResponseBatch(testimonials);
+    }
+
+    private List<TestimonialResponseDTO> mapToResponseBatch(List<Testimonial> testimonials) {
+        if (testimonials.isEmpty()) return List.of();
+
+        List<Long> ids = testimonials.stream().map(Testimonial::getId).toList();
+        Map<Long, FileAsset> imageByTestimonialId = fileAssetDao
+                .findByResourceIdInAndResourceTypeAndIsPrimaryTrue(ids, ResourceTypeEnum.TESTIMONIAL)
                 .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .collect(Collectors.toMap(FileAsset::getResourceId, a -> a, (a, b) -> a));
+
+        return testimonials.stream().map(c -> {
+            FileAsset asset = imageByTestimonialId.get(c.getId());
+            return TestimonialResponseDTO.builder()
+                    .id(c.getId())
+                    .name(c.getName())
+                    .role(c.getRole())
+                    .company(c.getCompany())
+                    .message(c.getMessage())
+                    .imageId(asset != null ? asset.getId() : null)
+                    .imageUrl(asset != null ? asset.getPath() : null)
+                    .linkedInUrl(c.getLinkedInUrl())
+                    .status(c.getStatus())
+                    .order(c.getOrder())
+                    .createdAt(c.getCreatedAt())
+                    .updatedAt(c.getUpdatedAt())
+                    .build();
+        }).toList();
     }
 
     @Override

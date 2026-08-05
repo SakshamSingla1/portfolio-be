@@ -24,7 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -81,7 +83,8 @@ public class ServiceOfferingServiceImpl implements ServiceOfferingService {
         Page<ServiceOffering> page = (search != null && !search.isBlank())
                 ? serviceOfferingDao.findByProfileIdAndTitleContainingIgnoreCase(profileId, search, pageable)
                 : serviceOfferingDao.findByProfileId(profileId, pageable);
-        return page.map(this::mapToResponse);
+        List<ServiceResponse> mapped = mapToResponseBatch(page.getContent());
+        return new org.springframework.data.domain.PageImpl<>(mapped, page.getPageable(), page.getTotalElements());
     }
 
     @Override
@@ -115,11 +118,35 @@ public class ServiceOfferingServiceImpl implements ServiceOfferingService {
 
     @Override
     public List<ServiceResponse> getByProfile(Long profileId) {
-        return serviceOfferingDao
-                .findByProfileIdAndIsActiveTrueOrderBySortOrderAsc(profileId)
+        List<ServiceOffering> services = serviceOfferingDao
+                .findByProfileIdAndIsActiveTrueOrderBySortOrderAsc(profileId);
+        return mapToResponseBatch(services);
+    }
+
+    private List<ServiceResponse> mapToResponseBatch(List<ServiceOffering> services) {
+        if (services.isEmpty()) return List.of();
+
+        List<Long> ids = services.stream().map(ServiceOffering::getId).toList();
+        Map<Long, FileAsset> bannerByServiceId = fileAssetDao
+                .findByResourceIdInAndResourceTypeAndIsPrimaryTrue(ids, ResourceTypeEnum.SERVICE)
                 .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .collect(Collectors.toMap(FileAsset::getResourceId, a -> a, (a, b) -> a));
+
+        return helper.mapAuditList(services, entity -> {
+            FileAsset asset = bannerByServiceId.get(entity.getId());
+            return ServiceResponse.builder()
+                    .id(entity.getId())
+                    .title(entity.getTitle())
+                    .description(entity.getDescription())
+                    .icon(entity.getIcon())
+                    .priceRange(entity.getPriceRange())
+                    .deliveryTime(entity.getDeliveryTime())
+                    .sortOrder(entity.getSortOrder())
+                    .isActive(entity.getIsActive())
+                    .bannerUrl(asset != null ? asset.getPath() : null)
+                    .bannerPublicId(asset != null ? asset.getPublicId() : null)
+                    .build();
+        });
     }
 
     private void linkBanner(Long resourceId, String publicId, String url) {

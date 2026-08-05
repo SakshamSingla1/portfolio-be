@@ -26,7 +26,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -125,11 +127,35 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     public List<CertificationResponseDTO> getByProfile(Long profileId) {
-        return certificationDao
-                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE)
+        List<Certifications> certifications = certificationDao
+                .findByProfileIdAndStatusOrderByOrderAsc(profileId, StatusEnum.ACTIVE);
+        return mapToResponseBatch(certifications);
+    }
+
+    private List<CertificationResponseDTO> mapToResponseBatch(List<Certifications> certifications) {
+        if (certifications.isEmpty()) return List.of();
+
+        List<Long> ids = certifications.stream().map(Certifications::getId).toList();
+        Map<Long, FileAsset> credentialByCertId = fileAssetDao
+                .findByResourceIdInAndResourceTypeAndIsPrimaryTrue(ids, ResourceTypeEnum.CERTIFICATION)
                 .stream()
-                .map(this::mapToResponse)
-                .toList();
+                .collect(Collectors.toMap(FileAsset::getResourceId, a -> a, (a, b) -> a));
+
+        return helper.mapAuditList(certifications, c -> {
+            FileAsset asset = credentialByCertId.get(c.getId());
+            return CertificationResponseDTO.builder()
+                    .id(c.getId())
+                    .title(c.getTitle())
+                    .issuer(c.getIssuer())
+                    .credentialId(c.getCredentialId())
+                    .credentialUrl(asset != null ? asset.getPath() : null)
+                    .credentialPublicId(asset != null ? asset.getPublicId() : null)
+                    .status(c.getStatus())
+                    .order(c.getOrder())
+                    .issueDate(c.getIssueDate())
+                    .expiryDate(c.getExpiryDate())
+                    .build();
+        });
     }
 
     private void linkFileAsset(Long resourceId, String publicId, String url) {
