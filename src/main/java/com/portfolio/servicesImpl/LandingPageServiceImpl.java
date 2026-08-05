@@ -29,6 +29,8 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.LandingPageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,6 +49,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     // ── Public ────────────────────────────────────────────────────────────
 
     @Override
+    @Cacheable(cacheNames = "landingPagePublic")
     public LandingPageResponse getPublicLandingPage() {
         LandingPageConfig config = configRepository.findAll().stream().findFirst().orElse(null);
         return LandingPageResponse.builder()
@@ -71,6 +74,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingConfigResponse updateConfig(LandingConfigRequest request) throws GenericException {
         LandingPageConfig config = configRepository.findAll().stream()
                 .findFirst()
@@ -100,6 +104,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingFeatureResponse createFeature(LandingFeatureRequest req) throws GenericException {
         LandingFeature feature = LandingFeature.builder()
                 .iconName(req.getIconName())
@@ -113,6 +118,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingFeatureResponse updateFeature(Long id, LandingFeatureRequest req) throws GenericException {
         LandingFeature feature = featureRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_FEATURE_NOT_FOUND, "Feature not found"));
@@ -128,6 +134,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public void deleteFeature(Long id) throws GenericException {
         LandingFeature feature = featureRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_FEATURE_NOT_FOUND, "Feature not found"));
@@ -142,6 +149,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingFaqResponse createFaq(LandingFaqRequest req) {
         LandingFaq faq = LandingFaq.builder()
                 .question(req.getQuestion())
@@ -153,6 +161,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingFaqResponse updateFaq(Long id, LandingFaqRequest req) throws GenericException {
         LandingFaq faq = faqRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_FAQ_NOT_FOUND, "FAQ not found"));
@@ -166,6 +175,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public void deleteFaq(Long id) throws GenericException {
         LandingFaq faq = faqRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_FAQ_NOT_FOUND, "FAQ not found"));
@@ -180,6 +190,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingHowToUseStepResponse createStep(LandingHowToUseStepRequest req) throws GenericException {
         LandingHowToUseStep step = LandingHowToUseStep.builder()
                 .stepNumber(req.getStepNumber())
@@ -194,6 +205,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingHowToUseStepResponse updateStep(Long id, LandingHowToUseStepRequest req) throws GenericException {
         LandingHowToUseStep step = stepRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_STEP_NOT_FOUND, "Step not found"));
@@ -210,6 +222,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public void deleteStep(Long id) throws GenericException {
         LandingHowToUseStep step = stepRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_STEP_NOT_FOUND, "Step not found"));
@@ -224,6 +237,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingAudienceCardResponse createAudienceCard(LandingAudienceCardRequest req) throws GenericException {
         LandingAudienceCard card = LandingAudienceCard.builder()
                 .iconName(req.getIconName())
@@ -237,6 +251,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingAudienceCardResponse updateAudienceCard(Long id, LandingAudienceCardRequest req) throws GenericException {
         LandingAudienceCard card = audienceCardRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_AUDIENCE_CARD_NOT_FOUND, "Audience card not found"));
@@ -252,6 +267,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public void deleteAudienceCard(Long id) throws GenericException {
         LandingAudienceCard card = audienceCardRepository.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_AUDIENCE_CARD_NOT_FOUND, "Audience card not found"));
@@ -266,6 +282,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingTestimonialResponse createTestimonial(LandingTestimonialRequest req) throws GenericException {
         LandingTestimonial testimonial = LandingTestimonial.builder()
                 .authorName(req.getAuthorName())
@@ -281,6 +298,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public LandingTestimonialResponse updateTestimonial(Long id, LandingTestimonialRequest req) throws GenericException {
         LandingTestimonial testimonial = landingTestimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_TESTIMONIAL_NOT_FOUND, "Testimonial not found"));
@@ -298,6 +316,7 @@ public class LandingPageServiceImpl implements LandingPageService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "landingPagePublic", allEntries = true)
     public void deleteTestimonial(Long id) throws GenericException {
         LandingTestimonial testimonial = landingTestimonialDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.LANDING_TESTIMONIAL_NOT_FOUND, "Testimonial not found"));

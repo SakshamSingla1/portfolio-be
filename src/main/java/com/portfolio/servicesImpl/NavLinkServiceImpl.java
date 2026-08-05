@@ -11,6 +11,8 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.NavLinkService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     private final Helper helper;
 
     @Override
+    @CacheEvict(cacheNames = {"navLinksGrouped", "navLinksAll"}, allEntries = true)
     public NavLinkResponseDTO createNavLink(NavLinkRequestDTO request) throws GenericException {
 
         if (request == null) {
@@ -48,6 +51,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"navLinksGrouped", "navLinksAll"}, allEntries = true)
     public NavLinkResponseDTO updateNavLink(Long id, NavLinkRequestDTO request)
             throws GenericException {
 
@@ -69,6 +73,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"navLinksGrouped", "navLinksAll"}, allEntries = true)
     public void deleteNavLink(Long id) throws GenericException {
 
         NavLink navLink = navLinkDao.findById(id)
@@ -82,6 +87,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
+    @Cacheable(cacheNames = "navLinksAll")
     public List<NavLinkResponseDTO> getNavLinks() {
 
         return navLinkDao.findAll()
@@ -124,6 +130,7 @@ public class NavLinkServiceImpl implements NavLinkService {
     }
 
     @Override
+    @Cacheable(cacheNames = "navLinksGrouped")
     public List<GroupedNavLinkResponseDTO> getGroupedNavLinks() {
 
         List<NavLink> navLinks = navLinkDao.findAll();

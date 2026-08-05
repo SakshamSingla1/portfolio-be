@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 @Service
 @RequiredArgsConstructor
@@ -30,22 +31,25 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProfileDao profileDao;
     private final PortfolioViewService portfolioViewService;
     private final FileAssetDao fileAssetDao;
+    private final ExecutorService profileAggregationExecutor;
 
     @Override
     public DashboardSummaryDTO getDashboardSummary(Long profileId) {
-        // All 6 data fetches are independent — run them in parallel
+        // All 6 data fetches are independent — run them in parallel, bounded by the
+        // same pool ProfileMasterServiceImpl uses so this doesn't oversubscribe the
+        // HikariCP pool alongside the common ForkJoinPool's own unbounded fan-out.
         CompletableFuture<Profile> profileFuture = CompletableFuture.supplyAsync(
-                () -> profileDao.findById(profileId).orElse(null));
+                () -> profileDao.findById(profileId).orElse(null), profileAggregationExecutor);
         CompletableFuture<StatsDTO> statsFuture = CompletableFuture.supplyAsync(
-                () -> profileDao.getDashboardStats(profileId));
+                () -> profileDao.getDashboardStats(profileId), profileAggregationExecutor);
         CompletableFuture<ViewStatsDTO> viewStatsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewService.getViewStats(profileId));
+                () -> portfolioViewService.getViewStats(profileId), profileAggregationExecutor);
         CompletableFuture<List<ContactUsResponse>> messagesFuture = CompletableFuture.supplyAsync(
-                () -> contactUsDao.findTop5DTOByProfileIdOrderByCreatedAtDesc(profileId));
+                () -> contactUsDao.findTop5DTOByProfileIdOrderByCreatedAtDesc(profileId), profileAggregationExecutor);
         CompletableFuture<List<ActivityDTO>> activitiesFuture = CompletableFuture.supplyAsync(
-                () -> profileDao.getLatestActivities(profileId));
+                () -> profileDao.getLatestActivities(profileId), profileAggregationExecutor);
         CompletableFuture<List<FileAsset>> assetsFuture = CompletableFuture.supplyAsync(
-                () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE));
+                () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE), profileAggregationExecutor);
 
         CompletableFuture.allOf(profileFuture, statsFuture, viewStatsFuture, messagesFuture, activitiesFuture, assetsFuture).join();
 

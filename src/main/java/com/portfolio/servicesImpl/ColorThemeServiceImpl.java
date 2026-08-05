@@ -16,6 +16,9 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ColorThemeService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,10 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         private final Helper helper;
 
         @Override
+        @Caching(evict = {
+                @CacheEvict(cacheNames = "colorThemeDefault", allEntries = true),
+                @CacheEvict(cacheNames = "colorThemeById", allEntries = true)
+        })
         public ColorThemeResponseDTO createTheme(ColorThemeRequestDTO dto) throws GenericException {
 
                 String themeName = dto.getThemeName();
@@ -53,6 +60,10 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
+        @Caching(evict = {
+                @CacheEvict(cacheNames = "colorThemeDefault", allEntries = true),
+                @CacheEvict(cacheNames = "colorThemeById", key = "#id")
+        })
         public ColorThemeResponseDTO updateTheme(Long id, ColorThemeRequestDTO dto) throws GenericException {
 
                 ColorTheme theme = colorThemeDao.findById(id)
@@ -68,6 +79,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
+        @Cacheable(cacheNames = "colorThemeById", key = "#themeId")
         public ColorThemeResponseDTO getThemeById(Long themeId) throws GenericException {
                 ColorTheme theme = colorThemeDao.findById(themeId)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,
@@ -85,6 +97,7 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
+        @Cacheable(cacheNames = "colorThemeDefault")
         public ColorThemeResponseDTO getDefaultTheme() throws GenericException {
                 return colorThemeDao.findFirstByStatusOrderByCreatedAtDesc(StatusEnum.ACTIVE)
                                 .map(this::mapToResponse)
@@ -93,6 +106,10 @@ public class ColorThemeServiceImpl implements ColorThemeService {
         }
 
         @Override
+        @Caching(evict = {
+                @CacheEvict(cacheNames = "colorThemeDefault", allEntries = true),
+                @CacheEvict(cacheNames = "colorThemeById", key = "#id")
+        })
         public String deleteTheme(Long id) throws GenericException {
                 ColorTheme theme = colorThemeDao.findById(id)
                                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND,

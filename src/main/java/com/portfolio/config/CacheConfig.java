@@ -22,7 +22,9 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
-                "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport");
+                "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport",
+                "navLinksGrouped", "navLinksAll", "permissionsAll",
+                "colorThemeDefault", "colorThemeById", "landingPagePublic");
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(60, TimeUnit.SECONDS)
                 .maximumSize(500));

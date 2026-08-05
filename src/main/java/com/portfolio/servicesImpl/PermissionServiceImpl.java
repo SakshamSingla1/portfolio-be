@@ -11,6 +11,8 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.PermissionService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
@@ -29,11 +31,13 @@ public class PermissionServiceImpl implements PermissionService {
     private final Helper helper;
 
     @Override
+    @Cacheable(cacheNames = "permissionsAll")
     public List<Permission> getAllPermissions() {
         return permissionDao.findAll();
     }
 
     @Override
+    @CacheEvict(cacheNames = "permissionsAll", allEntries = true)
     public PermissionResponseDTO createPermission(PermissionRequestDTO request) throws GenericException {
         if (request == null || request.getName() == null || request.getName().isBlank()) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Permission name is required");
@@ -52,6 +56,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "permissionsAll", allEntries = true)
     public PermissionResponseDTO updatePermission(Long id, PermissionRequestDTO request) throws GenericException {
         if (request == null || request.getName() == null || request.getName().isBlank()) {
             throw new GenericException(ExceptionCodeEnum.BAD_REQUEST, "Permission name is required");
@@ -70,6 +75,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "permissionsAll", allEntries = true)
     public void deletePermission(Long id) throws GenericException {
         Permission permission = permissionDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PERMISSION_NOT_FOUND, "Permission not found"));
