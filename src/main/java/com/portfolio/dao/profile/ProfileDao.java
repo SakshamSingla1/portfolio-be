@@ -67,6 +67,10 @@ public class ProfileDao {
         return profileRepository.existsByRoleId(roleId);
     }
 
+    public Optional<Profile> findFirstConflictingProfile(String email, String userName, String phone) {
+        return profileRepository.findFirstConflictingProfile(email, userName, phone);
+    }
+
     public Page<UserResponse> findByCriteria(
             String search, List<StatusEnum> statuses, List<Long> roleIds, Pageable pageable) {
         return profileRepository.findByCriteria(search, statuses, roleIds, pageable);

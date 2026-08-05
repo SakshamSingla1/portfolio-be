@@ -32,6 +32,9 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     boolean existsByRoleId(Long roleId);
 
+    @Query("SELECT p FROM Profile p WHERE p.email = :email OR p.userName = :userName OR (:phone IS NOT NULL AND p.phone = :phone)")
+    Optional<Profile> findFirstConflictingProfile(@Param("email") String email, @Param("userName") String userName, @Param("phone") String phone);
+
     @Query(value = """
                 SELECT NEW com.portfolio.dtos.User.UserResponse(
                     p.id, p.fullName, p.userName, p.email, p.roleId,

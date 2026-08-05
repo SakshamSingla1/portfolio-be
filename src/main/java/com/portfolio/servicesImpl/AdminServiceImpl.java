@@ -124,14 +124,16 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public Long createUserByAdmin(AdminCreateUserRequest dto) throws GenericException {
-        if (profileDao.existsByEmail(dto.getEmail()))
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_EMAIL, "User with same email already exists");
-
-        if (profileDao.existsByUserName(dto.getUserName()))
-            throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same username already exists");
-
-        if (StringUtils.hasText(dto.getPhone()) && profileDao.existsByPhone(dto.getPhone()))
+        String phone = StringUtils.hasText(dto.getPhone()) ? dto.getPhone() : null;
+        Optional<Profile> conflict = profileDao.findFirstConflictingProfile(dto.getEmail(), dto.getUserName(), phone);
+        if (conflict.isPresent()) {
+            Profile existing = conflict.get();
+            if (dto.getEmail().equals(existing.getEmail()))
+                throw new GenericException(ExceptionCodeEnum.DUPLICATE_EMAIL, "User with same email already exists");
+            if (dto.getUserName().equals(existing.getUserName()))
+                throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same username already exists");
             throw new GenericException(ExceptionCodeEnum.DUPLICATE_PROFILE, "User with same phone number already exists");
+        }
 
         // Validates the role exists (throws if not) before we commit to it.
         roleService.getRoleById(dto.getRoleId());
