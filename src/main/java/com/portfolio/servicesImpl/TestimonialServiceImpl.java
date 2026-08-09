@@ -17,6 +17,7 @@ import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.TestimonialService;
 import com.portfolio.services.FileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TestimonialServiceImpl implements TestimonialService {
 
     private final TestimonialDao testimonialDao;
@@ -114,6 +116,20 @@ public class TestimonialServiceImpl implements TestimonialService {
         }
         testimonialDao.deleteById(id);
         return null;
+    }
+
+    @Override
+    public int bulkDeleteByIds(List<Long> ids) {
+        int deleted = 0;
+        for (Long id : ids) {
+            try {
+                deleteById(id);
+                deleted++;
+            } catch (GenericException e) {
+                log.warn("Skipping bulk delete for testimonial {}: {}", id, e.getMessage());
+            }
+        }
+        return deleted;
     }
 
     @Override

@@ -19,4 +19,5 @@ public interface TestimonialService {
     Void deleteById(Long id) throws GenericException;
     ImageUploadResponse uploadImage(Long id, MultipartFile file) throws GenericException, IOException;
     List<TestimonialResponseDTO> getByProfile(Long profileId);
+    int bulkDeleteByIds(List<Long> ids);
 }

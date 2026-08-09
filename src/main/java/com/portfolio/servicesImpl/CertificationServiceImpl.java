@@ -18,6 +18,7 @@ import com.portfolio.services.CertificationService;
 import com.portfolio.services.FileService;
 import com.portfolio.utils.Helper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CertificationServiceImpl implements CertificationService {
 
     private final CertificationDao certificationDao;
@@ -105,6 +107,20 @@ public class CertificationServiceImpl implements CertificationService {
         }
         certificationDao.deleteById(id);
         return null;
+    }
+
+    @Override
+    public int bulkDeleteByIds(List<Long> ids) {
+        int deleted = 0;
+        for (Long id : ids) {
+            try {
+                deleteById(id);
+                deleted++;
+            } catch (GenericException e) {
+                log.warn("Skipping bulk delete for certification {}: {}", id, e.getMessage());
+            }
+        }
+        return deleted;
     }
 
     @Override

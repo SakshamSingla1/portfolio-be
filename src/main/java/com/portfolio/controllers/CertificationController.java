@@ -3,6 +3,7 @@ package com.portfolio.controllers;
 import com.portfolio.dao.certification.CertificationDao;
 import com.portfolio.dtos.Certifications.CertificationRequestDTO;
 import com.portfolio.dtos.Certifications.CertificationResponseDTO;
+import com.portfolio.dtos.Common.BulkIdsRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Certifications;
 import com.portfolio.enums.ExceptionCodeEnum;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/certifications")
@@ -86,6 +88,19 @@ public class CertificationController {
         }
         certificationService.deleteById(id);
         return ApiResponse.successResponse(null, "Certification deleted successfully");
+    }
+
+    @Operation(summary = "Bulk delete certifications", description = "Permanently deletes multiple certification records at once, restricted to ones owned by the authenticated profile. Unknown/invalid/not-owned ids are skipped rather than failing the whole batch.")
+    @DeleteMapping("/bulk")
+    public ResponseEntity<ResponseModel<Integer>> bulkDeleteCertifications(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @Valid @RequestBody BulkIdsRequest request) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        List<Long> ownedIds = request.getIds().stream()
+                .filter(id -> certificationDao.findById(id).map(c -> c.getProfileId().equals(profileId)).orElse(false))
+                .toList();
+        int deleted = certificationService.bulkDeleteByIds(ownedIds);
+        return ApiResponse.respond(deleted, deleted + " certification(s) deleted successfully", "Failed to bulk delete certifications");
     }
 
     @Operation(summary = "Upload certification credential image", description = "Uploads a credential image file for a certification and returns the stored image URL for the authenticated user's profile.")

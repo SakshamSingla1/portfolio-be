@@ -19,4 +19,5 @@ public interface CertificationService {
     Void deleteById(Long id) throws GenericException;
     ImageUploadResponse uploadCredentialImage(Long id,MultipartFile file) throws GenericException, IOException;
     List<CertificationResponseDTO> getByProfile(Long profileId);
+    int bulkDeleteByIds(List<Long> ids);
 }
