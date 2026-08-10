@@ -125,7 +125,7 @@ public class BlogPostServiceImpl implements BlogPostService {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-        return blogPostDao.findByCriteria(profileId, status, search, sorted).map(this::mapToSummary);
+        return blogPostDao.findByCriteria(profileId, status, null, search, sorted).map(this::mapToSummary);
     }
 
     @Override
@@ -168,7 +168,7 @@ public class BlogPostServiceImpl implements BlogPostService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<BlogPostSummary> getPublishedByUsername(String username, String search,
+    public Page<BlogPostSummary> getPublishedByUsername(String username, String search, Long tagId,
                                                         String sortBy, String sortDir,
                                                         Pageable pageable) throws GenericException {
         var profile = profileDao.findByUserName(username)
@@ -178,7 +178,7 @@ public class BlogPostServiceImpl implements BlogPostService {
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "publishedAt");
         Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
-        Page<BlogPost> posts = blogPostDao.findByCriteria(profile.getId(), BlogStatusEnum.PUBLISHED, search, sorted);
+        Page<BlogPost> posts = blogPostDao.findByCriteria(profile.getId(), BlogStatusEnum.PUBLISHED, tagId, search, sorted);
 
         List<Long> postIds = posts.stream().map(BlogPost::getId).toList();
         Map<Long, FileAssetDTO> coverMap = postIds.isEmpty()
@@ -203,6 +203,18 @@ public class BlogPostServiceImpl implements BlogPostService {
 
         blogPostDao.incrementViewCount(post.getId());
         return mapToFullResponse(post);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BlogTagResponse> getPublishedTagsByUsername(String username) throws GenericException {
+        var profile = profileDao.findByUserName(username)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+
+        return blogPostDao.findDistinctTagsByProfileIdAndStatus(profile.getId(), BlogStatusEnum.PUBLISHED)
+                .stream()
+                .map(t -> BlogTagResponse.builder().id(t.getId()).name(t.getName()).build())
+                .toList();
     }
 
     private Set<BlogTag> resolveTags(List<Long> tagIds) {

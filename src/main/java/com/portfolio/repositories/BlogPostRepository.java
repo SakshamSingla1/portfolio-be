@@ -1,6 +1,7 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.BlogPost;
+import com.portfolio.entities.BlogTag;
 import com.portfolio.enums.BlogStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,8 +37,10 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
 
     @Query("""
             SELECT p FROM BlogPost p
+            LEFT JOIN p.tags t
             WHERE (:profileId IS NULL OR p.profileId = :profileId)
             AND (:status IS NULL OR p.status = :status)
+            AND (:tagId IS NULL OR t.id = :tagId)
             AND (:search IS NULL OR :search = ''
                 OR LOWER(p.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(p.excerpt) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
@@ -44,7 +48,19 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
     Page<BlogPost> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("status") BlogStatusEnum status,
+            @Param("tagId") Long tagId,
             @Param("search") String search,
             Pageable pageable
+    );
+
+    @Query("""
+            SELECT DISTINCT t FROM BlogPost p
+            JOIN p.tags t
+            WHERE p.profileId = :profileId AND p.status = :status
+            ORDER BY t.name ASC
+            """)
+    List<BlogTag> findDistinctTagsByProfileIdAndStatus(
+            @Param("profileId") Long profileId,
+            @Param("status") BlogStatusEnum status
     );
 }

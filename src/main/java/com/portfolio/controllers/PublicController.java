@@ -8,6 +8,7 @@ import com.google.zxing.qrcode.QRCodeWriter;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Blog.BlogPostResponse;
 import com.portfolio.dtos.Blog.BlogPostSummary;
+import com.portfolio.dtos.Blog.BlogTagResponse;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
@@ -124,16 +125,25 @@ public class PublicController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Get published blog posts", description = "Returns paginated published posts for a given username.")
+    @Operation(summary = "Get published blog posts", description = "Returns paginated published posts for a given username, optionally filtered by tag.")
     @GetMapping("/blog/{username}")
     public ResponseEntity<ResponseModel<Page<BlogPostSummary>>> getPublishedPosts(
             @PathVariable String username,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long tagId,
             @RequestParam(required = false, defaultValue = "publishedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir,
             Pageable pageable) throws GenericException {
-        Page<BlogPostSummary> posts = blogPostService.getPublishedByUsername(username, search, sortBy, sortDir, pageable);
+        Page<BlogPostSummary> posts = blogPostService.getPublishedByUsername(username, search, tagId, sortBy, sortDir, pageable);
         return ApiResponse.successResponse(posts, "Blog posts fetched successfully");
+    }
+
+    @Operation(summary = "Get published blog tags", description = "Returns the distinct tags used across a given username's published posts.")
+    @GetMapping("/blog/{username}/tags")
+    public ResponseEntity<ResponseModel<List<BlogTagResponse>>> getPublishedBlogTags(
+            @PathVariable String username) throws GenericException {
+        List<BlogTagResponse> tags = blogPostService.getPublishedTagsByUsername(username);
+        return ApiResponse.successResponse(tags, "Blog tags fetched successfully");
     }
 
     @Operation(summary = "Get a single published blog post", description = "Returns post detail and increments view count.")

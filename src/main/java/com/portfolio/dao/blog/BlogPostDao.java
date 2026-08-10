@@ -1,6 +1,7 @@
 package com.portfolio.dao.blog;
 
 import com.portfolio.entities.BlogPost;
+import com.portfolio.entities.BlogTag;
 import com.portfolio.enums.BlogStatusEnum;
 import com.portfolio.repositories.BlogPostRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -38,8 +40,12 @@ public class BlogPostDao {
         return blogPostRepository.existsById(id);
     }
 
-    public Page<BlogPost> findByCriteria(Long profileId, BlogStatusEnum status, String search, Pageable pageable) {
-        return blogPostRepository.findByCriteria(profileId, status, search, pageable);
+    public Page<BlogPost> findByCriteria(Long profileId, BlogStatusEnum status, Long tagId, String search, Pageable pageable) {
+        return blogPostRepository.findByCriteria(profileId, status, tagId, search, pageable);
+    }
+
+    public List<BlogTag> findDistinctTagsByProfileIdAndStatus(Long profileId, BlogStatusEnum status) {
+        return blogPostRepository.findDistinctTagsByProfileIdAndStatus(profileId, status);
     }
 
     public long countByProfileId(Long profileId) {

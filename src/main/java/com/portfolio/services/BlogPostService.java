@@ -3,6 +3,7 @@ package com.portfolio.services;
 import com.portfolio.dtos.Blog.BlogPostRequest;
 import com.portfolio.dtos.Blog.BlogPostResponse;
 import com.portfolio.dtos.Blog.BlogPostSummary;
+import com.portfolio.dtos.Blog.BlogTagResponse;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.enums.BlogStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface BlogPostService {
 
@@ -31,7 +33,9 @@ public interface BlogPostService {
     ImageUploadResponse uploadCoverImage(Long postId, MultipartFile file) throws IOException, GenericException;
 
     // Public (no-auth) endpoints
-    Page<BlogPostSummary> getPublishedByUsername(String username, String search, String sortBy, String sortDir, Pageable pageable) throws GenericException;
+    Page<BlogPostSummary> getPublishedByUsername(String username, String search, Long tagId, String sortBy, String sortDir, Pageable pageable) throws GenericException;
 
     BlogPostResponse getPublishedByUsernameAndSlug(String username, String slug) throws GenericException;
+
+    List<BlogTagResponse> getPublishedTagsByUsername(String username) throws GenericException;
 }
