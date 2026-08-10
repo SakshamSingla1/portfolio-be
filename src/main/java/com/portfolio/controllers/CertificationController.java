@@ -7,6 +7,7 @@ import com.portfolio.dtos.Common.BulkIdsRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Certifications;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -63,15 +64,16 @@ public class CertificationController {
         return ApiResponse.respond(response, "Certification fetched successfully", "Failed to fetch certification");
     }
 
-    @Operation(summary = "Get all certifications", description = "Returns a paginated list of certification records for the authenticated user's profile, with optional keyword search.")
+    @Operation(summary = "Get all certifications", description = "Returns a paginated list of certification records for the authenticated user's profile, with optional status filter and keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<CertificationResponseDTO>>> getAll(
             @RequestHeader(value = "Authorization", required = false) String auth,
+            @RequestParam(required = false) StatusEnum status,
             @RequestParam(required = false) String search,
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, search, pageable);
+        Page<CertificationResponseDTO> page = certificationService.getByProfile(profileId, status, search, pageable);
         return ApiResponse.respond(page, "Certifications fetched successfully", "Failed to fetch certifications");
     }
 

@@ -62,7 +62,7 @@ public class AchievementDao {
         return achievementRepository.findDTOById(id);
     }
 
-    public Page<AchievementResponseDTO> findByCriteria(Long profileId, String search, Pageable pageable){
-        return achievementRepository.findByCriteria(profileId,search,pageable);
+    public Page<AchievementResponseDTO> findByCriteria(Long profileId, StatusEnum status, String search, Pageable pageable){
+        return achievementRepository.findByCriteria(profileId, status, search, pageable);
     }
 }

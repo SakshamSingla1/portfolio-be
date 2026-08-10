@@ -7,6 +7,7 @@ import com.portfolio.dtos.Common.BulkIdsRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Testimonial;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -63,17 +64,18 @@ public class TestimonialController {
         return ApiResponse.respond(response, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
 
-    @Operation(summary = "Get all testimonials", description = "Returns a paginated list of testimonial records for the authenticated user's profile, with optional keyword search and configurable sort field and direction.")
+    @Operation(summary = "Get all testimonials", description = "Returns a paginated list of testimonial records for the authenticated user's profile, with optional status filter, keyword search, and configurable sort field and direction.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<TestimonialResponseDTO>>> getAll(
             @RequestHeader(value = "Authorization", required = false) String auth,
+            @RequestParam(required = false) StatusEnum status,
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "asc") String sortDir,
             @RequestParam(required = false, defaultValue = "order") String sortBy,
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<TestimonialResponseDTO> page = testimonialService.getByProfile(profileId, search, sortDir, sortBy, pageable);
+        Page<TestimonialResponseDTO> page = testimonialService.getByProfile(profileId, status, search, sortDir, sortBy, pageable);
         return ApiResponse.respond(page, "Testimonial fetched successfully", "Failed to fetch Testimonial");
     }
 

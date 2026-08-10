@@ -91,8 +91,8 @@ public class CertificationServiceImpl implements CertificationService {
     }
 
     @Override
-    public Page<CertificationResponseDTO> getByProfile(Long profileId, String search, Pageable pageable) {
-        return certificationDao.findByCriteria(profileId,search,pageable);
+    public Page<CertificationResponseDTO> getByProfile(Long profileId, StatusEnum status, String search, Pageable pageable) {
+        return certificationDao.findByCriteria(profileId, status, search, pageable);
     }
 
     @Override

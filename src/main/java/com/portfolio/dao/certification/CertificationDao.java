@@ -58,8 +58,8 @@ public class CertificationDao {
         return certificationsRepository.findDTOById(id);
     }
 
-    public Page<CertificationResponseDTO> findByCriteria(Long profileId, String search, Pageable pageable) {
-        return certificationsRepository.findByCriteria(profileId,search,pageable);
+    public Page<CertificationResponseDTO> findByCriteria(Long profileId, StatusEnum status, String search, Pageable pageable) {
+        return certificationsRepository.findByCriteria(profileId, status, search, pageable);
     }
 
     public boolean existsById(Long id) {

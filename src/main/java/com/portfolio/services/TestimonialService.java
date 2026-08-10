@@ -3,6 +3,7 @@ package com.portfolio.services;
 import com.portfolio.dtos.Testimonial.TestimonialRequestDTO;
 import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
 import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,7 @@ public interface TestimonialService {
     TestimonialResponseDTO createTestimonial(TestimonialRequestDTO TestimonialRequestDTO) throws GenericException;
     TestimonialResponseDTO updateTestimonial(Long id, TestimonialRequestDTO TestimonialDTO) throws GenericException;
     TestimonialResponseDTO getTestimonialById(Long id) throws GenericException;
-    Page<TestimonialResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable);
+    Page<TestimonialResponseDTO> getByProfile(Long profileId, StatusEnum status, String search, String sortDir, String sortBy, Pageable pageable);
     Void deleteById(Long id) throws GenericException;
     ImageUploadResponse uploadImage(Long id, MultipartFile file) throws GenericException, IOException;
     List<TestimonialResponseDTO> getByProfile(Long profileId);

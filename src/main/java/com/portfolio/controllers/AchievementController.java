@@ -5,6 +5,7 @@ import com.portfolio.dtos.Achievements.AchievementRequestDTO;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.entities.Achievements;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -61,15 +62,16 @@ public class AchievementController {
         return ApiResponse.respond(response, "Achievement fetched successfully", "Failed to fetch Achievement");
     }
 
-    @Operation(summary = "Get all achievements", description = "Returns a paginated list of achievement records for the authenticated user's profile, with optional keyword search.")
+    @Operation(summary = "Get all achievements", description = "Returns a paginated list of achievement records for the authenticated user's profile, with optional status filter and keyword search.")
     @GetMapping
     public ResponseEntity<ResponseModel<Page<AchievementResponseDTO>>> getAll(
             @RequestHeader(value = "Authorization", required = false) String auth,
+            @RequestParam(required = false) StatusEnum status,
             @RequestParam(required = false) String search,
             Pageable pageable
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, search, pageable);
+        Page<AchievementResponseDTO> page = achievementService.getByProfile(profileId, status, search, pageable);
         return ApiResponse.respond(page, "Achievements fetched successfully", "Failed to fetch Achievements");
     }
 

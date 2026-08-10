@@ -23,6 +23,7 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
             ) FROM Testimonial t
             LEFT JOIN FileAsset fa ON fa.resourceId = t.id AND fa.resourceType = 'TESTIMONIAL'
             WHERE (:profileId IS NULL OR t.profileId = :profileId)
+            AND (:status IS NULL OR t.status = :status)
             AND (:search IS NULL OR :search = ''
                 OR LOWER(t.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(t.company) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
@@ -31,6 +32,7 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
             countQuery = """
             SELECT COUNT(t) FROM Testimonial t
             WHERE (:profileId IS NULL OR t.profileId = :profileId)
+            AND (:status IS NULL OR t.status = :status)
             AND (:search IS NULL OR :search = ''
                 OR LOWER(t.name) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(t.company) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
@@ -38,6 +40,7 @@ public interface TestimonialRepository extends JpaRepository<Testimonial, Long> 
             """)
     Page<TestimonialResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
+            @Param("status") StatusEnum status,
             @Param("search") String search,
             Pageable pageable
     );

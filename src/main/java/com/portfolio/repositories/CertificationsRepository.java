@@ -26,6 +26,7 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
             LEFT JOIN Profile p1 ON p1.id = c.createdBy
             LEFT JOIN Profile p2 ON p2.id = c.updatedBy
             WHERE (:profileId IS NULL OR c.profileId = :profileId)
+            AND (:status IS NULL OR c.status = :status)
             AND (:search IS NULL OR :search = ''
             OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
             OR LOWER(c.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
@@ -34,12 +35,14 @@ public interface CertificationsRepository extends JpaRepository<Certifications, 
             countQuery = """
             SELECT COUNT(c) FROM Certifications c
             WHERE (:profileId IS NULL OR c.profileId = :profileId)
+            AND (:status IS NULL OR c.status = :status)
             AND (:search IS NULL OR :search = ''
             OR LOWER(c.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
             OR LOWER(c.issuer) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
             """)
     Page<CertificationResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
+            @Param("status") StatusEnum status,
             @Param("search") String search,
             Pageable pageable);
 

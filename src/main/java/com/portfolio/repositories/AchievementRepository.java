@@ -26,6 +26,7 @@ public interface AchievementRepository extends JpaRepository<Achievements, Long>
               LEFT JOIN Profile p1 ON p1.id = a.createdBy
               LEFT JOIN Profile p2 ON p2.id = a.updatedBy
             WHERE (:profileId IS NULL OR a.profileId = :profileId)
+             AND (:status IS NULL OR a.status = :status)
              AND (:search IS NULL OR :search = ''
                  OR LOWER(a.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                  OR LOWER(a.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
@@ -35,6 +36,7 @@ public interface AchievementRepository extends JpaRepository<Achievements, Long>
             countQuery = """
             SELECT COUNT(a) FROM Achievements a
             WHERE (:profileId IS NULL OR a.profileId = :profileId)
+             AND (:status IS NULL OR a.status = :status)
              AND (:search IS NULL OR :search = ''
                  OR LOWER(a.title) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                  OR LOWER(a.description) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
@@ -42,6 +44,7 @@ public interface AchievementRepository extends JpaRepository<Achievements, Long>
             """)
     Page<AchievementResponseDTO> findByCriteria(
             @Param("profileId") Long profileId,
+            @Param("status") StatusEnum status,
             @Param("search") String search,
             Pageable pageable
     );

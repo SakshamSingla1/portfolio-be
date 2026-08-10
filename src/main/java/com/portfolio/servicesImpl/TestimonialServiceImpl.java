@@ -89,7 +89,7 @@ public class TestimonialServiceImpl implements TestimonialService {
     }
 
     @Override
-    public Page<TestimonialResponseDTO> getByProfile(Long profileId, String search, String sortDir, String sortBy, Pageable pageable) {
+    public Page<TestimonialResponseDTO> getByProfile(Long profileId, StatusEnum status, String search, String sortDir, String sortBy, Pageable pageable) {
         String finalSortBy = (sortBy != null && !sortBy.isBlank()) ? sortBy : "order";
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC
@@ -101,7 +101,7 @@ public class TestimonialServiceImpl implements TestimonialService {
                 pageable.getPageSize(),
                 sort
         );
-        return testimonialDao.findByCriteria(profileId, search, sortedPageable);
+        return testimonialDao.findByCriteria(profileId, status, search, sortedPageable);
     }
 
     @Override

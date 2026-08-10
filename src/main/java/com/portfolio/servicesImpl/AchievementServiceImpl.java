@@ -85,8 +85,8 @@ public class AchievementServiceImpl implements AchievementService {
     }
 
     @Override
-    public Page<AchievementResponseDTO> getByProfile(Long profileId, String search, Pageable pageable) {
-        return achievementDao.findByCriteria(profileId,search,pageable);
+    public Page<AchievementResponseDTO> getByProfile(Long profileId, StatusEnum status, String search, Pageable pageable) {
+        return achievementDao.findByCriteria(profileId, status, search, pageable);
     }
 
     @Override

@@ -38,8 +38,8 @@ public class TestimonialDao {
         return testimonialRepository.findDTOById(id);
     }
 
-    public Page<TestimonialResponseDTO> findByCriteria(Long profileId, String search, Pageable pageable) {
-        return testimonialRepository.findByCriteria(profileId, search, pageable);
+    public Page<TestimonialResponseDTO> findByCriteria(Long profileId, StatusEnum status, String search, Pageable pageable) {
+        return testimonialRepository.findByCriteria(profileId, status, search, pageable);
     }
 
 
