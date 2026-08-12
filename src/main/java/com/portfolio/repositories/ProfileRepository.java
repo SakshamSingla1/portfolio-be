@@ -83,6 +83,22 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
             """, nativeQuery = true)
     List<Object[]> getDashboardStats(@Param("profileId") Long profileId);
 
+    // Week-over-week deltas for the 4 hero dashboard stats: count created in the
+    // trailing 7 days minus count created in the 7 days before that, so the
+    // dashboard can show "+3 this week" instead of just a static total.
+    @Query(value = """
+            SELECT
+              (SELECT COUNT(*) FROM skills WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '7 days')
+                - (SELECT COUNT(*) FROM skills WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days') AS skills_delta,
+              (SELECT COUNT(*) FROM experiences WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '7 days')
+                - (SELECT COUNT(*) FROM experiences WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days') AS experience_delta,
+              (SELECT COUNT(*) FROM projects WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '7 days')
+                - (SELECT COUNT(*) FROM projects WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days') AS projects_delta,
+              (SELECT COUNT(*) FROM contact_us WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '7 days')
+                - (SELECT COUNT(*) FROM contact_us WHERE profile_id = :profileId AND created_at >= NOW() - INTERVAL '14 days' AND created_at < NOW() - INTERVAL '7 days') AS messages_delta
+            """, nativeQuery = true)
+    List<Object[]> getDashboardStatsDeltas(@Param("profileId") Long profileId);
+
     @Query(value = """
             SELECT type, description_label, ts, entity_id FROM (
               (SELECT 'SKILL' AS type,

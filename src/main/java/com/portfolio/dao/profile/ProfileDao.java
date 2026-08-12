@@ -14,7 +14,9 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -96,6 +98,18 @@ public class ProfileDao {
                 .unreadMessages(toLong(r[8]))
                 .totalSocialLinks(toLong(r[9]))
                 .build();
+    }
+
+    public Map<String, Long> getDashboardStatsDeltas(Long profileId) {
+        List<Object[]> rows = profileRepository.getDashboardStatsDeltas(profileId);
+        Map<String, Long> deltas = new LinkedHashMap<>();
+        if (rows.isEmpty()) return deltas;
+        Object[] r = rows.get(0);
+        deltas.put("totalSkills", toLong(r[0]));
+        deltas.put("totalExperience", toLong(r[1]));
+        deltas.put("totalProjects", toLong(r[2]));
+        deltas.put("totalMessages", toLong(r[3]));
+        return deltas;
     }
 
     public List<ActivityDTO> getLatestActivities(Long profileId) {

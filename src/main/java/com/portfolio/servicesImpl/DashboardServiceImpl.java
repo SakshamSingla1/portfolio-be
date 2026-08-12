@@ -10,16 +10,21 @@ import com.portfolio.dtos.DashboardDTOs.ProfileCompletionDTO;
 import com.portfolio.dtos.DashboardDTOs.ProfileSummaryDTO;
 import com.portfolio.dtos.DashboardDTOs.StatsDTO;
 import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
+import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
+import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ResourceTypeEnum;
+import com.portfolio.enums.StatusEnum;
 import com.portfolio.services.DashboardService;
 import com.portfolio.services.PortfolioViewService;
+import com.portfolio.services.SocialLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -31,6 +36,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final ProfileDao profileDao;
     private final PortfolioViewService portfolioViewService;
     private final FileAssetDao fileAssetDao;
+    private final SocialLinkService socialLinkService;
     private final ExecutorService profileAggregationExecutor;
 
     @Override
@@ -42,6 +48,8 @@ public class DashboardServiceImpl implements DashboardService {
                 () -> profileDao.findById(profileId).orElse(null), profileAggregationExecutor);
         CompletableFuture<StatsDTO> statsFuture = CompletableFuture.supplyAsync(
                 () -> profileDao.getDashboardStats(profileId), profileAggregationExecutor);
+        CompletableFuture<Map<String, Long>> statsDeltaFuture = CompletableFuture.supplyAsync(
+                () -> profileDao.getDashboardStatsDeltas(profileId), profileAggregationExecutor);
         CompletableFuture<ViewStatsDTO> viewStatsFuture = CompletableFuture.supplyAsync(
                 () -> portfolioViewService.getViewStats(profileId), profileAggregationExecutor);
         CompletableFuture<List<ContactUsResponse>> messagesFuture = CompletableFuture.supplyAsync(
@@ -50,17 +58,23 @@ public class DashboardServiceImpl implements DashboardService {
                 () -> profileDao.getLatestActivities(profileId), profileAggregationExecutor);
         CompletableFuture<List<FileAsset>> assetsFuture = CompletableFuture.supplyAsync(
                 () -> fileAssetDao.findByResourceIdAndResourceTypeOrderBySortOrderAsc(profileId, ResourceTypeEnum.PROFILE), profileAggregationExecutor);
+        CompletableFuture<List<SocialLinkResponseDTO>> socialLinksFuture = CompletableFuture.supplyAsync(
+                () -> socialLinkService.getByProfile(profileId), profileAggregationExecutor);
 
-        CompletableFuture.allOf(profileFuture, statsFuture, viewStatsFuture, messagesFuture, activitiesFuture, assetsFuture).join();
+        CompletableFuture.allOf(profileFuture, statsFuture, statsDeltaFuture, viewStatsFuture, messagesFuture, activitiesFuture, assetsFuture, socialLinksFuture).join();
 
         Profile profile             = profileFuture.join();
         StatsDTO stats              = statsFuture.join();
+        Map<String, Long> statsDelta = statsDeltaFuture.join();
         ViewStatsDTO viewStats      = viewStatsFuture.join();
         List<ContactUsResponse> recentMessages  = messagesFuture.join();
         List<ActivityDTO> recentActivities      = activitiesFuture.join();
         List<FileAsset> assets      = assetsFuture.join();
+        List<SocialLinkResponseDTO> socialLinks = socialLinksFuture.join();
 
-        ProfileSummaryDTO profileSummary = buildProfileSummary(profile, assets);
+        stats.setWeeklyDelta(statsDelta);
+
+        ProfileSummaryDTO profileSummary = buildProfileSummary(profile, assets, socialLinks);
         ProfileCompletionDTO profileCompletion = calculateProfileCompletion(
                 profile,
                 stats.getTotalProjects(),
@@ -83,7 +97,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    private ProfileSummaryDTO buildProfileSummary(Profile profile, List<FileAsset> profileAssets) {
+    private ProfileSummaryDTO buildProfileSummary(Profile profile, List<FileAsset> profileAssets, List<SocialLinkResponseDTO> socialLinks) {
         if (profile == null) return ProfileSummaryDTO.builder().build();
         String profileImageUrl = null;
         for (FileAsset asset : profileAssets) {
@@ -97,7 +111,26 @@ public class DashboardServiceImpl implements DashboardService {
                 .title(safe(profile.getTitle()))
                 .location(safe(profile.getLocation()))
                 .profileImageUrl(safe(profileImageUrl))
+                .portfolioUrl(resolvePortfolioUrl(socialLinks))
                 .build();
+    }
+
+    // Mirrors EmbedController's resolution order: an explicit "Website" link
+    // wins (most users treat this as their real public URL), falling back to
+    // the "Portfolio" platform link if no separate website is set.
+    private String resolvePortfolioUrl(List<SocialLinkResponseDTO> socialLinks) {
+        String websiteUrl = findActiveSocialUrl(socialLinks, PlatformEnum.WEBSITE);
+        if (websiteUrl != null) return websiteUrl;
+        return findActiveSocialUrl(socialLinks, PlatformEnum.PORTFOLIO);
+    }
+
+    private String findActiveSocialUrl(List<SocialLinkResponseDTO> socialLinks, PlatformEnum platform) {
+        if (socialLinks == null) return null;
+        return socialLinks.stream()
+                .filter(l -> platform.equals(l.getPlatform()) && StatusEnum.ACTIVE.equals(l.getStatus()))
+                .map(SocialLinkResponseDTO::getUrl)
+                .findFirst()
+                .orElse(null);
     }
 
     private ProfileCompletionDTO calculateProfileCompletion(

@@ -10,4 +10,5 @@ public class ProfileSummaryDTO {
     private String title;
     private String location;
     private String profileImageUrl;
+    private String portfolioUrl;
 }
