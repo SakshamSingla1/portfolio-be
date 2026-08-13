@@ -17,6 +17,9 @@ public class ViewStatsDTO {
     private long uniqueVisitors;
     private long resumeDownloads;
     private List<DailyViewDTO> weeklyTrend;
+    // Same shape as weeklyTrend but covering ~90 days, for the GitHub-style
+    // views-heatmap calendar (which needs more history than the 7-day trend).
+    private List<DailyViewDTO> viewsHeatmap;
     private Map<String, Long> deviceBreakdown;
     private Map<String, Long> browserBreakdown;
     private Map<String, Long> locationBreakdown;

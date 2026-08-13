@@ -3,8 +3,10 @@ package com.portfolio.servicesImpl;
 import com.portfolio.dao.contact_us.ContactUsDao;
 import com.portfolio.dao.file.FileAssetDao;
 import com.portfolio.dao.profile.ProfileDao;
+import com.portfolio.dao.profile_completion.ProfileCompletionSnapshotDao;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.ActivityDTO;
+import com.portfolio.dtos.DashboardDTOs.CompletionSnapshotDTO;
 import com.portfolio.dtos.DashboardDTOs.DashboardSummaryDTO;
 import com.portfolio.dtos.DashboardDTOs.ProfileCompletionDTO;
 import com.portfolio.dtos.DashboardDTOs.ProfileSummaryDTO;
@@ -13,6 +15,7 @@ import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.ProfileCompletionSnapshot;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -22,8 +25,11 @@ import com.portfolio.services.SocialLinkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +43,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final PortfolioViewService portfolioViewService;
     private final FileAssetDao fileAssetDao;
     private final SocialLinkService socialLinkService;
+    private final ProfileCompletionSnapshotDao profileCompletionSnapshotDao;
     private final ExecutorService profileAggregationExecutor;
 
     @Override
@@ -86,6 +93,10 @@ public class DashboardServiceImpl implements DashboardService {
                 stats.getTotalAchievements(),
                 stats.getTotalSocialLinks()
         );
+
+        profileCompletionSnapshotDao.upsertSnapshot(profileId, LocalDate.now(), profileCompletion.getPercentage());
+        List<ProfileCompletionSnapshot> snapshots = profileCompletionSnapshotDao.findSince(profileId, LocalDate.now().minusDays(29));
+        profileCompletion.setTrend(buildCompletionTrend(snapshots));
 
         return DashboardSummaryDTO.builder()
                 .profileSummary(profileSummary)
@@ -163,6 +174,16 @@ public class DashboardServiceImpl implements DashboardService {
                 .percentage(Math.min(score, 100))
                 .missingSections(missingSections)
                 .build();
+    }
+
+    private List<CompletionSnapshotDTO> buildCompletionTrend(List<ProfileCompletionSnapshot> snapshots) {
+        List<CompletionSnapshotDTO> trend = new ArrayList<>();
+        for (ProfileCompletionSnapshot s : snapshots) {
+            LocalDate date = s.getSnapshotDate();
+            String dateStr = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + " " + date.getDayOfMonth();
+            trend.add(CompletionSnapshotDTO.builder().date(dateStr).percentage(s.getPercentage()).build());
+        }
+        return trend;
     }
 
     private int addScore(boolean condition, int value, String message, List<String> missing) {

@@ -37,4 +37,8 @@ public class PortfolioViewDao {
     public List<PortfolioView> findTop30ByProfileIdOrderByTimestampDesc(Long profileId) {
         return portfolioViewRepository.findTop30ByProfileIdOrderByTimestampDesc(profileId);
     }
+
+    public List<Object[]> getDailyViewCountsSince(Long profileId, LocalDateTime since) {
+        return portfolioViewRepository.getDailyViewCountsSince(profileId, since);
+    }
 }

@@ -77,12 +77,17 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 () -> resumeDownloadDao.countByProfileId(profileId));
         CompletableFuture<List<PortfolioView>> recentFuture = CompletableFuture.supplyAsync(
                 () -> portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(32)));
+        // Grouped in SQL (not pulled as raw rows like `recent`) since 90 days of
+        // history on a high-traffic profile would be a much larger row set.
+        CompletableFuture<List<Object[]>> heatmapRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getDailyViewCountsSince(profileId, now.minusDays(89).toLocalDate().atStartOfDay()));
 
-        CompletableFuture.allOf(totalViewsFuture, resumeDownloadsFuture, recentFuture).join();
+        CompletableFuture.allOf(totalViewsFuture, resumeDownloadsFuture, recentFuture, heatmapRowsFuture).join();
 
         long totalViews      = totalViewsFuture.join();
         long resumeDownloads = resumeDownloadsFuture.join();
         List<PortfolioView> recent = recentFuture.join();
+        List<Object[]> heatmapRows = heatmapRowsFuture.join();
 
         // Compute date-range counts in Java — no extra DB round trips needed
         long viewsToday     = recent.stream().filter(v -> v.getTimestamp() != null && !v.getTimestamp().isBefore(startDay)).count();
@@ -131,6 +136,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .toList();
 
         List<DailyViewDTO> weeklyTrend = buildWeeklyTrend(last7, now);
+        List<DailyViewDTO> viewsHeatmap = buildHeatmap(heatmapRows, now);
 
         List<PortfolioViewDTO> recentViews = recent.stream()
                 .filter(v -> v.getTimestamp() != null)
@@ -148,6 +154,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
                 .uniqueVisitors(uniqueVisitors)
                 .resumeDownloads(resumeDownloads)
                 .weeklyTrend(weeklyTrend)
+                .viewsHeatmap(viewsHeatmap)
                 .deviceBreakdown(deviceBreakdown)
                 .browserBreakdown(browserBreakdown)
                 .locationBreakdown(locationBreakdown)
@@ -224,6 +231,26 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
             trend.add(DailyViewDTO.builder().day(day).date(dateStr).count(count).build());
         }
         return trend;
+    }
+
+    private List<DailyViewDTO> buildHeatmap(List<Object[]> rows, LocalDateTime now) {
+        Map<LocalDate, Long> byDate = new HashMap<>();
+        for (Object[] row : rows) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            long count = ((Number) row[1]).longValue();
+            byDate.put(date, count);
+        }
+
+        List<DailyViewDTO> heatmap = new ArrayList<>();
+        for (int i = 89; i >= 0; i--) {
+            LocalDate date  = now.toLocalDate().minusDays(i);
+            long count      = byDate.getOrDefault(date, 0L);
+            String day      = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            String dateStr  = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH)
+                    + " " + date.getDayOfMonth();
+            heatmap.add(DailyViewDTO.builder().day(day).date(dateStr).count(count).build());
+        }
+        return heatmap;
     }
 
     private String normaliseDevice(String raw) {
