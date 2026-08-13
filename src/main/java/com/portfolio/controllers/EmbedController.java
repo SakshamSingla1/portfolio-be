@@ -396,7 +396,7 @@ public class EmbedController {
         String locationHtml = location.isEmpty() ? "" : "&#128205;&nbsp;" + location;
 
         String bioHtml = c.bioPlain().isEmpty() ? "" : String.format(
-            "<tr><td style=\"padding-top:14px;font-size:12.5px;line-height:1.55;color:#475569;font-family:Arial,sans-serif;\">%s</td></tr>",
+            "<tr><td colspan=\"2\" style=\"padding-top:14px;font-size:12.5px;line-height:1.55;color:#475569;font-family:Arial,sans-serif;\">%s</td></tr>",
             htmlEscape(c.bioPlain()));
 
         StringBuilder skillsHtml = new StringBuilder();
@@ -410,7 +410,7 @@ public class EmbedController {
                     htmlEscape(skill)));
             }
             skillsHtml.append(String.format(
-                "<tr><td style=\"padding-top:16px;\">"
+                "<tr><td colspan=\"2\" style=\"padding-top:16px;\">"
                 + "<div style=\"font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;"
                 + "letter-spacing:1px;margin-bottom:8px;font-family:Arial,sans-serif;\">Skills</div>"
                 + "<div>%s</div></td></tr>", chips));
@@ -450,8 +450,8 @@ public class EmbedController {
                       </tr>
                       %s
                       %s
-                      <tr><td style="padding-top:16px;border-top:1px solid #f1f5f9;margin-top:16px;">&nbsp;</td></tr>
-                      <tr><td>
+                      <tr><td colspan="2" style="padding-top:16px;border-top:1px solid #f1f5f9;margin-top:16px;">&nbsp;</td></tr>
+                      <tr><td colspan="2">
                         <table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>
                           <td valign="middle">%s</td>
                           <td align="right" valign="middle">
@@ -459,7 +459,7 @@ public class EmbedController {
                           </td>
                         </tr></table>
                       </td></tr>
-                      <tr><td style="padding-top:10px;text-align:center;font-size:9.5px;color:#cbd5e1;font-family:Arial,sans-serif;">Powered by PortfoliosBuilder</td></tr>
+                      <tr><td colspan="2" style="padding-top:10px;text-align:center;font-size:9.5px;color:#cbd5e1;font-family:Arial,sans-serif;">Powered by PortfoliosBuilder</td></tr>
                     </table>
                   </td></tr>
                 </table>
