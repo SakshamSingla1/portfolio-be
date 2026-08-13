@@ -4,11 +4,15 @@ import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.ColorTheme.ColorGroupDTO;
 import com.portfolio.dtos.ColorTheme.ColorShadeDTO;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
+import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
+import com.portfolio.dtos.Testimonial.TestimonialResponseDTO;
+import com.portfolio.enums.EmploymentStatusEnum;
 import com.portfolio.enums.PlatformEnum;
+import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.services.ProfileMasterService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -76,9 +83,13 @@ public class EmbedController {
     }
 
     /** Everything both renderers need, computed once. */
+    private record SkillEntry(String name, boolean expert) {}
+
     private record CardData(
         String fullName, String title, String location, boolean openToWork,
-        String imageUrl, String bioPlain, List<String> skills,
+        String imageUrl, String bioPlain, List<SkillEntry> skills, int totalSkills,
+        String experienceLabel, int totalProjects,
+        String testimonialQuote, String testimonialAuthor,
         String githubUrl, String linkedinUrl, String websiteUrl, String portfolioUrl,
         String primary400, String primary500, String primary600, String primary700
     ) {}
@@ -101,13 +112,30 @@ public class EmbedController {
             }
         }
 
-        List<String> skills = data.getSkills() != null
-            ? data.getSkills().stream()
-                .map(SkillResponse::getLogoName)
-                .filter(n -> n != null && !n.isBlank())
-                .limit(10)
-                .toList()
-            : List.of();
+        List<SkillResponse> allSkills = data.getSkills() != null ? data.getSkills() : List.of();
+        List<SkillEntry> skills = allSkills.stream()
+            .filter(s -> s.getLogoName() != null && !s.getLogoName().isBlank())
+            // Best skills first so a 10-skill cap still leads with the strongest ones.
+            .sorted(Comparator.comparingInt((SkillResponse s) -> skillRank(s.getLevel())).reversed())
+            .limit(10)
+            .map(s -> new SkillEntry(s.getLogoName(), s.getLevel() == SkillLevelEnum.Expert))
+            .toList();
+
+        String experienceLabel = computeExperienceLabel(data.getExperiences());
+        int totalProjects = data.getProjects() != null ? data.getProjects().size() : 0;
+
+        String testimonialQuote = null;
+        String testimonialAuthor = null;
+        if (data.getTestimonials() != null) {
+            for (TestimonialResponseDTO t : data.getTestimonials()) {
+                if (t.getMessage() != null && !t.getMessage().isBlank() && StatusEnum.ACTIVE.equals(t.getStatus())) {
+                    String msg = t.getMessage().trim();
+                    testimonialQuote = msg.length() > 110 ? msg.substring(0, 110).trim() + "…" : msg;
+                    testimonialAuthor = t.getName();
+                    break;
+                }
+            }
+        }
 
         List<SocialLinkResponseDTO> links = data.getSocialLinks();
         String githubUrl   = findActiveSocialUrl(links, PlatformEnum.GITHUB);
@@ -123,13 +151,46 @@ public class EmbedController {
 
         return new CardData(
             fullName, title, location, openToWork,
-            p.getProfileImageUrl(), bioPlain, skills,
+            p.getProfileImageUrl(), bioPlain, skills, allSkills.size(),
+            experienceLabel, totalProjects, testimonialQuote, testimonialAuthor,
             githubUrl, linkedinUrl, websiteUrl, portfolioUrl,
             themeColor(data.getColorTheme(), "primary400", "#34d399"),
             themeColor(data.getColorTheme(), "primary500", "#059669"),
             themeColor(data.getColorTheme(), "primary600", "#047857"),
             themeColor(data.getColorTheme(), "primary700", "#065f46")
         );
+    }
+
+    private int skillRank(SkillLevelEnum level) {
+        if (level == null) return 0;
+        return switch (level) {
+            case Expert -> 3;
+            case Advanced -> 2;
+            case Intermediate -> 1;
+            case Beginner -> 0;
+        };
+    }
+
+    private String computeExperienceLabel(List<ExperienceResponse> experiences) {
+        if (experiences == null || experiences.isEmpty()) return "Fresher";
+        long totalMonths = 0;
+        LocalDate now = LocalDate.now();
+        for (ExperienceResponse exp : experiences) {
+            if (exp.getStartDate() == null || exp.getStartDate().isBlank()) continue;
+            try {
+                LocalDate start = LocalDate.parse(exp.getStartDate());
+                boolean isCurrent = exp.getEndDate() == null || exp.getEndDate().isBlank()
+                    || exp.getEmploymentStatus() == EmploymentStatusEnum.CURRENT;
+                LocalDate end = isCurrent ? now : LocalDate.parse(exp.getEndDate());
+                long months = Period.between(start, end).toTotalMonths();
+                totalMonths += Math.max(months, 0);
+            } catch (Exception ignored) {
+                // Malformed date on one entry shouldn't sink the whole card's experience total.
+            }
+        }
+        double years = totalMonths / 12.0;
+        if (years < 1) return "Fresher";
+        return String.format("%.1f+ Years", years);
     }
 
     // ── Rich, interactive version — for iframe embeds on websites you control ──
@@ -165,15 +226,39 @@ public class EmbedController {
                 + "<span class=\"pulse-dot\"></span></span>Open to Work</span>");
         }
 
+        String statsHtml = String.format("""
+            <div class="stats-row">
+              <div class="stat"><div class="stat-value">%s</div><div class="stat-label">Experience</div></div>
+              <div class="stat-divider"></div>
+              <div class="stat"><div class="stat-value">%d</div><div class="stat-label">Project%s</div></div>
+              <div class="stat-divider"></div>
+              <div class="stat"><div class="stat-value">%d</div><div class="stat-label">Skill%s</div></div>
+            </div>
+            """,
+            htmlEscape(c.experienceLabel()),
+            c.totalProjects(), c.totalProjects() == 1 ? "" : "s",
+            c.totalSkills(), c.totalSkills() == 1 ? "" : "s"
+        );
+
         String bioHtml = c.bioPlain().isEmpty() ? "" : String.format("<div class=\"bio\">%s</div>", htmlEscape(c.bioPlain()));
 
         StringBuilder skillsHtml = new StringBuilder();
         if (!c.skills().isEmpty()) {
             skillsHtml.append("<div><div class=\"section-label\">Skills</div><div class=\"skills\">");
-            for (String skill : c.skills()) {
-                skillsHtml.append(String.format("<span class=\"skill-chip\">%s</span>", htmlEscape(skill)));
+            for (SkillEntry skill : c.skills()) {
+                String chipClass = skill.expert() ? "skill-chip skill-chip-expert" : "skill-chip";
+                skillsHtml.append(String.format("<span class=\"%s\">%s</span>", chipClass, htmlEscape(skill.name())));
             }
             skillsHtml.append("</div></div>");
+        }
+
+        String testimonialHtml = "";
+        if (c.testimonialQuote() != null) {
+            String author = c.testimonialAuthor() != null && !c.testimonialAuthor().isBlank()
+                ? String.format("<div class=\"testimonial-author\">&#8212; %s</div>", htmlEscape(c.testimonialAuthor())) : "";
+            testimonialHtml = String.format(
+                "<div class=\"testimonial\">&#8220;%s&#8221;%s</div>",
+                htmlEscape(c.testimonialQuote()), author);
         }
 
         StringBuilder socialHtml = new StringBuilder();
@@ -209,13 +294,13 @@ public class EmbedController {
                   <style>
                     * { box-sizing: border-box; margin: 0; padding: 0; }
                     body {
-                      width: 420px; height: 400px; overflow: hidden;
+                      width: 420px; height: 540px; overflow: hidden;
                       font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
                       background: transparent;
                     }
                     .card {
                       position: relative;
-                      width: 420px; height: 400px;
+                      width: 420px; height: 540px;
                       background: #ffffff;
                       box-shadow: 0 4px 28px rgba(15,23,42,0.12);
                       border-radius: 18px;
@@ -290,6 +375,18 @@ public class EmbedController {
                       0%% { transform: scale(1); opacity: 0.6; }
                       100%% { transform: scale(2.6); opacity: 0; }
                     }
+                    .stats-row {
+                      display: flex; align-items: center;
+                      background: #f8fafc; border: 1px solid #eef2f7; border-radius: 12px;
+                      padding: 10px 0;
+                    }
+                    .stat { flex: 1; text-align: center; }
+                    .stat-value { font-size: 16px; font-weight: 800; color: #0f172a; }
+                    .stat-label {
+                      font-size: 8.5px; font-weight: 700; color: #94a3b8;
+                      text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;
+                    }
+                    .stat-divider { width: 1px; height: 22px; background: #e2e8f0; flex-shrink: 0; }
                     .bio { font-size: 12.5px; line-height: 1.55; color: #475569; }
                     .section-label {
                       font-size: 10.5px; font-weight: 700; color: #94a3b8;
@@ -302,6 +399,20 @@ public class EmbedController {
                       background: #f8fafc; border: 1px solid #eef2f7;
                       color: #334155; font-size: 11.5px; font-weight: 600;
                       padding: 4px 11px; border-radius: 50px; white-space: nowrap;
+                    }
+                    .skill-chip-expert {
+                      background: #ecfdf5; border: 1.5px solid var(--primary500); color: var(--primary700);
+                      font-weight: 700;
+                    }
+                    .testimonial {
+                      background: #f8fafc; border-left: 3px solid var(--primary500);
+                      border-radius: 0 8px 8px 0;
+                      padding: 10px 14px; font-size: 12px; line-height: 1.5;
+                      color: #475569; font-style: italic;
+                    }
+                    .testimonial-author {
+                      margin-top: 5px; font-size: 11px; font-weight: 700;
+                      color: #94a3b8; font-style: normal;
                     }
                     .footer-row {
                       margin-top: auto; padding-top: 14px;
@@ -344,6 +455,8 @@ public class EmbedController {
                         </div>
                         %s
                         %s
+                        %s
+                        %s
                       </div>
                       <div class="footer-row">
                         <div class="social-icons">%s</div>
@@ -359,7 +472,8 @@ public class EmbedController {
                 """;
 
         return String.format(template,
-            fullName, themeVars, imageHtml, fullName, title, metaHtml, bioHtml, skillsHtml, socialHtml, c.portfolioUrl()
+            fullName, themeVars, imageHtml, fullName, title, metaHtml,
+            statsHtml, bioHtml, skillsHtml, testimonialHtml, socialHtml, c.portfolioUrl()
         );
     }
 
@@ -371,104 +485,149 @@ public class EmbedController {
         String fullName = htmlEscape(c.fullName());
         String title = htmlEscape(c.title());
         String location = htmlEscape(c.location());
+        String primary500 = c.primary500();
         String primary600 = c.primary600();
         String primary700 = c.primary700();
 
         String avatarHtml;
         if (c.imageUrl() != null && !c.imageUrl().isBlank()) {
             avatarHtml = String.format(
-                "<img src=\"%s\" width=\"60\" height=\"60\" alt=\"%s\" "
-                + "style=\"border-radius:50%%;display:block;object-fit:cover;border:2px solid #ffffff;\" />",
+                "<img src=\"%s\" width=\"72\" height=\"72\" alt=\"%s\" "
+                + "style=\"border-radius:50%%;display:block;object-fit:cover;border:3px solid rgba(255,255,255,0.9);\" />",
                 c.imageUrl(), fullName);
         } else {
             String initial = fullName.isEmpty() ? "?" : fullName.substring(0, 1).toUpperCase();
             avatarHtml = String.format(
-                "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" width=\"60\" height=\"60\" "
-                + "style=\"background:%s;border-radius:50%%;\"><tr><td align=\"center\" valign=\"middle\" "
-                + "style=\"font-size:24px;font-weight:700;color:#ffffff;font-family:Arial,sans-serif;\">%s</td></tr></table>",
-                primary600, initial);
+                "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" width=\"72\" height=\"72\" "
+                + "style=\"background:rgba(255,255,255,0.22);border-radius:50%%;border:3px solid rgba(255,255,255,0.9);\">"
+                + "<tr><td align=\"center\" valign=\"middle\" "
+                + "style=\"font-size:28px;font-weight:700;color:#ffffff;font-family:Arial,sans-serif;\">%s</td></tr></table>",
+                initial);
         }
 
         String badgeHtml = c.openToWork()
-            ? "&nbsp;&nbsp;<span style=\"background:#ecfdf5;color:#047857;font-size:11px;font-weight:700;"
-              + "padding:3px 9px;border-radius:20px;\">&#9679;&nbsp;Open to Work</span>"
+            ? "<span style=\"background:rgba(255,255,255,0.2);color:#ffffff;font-size:11px;font-weight:700;"
+              + "padding:3px 10px;border-radius:20px;\">&#9679;&nbsp;Open to Work</span>"
             : "";
-        String locationHtml = location.isEmpty() ? "" : "&#128205;&nbsp;" + location;
+        String locationHtml = location.isEmpty() ? "" : "<span style=\"color:rgba(255,255,255,0.85);font-size:12px;\">&#128205;&nbsp;" + location + "</span>";
+
+        // Stats row — real signal (experience/projects/skills) rather than pure decoration,
+        // so the card earns the space it takes instead of just padding it out.
+        String statCell = "<td align=\"center\" style=\"padding:14px 4px;\">"
+            + "<div style=\"font-size:17px;font-weight:800;color:#0f172a;font-family:Arial,sans-serif;\">%s</div>"
+            + "<div style=\"font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px;font-family:Arial,sans-serif;\">%s</div>"
+            + "</td>";
+        String dividerCell = "<td width=\"1\" style=\"background:#eef2f7;\">&nbsp;</td>";
+        String statsRow = String.format(
+            "<tr><td style=\"padding:0 20px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%%\"><tr>"
+            + statCell + dividerCell + statCell + dividerCell + statCell
+            + "</tr></table></td></tr>",
+            c.experienceLabel(), "Experience",
+            c.totalProjects(), "Project" + (c.totalProjects() == 1 ? "" : "s"),
+            c.totalSkills(), "Skill" + (c.totalSkills() == 1 ? "" : "s")
+        );
 
         String bioHtml = c.bioPlain().isEmpty() ? "" : String.format(
-            "<tr><td colspan=\"2\" style=\"padding-top:14px;font-size:12.5px;line-height:1.55;color:#475569;font-family:Arial,sans-serif;\">%s</td></tr>",
+            "<tr><td style=\"padding:16px 24px 0 24px;font-size:12.5px;line-height:1.55;color:#475569;font-family:Arial,sans-serif;\">%s</td></tr>",
             htmlEscape(c.bioPlain()));
 
-        StringBuilder skillsHtml = new StringBuilder();
+        String skillsHtml = "";
         if (!c.skills().isEmpty()) {
             StringBuilder chips = new StringBuilder();
-            for (String skill : c.skills()) {
-                chips.append(String.format(
-                    "<span style=\"display:inline-block;background:#f8fafc;border:1px solid #eef2f7;color:#334155;"
-                    + "font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;"
-                    + "font-family:Arial,sans-serif;\">%s</span>",
-                    htmlEscape(skill)));
+            for (SkillEntry skill : c.skills()) {
+                if (skill.expert()) {
+                    chips.append(String.format(
+                        "<span style=\"display:inline-block;background:#ecfdf5;border:1.5px solid %s;color:%s;"
+                        + "font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;"
+                        + "font-family:Arial,sans-serif;\">%s</span>",
+                        primary500, primary700, htmlEscape(skill.name())));
+                } else {
+                    chips.append(String.format(
+                        "<span style=\"display:inline-block;background:#f8fafc;border:1px solid #eef2f7;color:#334155;"
+                        + "font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:20px;margin:0 6px 6px 0;"
+                        + "font-family:Arial,sans-serif;\">%s</span>",
+                        htmlEscape(skill.name())));
+                }
             }
-            skillsHtml.append(String.format(
-                "<tr><td colspan=\"2\" style=\"padding-top:16px;\">"
+            skillsHtml = String.format(
+                "<tr><td style=\"padding:16px 24px 0 24px;\">"
                 + "<div style=\"font-size:10.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;"
                 + "letter-spacing:1px;margin-bottom:8px;font-family:Arial,sans-serif;\">Skills</div>"
-                + "<div>%s</div></td></tr>", chips));
+                + "<div>%s</div></td></tr>", chips);
+        }
+
+        String testimonialHtml = "";
+        if (c.testimonialQuote() != null) {
+            String author = c.testimonialAuthor() != null && !c.testimonialAuthor().isBlank()
+                ? "&#8212; " + htmlEscape(c.testimonialAuthor()) : "";
+            testimonialHtml = String.format(
+                "<tr><td style=\"padding:16px 24px 0 24px;\">"
+                + "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" width=\"100%%\" style=\"background:#f8fafc;border-left:3px solid %s;border-radius:0 8px 8px 0;\">"
+                + "<tr><td style=\"padding:12px 14px;font-size:12px;line-height:1.5;color:#475569;font-style:italic;font-family:Arial,sans-serif;\">"
+                + "&#8220;%s&#8221;<div style=\"margin-top:5px;font-size:11px;font-weight:700;color:#94a3b8;font-style:normal;\">%s</div>"
+                + "</td></tr></table></td></tr>",
+                primary500, htmlEscape(c.testimonialQuote()), author);
         }
 
         StringBuilder linksHtml = new StringBuilder();
         if (c.githubUrl() != null) {
             linksHtml.append(String.format(
-                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">GitHub</a>",
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-weight:600;font-family:Arial,sans-serif;\">GitHub</a>",
                 htmlEscape(c.githubUrl())));
         }
         if (c.linkedinUrl() != null) {
             if (linksHtml.length() > 0) linksHtml.append("&nbsp;&nbsp;|&nbsp;&nbsp;");
             linksHtml.append(String.format(
-                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">LinkedIn</a>",
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-weight:600;font-family:Arial,sans-serif;\">LinkedIn</a>",
                 htmlEscape(c.linkedinUrl())));
         }
         if (c.websiteUrl() != null) {
             if (linksHtml.length() > 0) linksHtml.append("&nbsp;&nbsp;|&nbsp;&nbsp;");
             linksHtml.append(String.format(
-                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-family:Arial,sans-serif;\">Website</a>",
+                "<a href=\"%s\" style=\"color:#64748b;text-decoration:none;font-size:12px;font-weight:600;font-family:Arial,sans-serif;\">Website</a>",
                 htmlEscape(c.websiteUrl())));
         }
 
         String templ = """
-                <table role="presentation" cellpadding="0" cellspacing="0" width="440" style="max-width:440px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;font-family:Arial,sans-serif;">
-                  <tr><td style="height:4px;background:%s;font-size:0;line-height:0;border-radius:16px 16px 0 0;">&nbsp;</td></tr>
-                  <tr><td style="padding:22px 24px 18px 24px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="440" style="max-width:440px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;font-family:Arial,sans-serif;box-shadow:0 8px 24px rgba(15,23,42,0.08);">
+                  <tr><td style="background-color:%s;background-image:linear-gradient(135deg,%s,%s);padding:24px 24px 20px 24px;border-radius:16px 16px 0 0;">
                     <table role="presentation" cellpadding="0" cellspacing="0" width="100%%">
                       <tr>
-                        <td width="60" valign="top">%s</td>
-                        <td style="padding-left:14px;" valign="top">
-                          <div style="font-size:18px;font-weight:800;color:#0f172a;font-family:Arial,sans-serif;">%s</div>
-                          <div style="font-size:13px;color:#64748b;margin-top:2px;font-family:Arial,sans-serif;">%s</div>
-                          <div style="font-size:11.5px;color:#94a3b8;margin-top:6px;font-family:Arial,sans-serif;">%s%s</div>
+                        <td width="72" valign="top">%s</td>
+                        <td style="padding-left:16px;" valign="top">
+                          <div style="font-size:19px;font-weight:800;color:#ffffff;font-family:Arial,sans-serif;">%s</div>
+                          <div style="font-size:13.5px;color:rgba(255,255,255,0.9);margin-top:2px;font-weight:500;font-family:Arial,sans-serif;">%s</div>
+                          <div style="margin-top:8px;">%s&nbsp;&nbsp;%s</div>
                         </td>
                       </tr>
-                      %s
-                      %s
-                      <tr><td colspan="2" style="padding-top:16px;border-top:1px solid #f1f5f9;margin-top:16px;">&nbsp;</td></tr>
-                      <tr><td colspan="2">
-                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>
-                          <td valign="middle">%s</td>
-                          <td align="right" valign="middle">
-                            <a href="%s" style="display:inline-block;background:%s;color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:9px 18px;border-radius:20px;font-family:Arial,sans-serif;">View Portfolio &#8594;</a>
-                          </td>
-                        </tr></table>
-                      </td></tr>
-                      <tr><td colspan="2" style="padding-top:10px;text-align:center;font-size:9.5px;color:#cbd5e1;font-family:Arial,sans-serif;">Powered by PortfoliosBuilder</td></tr>
                     </table>
                   </td></tr>
+                  %s
+                  %s
+                  %s
+                  %s
+                  <tr><td style="padding:20px 24px 0 24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>
+                      <td style="border-top:1px solid #f1f5f9;font-size:0;line-height:0;">&nbsp;</td>
+                    </tr></table>
+                  </td></tr>
+                  <tr><td style="padding:14px 24px 0 24px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%%"><tr>
+                      <td valign="middle">%s</td>
+                      <td align="right" valign="middle">
+                        <a href="%s" style="display:inline-block;background:%s;color:#ffffff;text-decoration:none;font-weight:700;font-size:12.5px;padding:9px 18px;border-radius:20px;font-family:Arial,sans-serif;">View Portfolio &#8594;</a>
+                      </td>
+                    </tr></table>
+                  </td></tr>
+                  <tr><td style="padding:14px 24px 18px 24px;text-align:center;font-size:9.5px;color:#cbd5e1;font-family:Arial,sans-serif;">Powered by PortfoliosBuilder</td></tr>
                 </table>
                 """;
 
         return String.format(templ,
-            "linear-gradient(90deg," + primary600 + "," + primary700 + ")",
+            primary600, primary500, primary700,
             avatarHtml, fullName, title, locationHtml, badgeHtml,
-            bioHtml, skillsHtml, linksHtml, c.portfolioUrl(), primary600
+            statsRow, bioHtml, skillsHtml, testimonialHtml,
+            linksHtml, c.portfolioUrl(), primary600
         );
     }
 
