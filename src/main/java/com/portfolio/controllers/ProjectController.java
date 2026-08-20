@@ -5,6 +5,7 @@ import com.portfolio.dtos.Project.ProjectRequest;
 import com.portfolio.dtos.Project.ProjectResponse;
 import com.portfolio.entities.Project;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.WorkStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -84,10 +85,11 @@ public class ProjectController {
             @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) WorkStatusEnum workStatus,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search, sortDir, sortBy);
+        Page<ProjectResponse> projects = projectService.getByProfile(profileId, pageable, search, workStatus, sortDir, sortBy);
         return ApiResponse.successResponse(projects, "Projects fetched successfully");
     }
 

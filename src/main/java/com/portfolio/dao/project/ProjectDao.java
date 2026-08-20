@@ -1,6 +1,7 @@
 package com.portfolio.dao.project;
 
 import com.portfolio.entities.Project;
+import com.portfolio.enums.WorkStatusEnum;
 import com.portfolio.repositories.ProjectRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,8 +41,8 @@ public class ProjectDao {
         return projectRepository.findByProfileId(profileId);
     }
 
-    public Page<Project> findByCriteria(Long profileId, String search, Pageable pageable) {
-        return projectRepository.findByCriteria(profileId, search, pageable);
+    public Page<Project> findByCriteria(Long profileId, String search, WorkStatusEnum workStatus, Pageable pageable) {
+        return projectRepository.findByCriteria(profileId, search, workStatus, pageable);
     }
 
     public Page<Project> findByProfileId(Long profileId, Pageable pageable) {

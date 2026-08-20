@@ -3,6 +3,7 @@ package com.portfolio.controllers;
 import com.portfolio.dtos.Experience.ExperienceRequest;
 import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.entities.Experience;
+import com.portfolio.enums.EmploymentStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
@@ -79,9 +80,10 @@ public class ExperienceController {
     public ResponseEntity<ResponseModel<Page<ExperienceResponse>>> getAll(
             @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
-            @RequestParam(required = false) String search) throws GenericException {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) EmploymentStatusEnum employmentStatus) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<ExperienceResponse> response = experienceService.getByProfile(profileId, search, pageable);
+        Page<ExperienceResponse> response = experienceService.getByProfile(profileId, search, employmentStatus, pageable);
         return ApiResponse.respond(response, "Experiences fetched successfully", "Failed to fetch experiences");
     }
 }

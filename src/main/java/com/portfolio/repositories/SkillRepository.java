@@ -3,6 +3,7 @@ package com.portfolio.repositories;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.entities.Skill;
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,15 +26,18 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             LEFT JOIN FileAsset fa ON fa.resourceId = s.logoId AND fa.resourceType = 'LOGO'
             WHERE (:profileId IS NULL OR s.profileId = :profileId)
             AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:category IS NULL OR s.category = :category)
     """,
             countQuery = """
             SELECT COUNT(s) FROM Skill s
             WHERE (:profileId IS NULL OR s.profileId = :profileId)
             AND (:search IS NULL OR :search = '' OR LOWER(s.logoName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:category IS NULL OR s.category = :category)
             """)
     Page<SkillResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
+            @Param("category") SkillCategoryEnum category,
             Pageable pageable
     );
 

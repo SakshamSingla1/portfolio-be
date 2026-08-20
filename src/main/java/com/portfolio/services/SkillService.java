@@ -3,6 +3,7 @@ package com.portfolio.services;
 import com.portfolio.dtos.Skill.SkillRequest;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +20,7 @@ public interface SkillService {
 
     void delete(Long id) throws GenericException;
 
-    Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy);
+    Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, SkillCategoryEnum category, String sortDir, String sortBy);
 
     List<SkillResponse> getByProfile(Long profileId);
 

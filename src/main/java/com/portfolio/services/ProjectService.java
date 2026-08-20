@@ -3,6 +3,7 @@ package com.portfolio.services;
 import com.portfolio.dtos.Image.ImageUploadResponse;
 import com.portfolio.dtos.Project.ProjectRequest;
 import com.portfolio.dtos.Project.ProjectResponse;
+import com.portfolio.enums.WorkStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +24,7 @@ public interface ProjectService {
 
     String delete(Long id) throws GenericException;
 
-    Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy);
+    Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, WorkStatusEnum workStatus, String sortDir, String sortBy);
 
     List<ProjectResponse> getByProfile(Long profileId);
 }

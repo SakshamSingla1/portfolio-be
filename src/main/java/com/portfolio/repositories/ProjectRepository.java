@@ -1,6 +1,7 @@
 package com.portfolio.repositories;
 
 import com.portfolio.entities.Project;
+import com.portfolio.enums.WorkStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,10 +25,12 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
             AND (:search IS NULL OR :search = ''
                 OR LOWER(p.projectName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(p.projectDescription) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:workStatus IS NULL OR p.workStatus = :workStatus)
     """)
     Page<Project> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
+            @Param("workStatus") WorkStatusEnum workStatus,
             Pageable pageable
     );
 

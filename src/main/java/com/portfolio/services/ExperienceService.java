@@ -2,6 +2,7 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.Experience.ExperienceRequest;
 import com.portfolio.dtos.Experience.ExperienceResponse;
+import com.portfolio.enums.EmploymentStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,6 @@ public interface ExperienceService {
     ExperienceResponse update(Long id,ExperienceRequest request) throws GenericException;
     ExperienceResponse getById(Long id) throws GenericException;
     String delete(Long id) throws GenericException;
-    Page<ExperienceResponse> getByProfile(Long profileId, String search ,Pageable pageable);
+    Page<ExperienceResponse> getByProfile(Long profileId, String search, EmploymentStatusEnum employmentStatus, Pageable pageable);
     List<ExperienceResponse> getByProfile(Long profileId);
 }

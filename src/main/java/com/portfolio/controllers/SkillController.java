@@ -5,6 +5,7 @@ import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.dtos.Skill.SkillStat;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -66,11 +67,12 @@ public class SkillController {
             @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) SkillCategoryEnum category,
             @RequestParam(required = false, defaultValue = "updatedAt") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
-        Page<SkillResponse> response = skillService.getByProfile(profileId, pageable, search, sortDir, sortBy);
+        Page<SkillResponse> response = skillService.getByProfile(profileId, pageable, search, category, sortDir, sortBy);
         return ApiResponse.successResponse(response, "Skills fetched successfully");
     }
 

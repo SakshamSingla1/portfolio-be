@@ -139,7 +139,7 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy) {
+    public Page<ProjectResponse> getByProfile(Long profileId, Pageable pageable, String search, WorkStatusEnum workStatus, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -148,7 +148,7 @@ public class ProjectServiceImpl implements ProjectService {
                 pageable.getPageSize(),
                 sort
         );
-        return projectDao.findByCriteria(profileId, search, sortedPageable).map(this::mapToResponse);
+        return projectDao.findByCriteria(profileId, search, workStatus, sortedPageable).map(this::mapToResponse);
     }
 
     @Override

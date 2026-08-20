@@ -6,6 +6,7 @@ import com.portfolio.dtos.Experience.ExperienceRequest;
 import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.entities.Experience;
+import com.portfolio.enums.EmploymentStatusEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ExperienceService;
@@ -88,8 +89,8 @@ public class ExperienceServiceImpl implements ExperienceService {
     }
 
     @Override
-    public Page<ExperienceResponse> getByProfile(Long profileId, String search, Pageable pageable) {
-        return experienceDao.findByCriteria(profileId,search,pageable);
+    public Page<ExperienceResponse> getByProfile(Long profileId, String search, EmploymentStatusEnum employmentStatus, Pageable pageable) {
+        return experienceDao.findByCriteria(profileId, search, employmentStatus, pageable);
     }
 
     @Override

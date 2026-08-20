@@ -3,6 +3,7 @@ package com.portfolio.dao.skill;
 import com.portfolio.dtos.Skill.SkillDropdown;
 import com.portfolio.dtos.Skill.SkillResponse;
 import com.portfolio.entities.Skill;
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.repositories.SkillRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,8 @@ public class SkillDao {
         return skillRepository.findDTOById(id);
     }
 
-    public Page<SkillResponse> findByCriteria(Long profileId, String search, Pageable pageable) {
-        return skillRepository.findByCriteria(profileId, search, pageable);
+    public Page<SkillResponse> findByCriteria(Long profileId, String search, SkillCategoryEnum category, Pageable pageable) {
+        return skillRepository.findByCriteria(profileId, search, category, pageable);
     }
 
     public List<Skill> findByProfileId(Long profileId) {

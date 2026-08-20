@@ -2,6 +2,7 @@ package com.portfolio.repositories;
 
 import com.portfolio.dtos.Experience.ExperienceResponse;
 import com.portfolio.entities.Experience;
+import com.portfolio.enums.EmploymentStatusEnum;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,6 +42,7 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
                 OR LOWER(ex.companyName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.jobTitle) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.location) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:employmentStatus IS NULL OR ex.employmentStatus = :employmentStatus)
     """,
             countQuery = """
             SELECT COUNT(ex) FROM Experience ex
@@ -49,10 +51,12 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
                 OR LOWER(ex.companyName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.jobTitle) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(ex.location) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:employmentStatus IS NULL OR ex.employmentStatus = :employmentStatus)
             """)
     Page<ExperienceResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
+            @Param("employmentStatus") EmploymentStatusEnum employmentStatus,
             Pageable pageable
     );
 }

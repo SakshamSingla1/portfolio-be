@@ -11,6 +11,7 @@ import com.portfolio.entities.Logo;
 import com.portfolio.entities.Skill;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.ResourceTypeEnum;
+import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.SkillLevelEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.SkillService;
@@ -77,7 +78,7 @@ public class SkillServiceImpl implements SkillService {
     }
 
     @Override
-    public Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, String sortDir, String sortBy) {
+    public Page<SkillResponse> getByProfile(Long profileId, Pageable pageable, String search, SkillCategoryEnum category, String sortDir, String sortBy) {
         Sort sort = Sort.by("desc".equalsIgnoreCase(sortDir)
                         ? Sort.Direction.DESC : Sort.Direction.ASC,
                 (sortBy != null && !sortBy.isBlank()) ? sortBy : "createdAt");
@@ -86,7 +87,7 @@ public class SkillServiceImpl implements SkillService {
                 pageable.getPageSize(),
                 sort
         );
-        return skillDao.findByCriteria(profileId, search, sortedPageable);
+        return skillDao.findByCriteria(profileId, search, category, sortedPageable);
     }
 
     @Override
