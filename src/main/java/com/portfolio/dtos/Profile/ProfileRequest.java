@@ -13,6 +13,8 @@ public class ProfileRequest {
     private String userName;
     private String title;
     private String aboutMe;
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be a valid email address")
     private String email;
     private String phone;
     private String location;

@@ -2,6 +2,7 @@ package com.portfolio.dtos.Project;
 
 import com.portfolio.dtos.ProjectImages.ProjectImageRequest;
 import com.portfolio.enums.WorkStatusEnum;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
@@ -22,5 +23,6 @@ public class ProjectRequest {
     private LocalDate projectEndDate;
     private WorkStatusEnum workStatus;
     private List<String> skillIds;
+    @Valid
     private List<ProjectImageRequest> projectImages;
 }

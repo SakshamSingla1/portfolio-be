@@ -21,6 +21,7 @@ public class AdminCreateUserRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[0-9]).{8,}$", message = "Password must contain at least one uppercase letter and one digit")
     private String password;
+    @Pattern(regexp = "\\+?[0-9]{7,15}", message = "Invalid phone number")
     private String phone;
     @NotNull(message = "Role is required")
     private Long roleId;
