@@ -2,6 +2,7 @@ package com.portfolio.controllers;
 
 import com.portfolio.dtos.Education.EducationRequest;
 import com.portfolio.dtos.Education.EducationResponse;
+import com.portfolio.enums.DegreeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
@@ -74,11 +75,12 @@ public class EducationController {
     public ResponseEntity<ResponseModel<Page<EducationResponse>>> getAll(
             @RequestHeader(value = "Authorization", required = false) String auth,
             Pageable pageable,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) DegreeEnum degree
     ) throws GenericException {
         Long profileId = helper.getProfileIdFromHeader(auth);
         return ApiResponse.respond(
-                educationService.getByProfile(profileId, search, pageable),
+                educationService.getByProfile(profileId, search, degree, pageable),
                 "Educations fetched successfully",
                 "Failed to fetch educations"
         );

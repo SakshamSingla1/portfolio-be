@@ -58,7 +58,7 @@ public class EducationDao {
         return educationRepository.findDTOByIdAndProfileId(id, profileId);
     }
 
-    public Page<EducationResponse> findByCriteria(Long profileId, String search, Pageable pageable){
-        return educationRepository.findByCriteria(profileId,search,pageable);
+    public Page<EducationResponse> findByCriteria(Long profileId, String search, DegreeEnum degree, Pageable pageable){
+        return educationRepository.findByCriteria(profileId, search, degree, pageable);
     }
 }

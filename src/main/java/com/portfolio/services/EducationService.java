@@ -2,6 +2,7 @@ package com.portfolio.services;
 
 import com.portfolio.dtos.Education.EducationRequest;
 import com.portfolio.dtos.Education.EducationResponse;
+import com.portfolio.enums.DegreeEnum;
 import com.portfolio.exceptions.GenericException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,6 @@ public interface EducationService {
     EducationResponse updateEducation(Long id, EducationRequest request) throws GenericException;
     EducationResponse findById(Long id,Long profileId) throws GenericException;
     String delete(Long id,Long profileId) throws GenericException;
-    Page<EducationResponse> getByProfile(Long profileId, String search, Pageable pageable);
+    Page<EducationResponse> getByProfile(Long profileId, String search, DegreeEnum degree, Pageable pageable);
     List<EducationResponse> getByProfile(Long profileId);
 }

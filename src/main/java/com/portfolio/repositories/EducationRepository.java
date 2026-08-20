@@ -43,8 +43,9 @@ public interface EducationRepository extends JpaRepository<Education, Long> {
             WHERE( :profileId is NULL OR e.profileId = :profileId)
             AND (:search IS NULL OR :search = ''
                 OR LOWER(e.institution) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
-                OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')   
+                OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(e.degree) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:degree IS NULL OR e.degree = :degree)
     """,
             countQuery = """
             SELECT COUNT(e) FROM Education e
@@ -53,10 +54,12 @@ public interface EducationRepository extends JpaRepository<Education, Long> {
                 OR LOWER(e.institution) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(e.fieldOfStudy) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%')
                 OR LOWER(e.degree) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))
+            AND (:degree IS NULL OR e.degree = :degree)
             """)
     Page<EducationResponse> findByCriteria(
             @Param("profileId") Long profileId,
             @Param("search") String search,
+            @Param("degree") DegreeEnum degree,
             Pageable pageable
     );
 

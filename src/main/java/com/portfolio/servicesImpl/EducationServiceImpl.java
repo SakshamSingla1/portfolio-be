@@ -4,6 +4,7 @@ import com.portfolio.dao.education.EducationDao;
 import com.portfolio.dtos.Education.EducationRequest;
 import com.portfolio.dtos.Education.EducationResponse;
 import com.portfolio.entities.Education;
+import com.portfolio.enums.DegreeEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.EducationService;
@@ -80,8 +81,8 @@ public class EducationServiceImpl implements EducationService {
     }
 
     @Override
-    public Page<EducationResponse> getByProfile(Long profileId, String search, Pageable pageable) {
-        return educationDao.findByCriteria(profileId,search, pageable);
+    public Page<EducationResponse> getByProfile(Long profileId, String search, DegreeEnum degree, Pageable pageable) {
+        return educationDao.findByCriteria(profileId, search, degree, pageable);
     }
 
     @Override
