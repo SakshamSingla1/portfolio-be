@@ -45,4 +45,6 @@ public class ProfileResponse extends AuditableResponse {
 
     private boolean isDiscoverable;
     private boolean digestEmailEnabled;
+
+    private String templateKey;
 }

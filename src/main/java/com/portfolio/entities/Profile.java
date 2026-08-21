@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.portfolio.audit.Auditable;
 import com.portfolio.enums.StatusEnum;
+import com.portfolio.enums.TemplateKeyEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -75,4 +76,8 @@ public class Profile extends Auditable {
 
     @Column(name = "digest_last_sent_at")
     private LocalDateTime digestLastSentAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "template_key", nullable = false)
+    private TemplateKeyEnum templateKey;
 }

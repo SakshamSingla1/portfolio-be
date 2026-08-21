@@ -123,8 +123,10 @@ public class ProfileMasterServiceImpl implements ProfileMasterService {
         }
         join(all);
 
+        ProfileResponse profileResponse = join(profileF);
         ProfileMasterResponse.ProfileMasterResponseBuilder builder = ProfileMasterResponse.builder()
-                .profile(join(profileF))
+                .profile(profileResponse)
+                .templateKey(profileResponse.getTemplateKey())
                 .colorTheme(join(colorThemeF))
                 .projects(join(cast(projectsF)))
                 .experiences(join(cast(experiencesF)))

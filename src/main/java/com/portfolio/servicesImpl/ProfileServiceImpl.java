@@ -18,6 +18,7 @@ import com.portfolio.entities.Role;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
+import com.portfolio.enums.TemplateKeyEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.FileService;
@@ -206,6 +207,7 @@ public class ProfileServiceImpl implements ProfileService {
                 .availableFrom(profile.getAvailableFrom())
                 .isDiscoverable(profile.isDiscoverable())
                 .digestEmailEnabled(profile.isDigestEmailEnabled())
+                .templateKey(profile.getTemplateKey() != null ? profile.getTemplateKey().name() : TemplateKeyEnum.CLASSIC.name())
                 .build();
     }
 

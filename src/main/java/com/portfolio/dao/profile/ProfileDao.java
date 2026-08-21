@@ -6,6 +6,7 @@ import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.StatusEnum;
+import com.portfolio.enums.TemplateKeyEnum;
 import com.portfolio.repositories.ProfileRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,10 @@ public class ProfileDao {
 
     public void deleteById(Long id) {
         profileRepository.deleteById(id);
+    }
+
+    public long countByTemplateKey(TemplateKeyEnum templateKey) {
+        return profileRepository.countByTemplateKey(templateKey);
     }
 
     public Optional<Profile> findByEmail(String email) {
