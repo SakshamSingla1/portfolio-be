@@ -42,4 +42,7 @@ public class ProfileResponse extends AuditableResponse {
     private boolean availableForWork;
     private String availabilityNote;
     private LocalDate availableFrom;
+
+    private boolean isDiscoverable;
+    private boolean digestEmailEnabled;
 }

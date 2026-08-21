@@ -204,6 +204,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .availableForWork(profile.isAvailableForWork())
                 .availabilityNote(profile.getAvailabilityNote())
                 .availableFrom(profile.getAvailableFrom())
+                .isDiscoverable(profile.isDiscoverable())
+                .digestEmailEnabled(profile.isDigestEmailEnabled())
                 .build();
     }
 
