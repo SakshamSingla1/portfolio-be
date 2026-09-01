@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,9 +78,17 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
         ColorTheme theme = colorThemeDao.findById(themeId)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.COLOR_THEME_NOT_FOUND, "Theme not found: " + themeId));
 
+        // Batch-load every mapped profile in one query instead of one findById per
+        // mapping (N+1) — a popular theme can be mapped to many profiles.
+        List<Long> profileIds = mappings.stream()
+                .map(ProfileThemeMapping::getProfileId)
+                .collect(Collectors.toList());
+        Map<Long, Profile> profilesById = profileDao.findAllById(profileIds).stream()
+                .collect(Collectors.toMap(Profile::getId, p -> p));
+
         return mappings.stream()
                 .map(mapping -> {
-                    Profile profile = profileDao.findById(mapping.getProfileId()).orElse(null);
+                    Profile profile = profilesById.get(mapping.getProfileId());
                     ProfileThemeResponse response = mapToResponse(mapping, profile, theme);
                     helper.setAudit(mapping, response);
                     return response;

@@ -35,4 +35,5 @@ build/
 ### Custom Ignore ###
 src/main/resources/application-dev.properties
 src/main/resources/application-prod.properties
+SECRETS_BACKUP.md
 

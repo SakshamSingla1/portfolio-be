@@ -8,6 +8,8 @@ import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.HelpFaqService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -20,6 +22,7 @@ public class HelpFaqServiceImpl implements HelpFaqService {
     private final HelpFaqDao helpFaqDao;
 
     @Override
+    @Cacheable(cacheNames = "activeFaqs")
     public List<HelpFaqResponse> getActiveFaqs() {
         return helpFaqDao.findByIsActiveTrueOrderBySortOrderAsc().stream()
                 .map(this::mapToResponse)
@@ -35,6 +38,7 @@ public class HelpFaqServiceImpl implements HelpFaqService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "activeFaqs", allEntries = true)
     public HelpFaqResponse createFaq(HelpFaqRequest req) {
         HelpFaq faq = HelpFaq.builder()
                 .question(req.getQuestion())
@@ -46,6 +50,7 @@ public class HelpFaqServiceImpl implements HelpFaqService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "activeFaqs", allEntries = true)
     public HelpFaqResponse updateFaq(Long id, HelpFaqRequest req) throws GenericException {
         HelpFaq faq = helpFaqDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.HELP_FAQ_NOT_FOUND, "FAQ not found"));
@@ -59,6 +64,7 @@ public class HelpFaqServiceImpl implements HelpFaqService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "activeFaqs", allEntries = true)
     public void deleteFaq(Long id) throws GenericException {
         HelpFaq faq = helpFaqDao.findById(id)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.HELP_FAQ_NOT_FOUND, "FAQ not found"));

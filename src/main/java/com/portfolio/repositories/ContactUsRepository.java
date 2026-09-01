@@ -51,6 +51,11 @@ public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
     @Query("UPDATE ContactUs c SET c.status = :status WHERE c.id = :id")
     void updateStatusById(@Param("id") Long id, @Param("status") ContactUsStatusEnum status);
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE ContactUs c SET c.status = :status WHERE c.id IN :ids")
+    int updateStatusByIdIn(@Param("ids") List<Long> ids, @Param("status") ContactUsStatusEnum status);
+
     List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(Long profileId);
 
     @Query("""

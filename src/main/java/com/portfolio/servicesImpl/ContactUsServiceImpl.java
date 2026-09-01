@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -95,6 +96,15 @@ public class ContactUsServiceImpl implements ContactUsService{
         }
 
         contactUsDao.updateStatusById(id, status);
+    }
+
+    @Override
+    @Transactional
+    public int updateStatusBulk(List<Long> ids, ContactUsStatusEnum status) throws GenericException {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return contactUsDao.updateStatusByIdIn(ids, status);
     }
 
     @Override

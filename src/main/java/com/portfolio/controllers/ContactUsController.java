@@ -1,5 +1,6 @@
 package com.portfolio.controllers;
 
+import com.portfolio.dtos.Common.BulkIdsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsReplyDTO;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.enums.ContactUsStatusEnum;
@@ -48,6 +49,15 @@ public class ContactUsController {
     ) throws GenericException {
         contactUsService.updateStatus(id, ContactUsStatusEnum.READ);
         return ApiResponse.respond("Success", ApiResponse.SUCCESS, ApiResponse.FAILED);
+    }
+
+    @Operation(summary = "Bulk mark as read", description = "Marks multiple contact messages as read in a single batch update.")
+    @PostMapping("/mark-read-bulk")
+    public ResponseEntity<ResponseModel<Integer>> markReadBulk(
+            @Valid @RequestBody BulkIdsRequest request
+    ) throws GenericException {
+        int updated = contactUsService.updateStatusBulk(request.getIds(), ContactUsStatusEnum.READ);
+        return ApiResponse.respond(updated, updated + " message(s) marked as read", "Failed to mark messages as read");
     }
 
     @Operation(summary = "Reply to a contact message", description = "Sends an email reply to the sender and marks the message as REPLIED.")

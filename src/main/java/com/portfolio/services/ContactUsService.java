@@ -8,10 +8,13 @@ import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.enums.ContactUsStatusEnum;
 import com.portfolio.exceptions.GenericException;
 
+import java.util.List;
+
 public interface ContactUsService {
     public ContactUsResponse create(ContactUsRequest request) throws GenericException;
     public Page<ContactUsResponse> getContactUsByProfileId(Long profileId, String search, ContactUsStatusEnum status,Pageable pageable) throws GenericException;
     public void updateStatus(Long id, ContactUsStatusEnum status) throws GenericException;
+    public int updateStatusBulk(List<Long> ids, ContactUsStatusEnum status) throws GenericException;
     public ContactUsResponse reply(Long id, String replyMessage, String authHeader) throws GenericException;
     public void deleteContactUs(Long id, Long profileId) throws GenericException;
 }

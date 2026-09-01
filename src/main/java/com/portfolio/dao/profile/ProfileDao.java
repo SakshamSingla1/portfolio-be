@@ -38,6 +38,10 @@ public class ProfileDao {
         return profileRepository.findById(id);
     }
 
+    public List<Profile> findAllById(List<Long> ids) {
+        return profileRepository.findAllById(ids);
+    }
+
     public void deleteById(Long id) {
         profileRepository.deleteById(id);
     }
