@@ -46,6 +46,10 @@ public class ContactUsDao {
         contactUsRepository.updateStatusById(id, status);
     }
 
+    public int updateStatusByIdIn(List<Long> ids, ContactUsStatusEnum status) {
+        return contactUsRepository.updateStatusByIdIn(ids, status);
+    }
+
     public List<ContactUs> findTop5ByProfileIdOrderByCreatedAtDesc(Long profileId) {
         return contactUsRepository.findTop5ByProfileIdOrderByCreatedAtDesc(profileId);
     }
