@@ -105,8 +105,11 @@ public class PublicController {
     public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterByDomain(HttpServletRequest request) throws GenericException {
         String domain = request.getHeader("Referer");
         ProfileMasterResponse response = profileMasterService.getProfileMasterData(domain);
-        return ApiResponse.respond( response, "Profile details fetched successfully", "Failed to fetch profile details"
-        );
+        // Matches the server-side Caffeine TTL for profileMasterByHost (CacheConfig) so the
+        // browser cache never outlives what the backend itself considers fresh. Without this,
+        // Spring Security's default Cache-Control: no-store forces a full network round trip
+        // on every single page load/reload, even seconds apart.
+        return ApiResponse.respond(response, "Profile details fetched successfully", "Failed to fetch profile details", 60);
     }
 
     @Operation(summary = "Create contact message", description = "Saves a new contact us message.")
@@ -135,7 +138,7 @@ public class PublicController {
             @RequestParam(required = false, defaultValue = "desc") String sortDir,
             Pageable pageable) throws GenericException {
         Page<BlogPostSummary> posts = blogPostService.getPublishedByUsername(username, search, tagId, sortBy, sortDir, pageable);
-        return ApiResponse.successResponse(posts, "Blog posts fetched successfully");
+        return ApiResponse.respond(posts, "Blog posts fetched successfully", "Failed to fetch blog posts", 60);
     }
 
     @Operation(summary = "Get published blog tags", description = "Returns the distinct tags used across a given username's published posts.")
@@ -143,7 +146,7 @@ public class PublicController {
     public ResponseEntity<ResponseModel<List<BlogTagResponse>>> getPublishedBlogTags(
             @PathVariable String username) throws GenericException {
         List<BlogTagResponse> tags = blogPostService.getPublishedTagsByUsername(username);
-        return ApiResponse.successResponse(tags, "Blog tags fetched successfully");
+        return ApiResponse.respond(tags, "Blog tags fetched successfully", "Failed to fetch blog tags", 60);
     }
 
     @Operation(summary = "Get a single published blog post", description = "Returns post detail and increments view count.")
@@ -191,7 +194,7 @@ public class PublicController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String skill) {
         List<DiscoverProfileResponse> results = profileDao.findDiscoverableProfiles(search, skill);
-        return ApiResponse.successResponse(results, "Profiles fetched successfully");
+        return ApiResponse.respond(results, "Profiles fetched successfully", "Failed to fetch profiles", 60);
     }
 
     @Operation(summary = "Get public testimonial link details", description = "Returns owner name and optional requester name for the testimonial form. No auth required.")
