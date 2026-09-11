@@ -7,6 +7,7 @@ import com.portfolio.dao.profile_theme.ProfileThemeMappingDao;
 import com.portfolio.dtos.Admin.AdminCreateUserRequest;
 import com.portfolio.dtos.Authentication.*;
 import com.portfolio.dtos.ColorTheme.ColorThemeResponseDTO;
+import com.portfolio.dtos.Role.ModulePermissionDTO;
 import com.portfolio.dtos.Role.RolePermissionResponseDTO;
 import com.portfolio.dtos.SocialLinks.SocialLinkRequestDTO;
 import com.portfolio.entities.*;
@@ -35,6 +36,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -59,6 +61,7 @@ public class AdminServiceImpl implements AdminService {
     private final ProfileThemeMappingDao profileThemeMappingDao;
     private final SocialLinkService socialLinkService;
     private final EncryptionUtil encryptionUtil;
+    private final ProfileSubscriptionService profileSubscriptionService;
 
     @Override
     @Transactional
@@ -85,6 +88,12 @@ public class AdminServiceImpl implements AdminService {
                 .phoneVerified(VerificationStatusEnum.PENDING)
                 .build();
         profileDao.save(user);
+
+        try {
+            profileSubscriptionService.assignDefaultPlan(user.getId());
+        } catch (Exception e) {
+            log.error("Failed to assign default subscription plan to profile {}: {}", user.getId(), e.getMessage(), e);
+        }
 
         String rawOtp = helper.generateRawOtp();
         String encodedOtp = passwordEncoder.encode(rawOtp);
@@ -153,6 +162,12 @@ public class AdminServiceImpl implements AdminService {
                 .phoneVerified(VerificationStatusEnum.VERIFIED)
                 .build();
         profileDao.save(profile);
+
+        try {
+            profileSubscriptionService.assignDefaultPlan(profile.getId());
+        } catch (Exception e) {
+            log.error("Failed to assign default subscription plan to admin-created profile {}: {}", profile.getId(), e.getMessage(), e);
+        }
 
         try {
             profileThemeMappingDao.save(
@@ -455,6 +470,7 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
+        applySubscriptionGate(rolePermissionResponse, user.getId());
 
         return LoginResponseDTO.builder()
                 .id(user.getId())
@@ -472,6 +488,19 @@ public class AdminServiceImpl implements AdminService {
                 .rolePermissions(rolePermissionResponse)
                 .isTwoFactorEnabled(user.isTwoFactorEnabled())
                 .build();
+    }
+
+    // Intersects a role's granted nav links with the profile's active subscription plan's
+    // included nav links (plus any nav link that isn't gated by any plan at all), so the
+    // FE sidebar/route guard — both driven solely by this payload — never needs to know
+    // about subscription plans.
+    private void applySubscriptionGate(RolePermissionResponseDTO rolePermissionResponse, Long profileId) {
+        if (rolePermissionResponse == null || rolePermissionResponse.getNavLinks() == null) return;
+        Set<Long> allowedNavLinkIds = profileSubscriptionService.getEffectiveNavLinkIds(profileId);
+        List<ModulePermissionDTO> filtered = rolePermissionResponse.getNavLinks().stream()
+                .filter(navLink -> allowedNavLinkIds.contains(navLink.getNavLinkId()))
+                .collect(Collectors.toList());
+        rolePermissionResponse.setNavLinks(filtered);
     }
 
     @Override
@@ -658,6 +687,7 @@ public class AdminServiceImpl implements AdminService {
                     catch (GenericException e) { return null; }
                 });
         RolePermissionResponseDTO rolePermissionResponse = roleService.getRolePermissionsByRoleId(user.getRoleId());
+        applySubscriptionGate(rolePermissionResponse, user.getId());
         return LoginResponseDTO.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
