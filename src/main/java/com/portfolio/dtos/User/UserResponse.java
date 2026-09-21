@@ -31,4 +31,6 @@ public class UserResponse {
     private Long updatedBy;
     private String createdByName;
     private String updatedByName;
+    private String planName;
+    private String planCode;
 }

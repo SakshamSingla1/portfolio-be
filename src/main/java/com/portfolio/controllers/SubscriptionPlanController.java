@@ -18,7 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-@PreAuthorize("hasRole('SUPER_ADMIN')")
+@PreAuthorize("isAuthenticated()")
 @RestController
 @RequestMapping("/api/v1/subscription-plans")
 @Tag(name = "Subscription Plans", description = "APIs for managing subscription plans and their gated nav links")
@@ -28,6 +28,7 @@ public class SubscriptionPlanController {
     private final SubscriptionPlanService subscriptionPlanService;
 
     @Operation(summary = "Create subscription plan", description = "Creates a new subscription plan. Requires SUPER_ADMIN role.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PostMapping
     public ResponseEntity<ResponseModel<SubscriptionPlanResponseDTO>> createPlan(
             @Valid @RequestBody SubscriptionPlanRequestDTO requestDTO) throws GenericException {
@@ -36,6 +37,7 @@ public class SubscriptionPlanController {
     }
 
     @Operation(summary = "Update subscription plan", description = "Updates an existing subscription plan by ID. Requires SUPER_ADMIN role.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ResponseModel<SubscriptionPlanResponseDTO>> updatePlan(
             @PathVariable Long id,
@@ -45,6 +47,7 @@ public class SubscriptionPlanController {
     }
 
     @Operation(summary = "Set plan nav links", description = "Replaces the full set of nav links (modules) included in a plan. Requires SUPER_ADMIN role.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PutMapping("/{id}/nav-links")
     public ResponseEntity<ResponseModel<SubscriptionPlanResponseDTO>> setPlanNavLinks(
             @PathVariable Long id,
@@ -54,6 +57,7 @@ public class SubscriptionPlanController {
     }
 
     @Operation(summary = "Delete subscription plan", description = "Deletes a subscription plan by ID, provided no profile is currently assigned to it. Requires SUPER_ADMIN role.")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseModel<String>> deletePlan(@PathVariable Long id) throws GenericException {
         subscriptionPlanService.deletePlan(id);

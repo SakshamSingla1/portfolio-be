@@ -39,15 +39,17 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query(value = """
                 SELECT NEW com.portfolio.dtos.User.UserResponse(
                     p.id, p.fullName, p.userName, p.email, p.roleId,
-                    r.name, p.status, p.emailVerified, p.phoneVerified, 
+                    r.name, p.status, p.emailVerified, p.phoneVerified,
                     fa.path, p.createdAt, p.updatedAt, p.createdBy, p.updatedBy,
-                    p1.fullName, p2.fullName
+                    p1.fullName, p2.fullName, sp.name, sp.code
                 ) FROM Profile p
                     LEFT JOIN Role r ON p.roleId = r.id
                     LEFT JOIN Profile p1 ON p.createdBy = p1.id
                     LEFT JOIN Profile p2 ON p.updatedBy = p2.id
                     LEFT JOIN FileAsset fa ON fa.resourceId = p.id AND fa.resourceType = 'PROFILE' AND fa.isPrimary = true
-                WHERE (:search IS NULL OR :search = '' OR 
+                    LEFT JOIN ProfileSubscription ps ON ps.profileId = p.id
+                    LEFT JOIN SubscriptionPlan sp ON sp.id = ps.planId
+                WHERE (:search IS NULL OR :search = '' OR
                        LOWER(p.fullName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
                        LOWER(p.userName) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%') OR
                        LOWER(p.email) LIKE CONCAT('%', LOWER(CAST(:search AS string)), '%'))

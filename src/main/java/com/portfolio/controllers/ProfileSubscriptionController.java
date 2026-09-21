@@ -34,6 +34,17 @@ public class ProfileSubscriptionController {
         return ApiResponse.respond(responseDTO, "Subscription fetched successfully", "Failed to fetch subscription");
     }
 
+    @Operation(summary = "Change my subscription plan", description = "Assigns or changes the authenticated profile's own subscription plan.")
+    @PutMapping("/me")
+    public ResponseEntity<ResponseModel<ProfileSubscriptionResponseDTO>> changeMyPlan(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @Valid @RequestBody ProfileSubscriptionRequestDTO requestDTO) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        ProfileSubscriptionResponseDTO responseDTO = profileSubscriptionService.assignPlan(
+                profileId, requestDTO.getPlanId(), requestDTO.getBillingCycle(), requestDTO.isAutoRenew());
+        return ApiResponse.respond(responseDTO, "Subscription plan updated successfully", "Failed to update subscription plan");
+    }
+
     @Operation(summary = "Get subscription by profile ID", description = "Fetches a specific profile's active subscription plan. Requires SUPER_ADMIN role.")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @GetMapping("/{profileId}")

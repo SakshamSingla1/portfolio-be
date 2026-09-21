@@ -3,6 +3,8 @@ package com.portfolio.servicesImpl;
 import com.portfolio.dao.file.FileAssetDao;
 import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.role.RoleDao;
+import com.portfolio.dao.subscription.ProfileSubscriptionDao;
+import com.portfolio.dao.subscription.SubscriptionPlanDao;
 import com.portfolio.dtos.Admin.RoleUpdateRequest;
 import com.portfolio.dtos.Admin.StatusUpdateRequest;
 import com.portfolio.dtos.File.FileAssetDTO;
@@ -14,7 +16,9 @@ import com.portfolio.dtos.Profile.ProfileSettingsRequest;
 import com.portfolio.dtos.User.UserResponse;
 import com.portfolio.entities.FileAsset;
 import com.portfolio.entities.Profile;
+import com.portfolio.entities.ProfileSubscription;
 import com.portfolio.entities.Role;
+import com.portfolio.entities.SubscriptionPlan;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
@@ -52,6 +56,8 @@ public class ProfileServiceImpl implements ProfileService {
     private final Helper helper;
     private final RoleDao roleDao;
     private final NTService ntService;
+    private final ProfileSubscriptionDao profileSubscriptionDao;
+    private final SubscriptionPlanDao subscriptionPlanDao;
 
     @Override
     @Transactional(readOnly = true)
@@ -295,6 +301,17 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
 
+        String planName = null;
+        String planCode = null;
+        Optional<ProfileSubscription> subscription = profileSubscriptionDao.findByProfileId(profile.getId());
+        if (subscription.isPresent()) {
+            Optional<SubscriptionPlan> plan = subscriptionPlanDao.findById(subscription.get().getPlanId());
+            if (plan.isPresent()) {
+                planName = plan.get().getName();
+                planCode = plan.get().getCode();
+            }
+        }
+
         UserResponse user = UserResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())
@@ -310,6 +327,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .updatedAt(profile.getUpdatedAt())
                 .createdBy(profile.getCreatedBy())
                 .updatedBy(profile.getUpdatedBy())
+                .planName(planName)
+                .planCode(planCode)
                 .build();
         return user;
     }
