@@ -16,6 +16,7 @@ import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
+import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanPublicResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialLinkPublicResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialSubmitRequest;
 import com.portfolio.entities.Profile;
@@ -34,6 +35,7 @@ import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
 import com.portfolio.services.ContactUsService;
 import com.portfolio.services.SocialLinkService;
+import com.portfolio.services.SubscriptionPlanService;
 import com.portfolio.services.TestimonialLinkService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,6 +69,7 @@ public class PublicController {
     private final TestimonialLinkService testimonialLinkService;
     private final PortfolioExportService portfolioExportService;
     private final SocialLinkService socialLinkService;
+    private final SubscriptionPlanService subscriptionPlanService;
 
     @Value("${portfolio.public.base-url:http://localhost:5173}")
     private String portfolioPublicBaseUrl;
@@ -186,6 +189,13 @@ public class PublicController {
                 .filter(u -> u != null && !u.isBlank())
                 .findFirst()
                 .orElse(portfolioPublicBaseUrl + "/" + username);
+    }
+
+    @Operation(summary = "Get public subscription plans", description = "Returns active subscription plans (name, pricing, included highlights) for the landing page's pricing section, ordered for display. No auth required.")
+    @GetMapping("/subscription-plans")
+    public ResponseEntity<ResponseModel<List<SubscriptionPlanPublicResponse>>> getPublicSubscriptionPlans() {
+        List<SubscriptionPlanPublicResponse> plans = subscriptionPlanService.getActivePlansPublic();
+        return ApiResponse.respond(plans, "Subscription plans fetched successfully", "Failed to fetch subscription plans", 60);
     }
 
     @Operation(summary = "Explore discoverable portfolios", description = "Returns all publicly discoverable profiles, optionally filtered by a search term or skill.")

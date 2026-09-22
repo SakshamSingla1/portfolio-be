@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -21,6 +22,8 @@ public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPl
     Optional<SubscriptionPlan> findByCode(String code);
 
     Optional<SubscriptionPlan> findByIsDefaultTrue();
+
+    List<SubscriptionPlan> findByStatusOrderBySortOrderAsc(StatusEnum status);
 
     boolean existsByName(String name);
 

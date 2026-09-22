@@ -1,5 +1,6 @@
 package com.portfolio.services;
 
+import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanPublicResponse;
 import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanRequestDTO;
 import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanResponseDTO;
 import com.portfolio.exceptions.GenericException;
@@ -17,4 +18,5 @@ public interface SubscriptionPlanService {
     SubscriptionPlanResponseDTO upsertPlanNavLinks(Long planId, List<Long> navLinkIds) throws GenericException;
     Set<Long> getIncludedNavLinkIds(Long planId);
     Long getDefaultPlanId() throws GenericException;
+    List<SubscriptionPlanPublicResponse> getActivePlansPublic();
 }

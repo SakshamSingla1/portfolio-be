@@ -5,6 +5,7 @@ import com.portfolio.dao.subscription.ProfileSubscriptionDao;
 import com.portfolio.dao.subscription.SubscriptionPlanDao;
 import com.portfolio.dao.subscription.SubscriptionPlanNavLinkDao;
 import com.portfolio.dtos.Role.RoleMappedModule;
+import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanPublicResponse;
 import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanRequestDTO;
 import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanResponseDTO;
 import com.portfolio.entities.NavLink;
@@ -137,6 +138,53 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         return subscriptionPlanDao.findByIsDefaultTrue()
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.SUBSCRIPTION_PLAN_NOT_FOUND, "No default subscription plan is configured"))
                 .getId();
+    }
+
+    @Override
+    public List<SubscriptionPlanPublicResponse> getActivePlansPublic() {
+        return subscriptionPlanDao.findActiveOrderedBySortOrder().stream()
+                .map(this::mapToPublicResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    private SubscriptionPlanPublicResponse mapToPublicResponseDTO(SubscriptionPlan plan) {
+        List<SubscriptionPlanNavLink> mappings = subscriptionPlanNavLinkDao.findByPlanId(plan.getId());
+        Map<Long, NavLink> navLinkMap = navLinkDao.findAllByIdAsMap(
+                mappings.stream().map(SubscriptionPlanNavLink::getNavLinkId).collect(Collectors.toList())
+        );
+        List<String> highlights = mappings.stream()
+                .map(m -> navLinkMap.get(m.getNavLinkId()))
+                .filter(java.util.Objects::nonNull)
+                .map(NavLink::getName)
+                .map(this::humanize)
+                .collect(Collectors.toList());
+
+        return SubscriptionPlanPublicResponse.builder()
+                .id(plan.getId())
+                .name(plan.getName())
+                .code(plan.getCode())
+                .description(plan.getDescription())
+                .priceMonthly(plan.getPriceMonthly())
+                .priceYearly(plan.getPriceYearly())
+                .currency(plan.getCurrency())
+                .isDefault(plan.isDefault())
+                .highlights(highlights)
+                .build();
+    }
+
+    // Nav link names are stored as system identifiers (e.g. "SOCIAL_LINKS") — this
+    // is the only place they're shown to an unauthenticated visitor, so they're
+    // turned into readable labels ("Social Links") rather than exposing the raw form.
+    private String humanize(String rawName) {
+        if (rawName == null || rawName.isBlank()) return rawName;
+        String[] words = rawName.split("_");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (word.isEmpty()) continue;
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(word.charAt(0)).append(word.substring(1).toLowerCase());
+        }
+        return sb.toString();
     }
 
     private SubscriptionPlanResponseDTO mapToResponseDTO(SubscriptionPlan plan) {
