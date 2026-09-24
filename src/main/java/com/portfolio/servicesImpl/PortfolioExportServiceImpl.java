@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
@@ -528,6 +529,13 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 .collect(Collectors.toList());
     }
 
+    // Inline-level formatting tags that openhtmltopdf 1.0.10 is confirmed to mis-order on text
+    // extraction (see stripInlineFormatting for why). Anything that can sit mid-line next to
+    // plain text and carry its own styling belongs here.
+    private static final String[] INLINE_FORMATTING_TAGS = {
+            "b", "strong", "i", "em", "u", "s", "strike", "span", "font", "mark", "small", "sub", "sup"
+    };
+
     /**
      * Renders a rich-text field (authored via the Jodit WYSIWYG editor and stored as HTML)
      * for embedding in the XHTML export. Sanitizes to a safe subset of formatting tags and
@@ -542,6 +550,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                 .addAttributes("li", "style");
         String cleaned = Jsoup.clean(value, safelist);
         Document doc = Jsoup.parse(cleaned);
+        stripInlineFormatting(doc);
         doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml).prettyPrint(false);
         return doc.body().html();
     }
@@ -564,8 +573,38 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         for (int i = listItems.size() - 1; i >= maxBullets; i--) {
             listItems.get(i).remove();
         }
+        stripInlineFormatting(doc);
         doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml).prettyPrint(false);
         return doc.body().html();
+    }
+
+    /**
+     * Unwraps inline formatting elements (bold/italic/underline/color spans, etc.) in place,
+     * keeping their text content but dropping the tag.
+     * <p>
+     * Confirmed by isolated reproduction against openhtmltopdf-pdfbox 1.0.10: when a line of text
+     * contains ANY inline element next to plain text — {@code <b>}, {@code <strong>}, or even a
+     * bare {@code <span style="color:red">} with no font change at all — the library's PDF
+     * content-stream writer emits that inline run's text-showing operator out of visual order
+     * relative to its plain-text siblings on the same line. The rendered PDF looks correct
+     * (each glyph still carries its own explicit position), but the invisible text layer that
+     * ATS parsers and copy-paste read comes out scrambled, e.g. "Developed and maintained
+     * scalable frontend applications using React.js" extracts as "Developed and maintained
+     * using React.js ... scalable frontend applications" — the styled run gets flushed after the
+     * plain text of that line instead of interleaved in place. A plain paragraph with zero inline
+     * elements was the only case that extracted in correct order.
+     * <p>
+     * Block-level structure (paragraphs, list items) is unaffected by this, since each block is
+     * already its own line with a single run — only text-level emphasis WITHIN a line is at risk.
+     * Since this export explicitly bills itself as "ATS-optimized", correct text order beats
+     * keeping inline bold/italic/color emphasis, so we drop the tags rather than the content.
+     */
+    private void stripInlineFormatting(Document doc) {
+        for (String tag : INLINE_FORMATTING_TAGS) {
+            for (Element el : doc.body().select(tag)) {
+                el.unwrap();
+            }
+        }
     }
 
     private String s(String value) {
