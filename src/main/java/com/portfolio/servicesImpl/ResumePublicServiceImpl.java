@@ -1,105 +1,73 @@
 package com.portfolio.servicesImpl;
 
-import com.portfolio.dao.file.FileAssetDao;
-import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dao.resume.ResumeDownloadDao;
-import com.portfolio.dao.resume.ResumeDao;
-import com.portfolio.entities.FileAsset;
-import com.portfolio.entities.Profile;
-import com.portfolio.entities.Resume;
+import com.portfolio.dtos.Resume.ActiveResumeAssetDTO;
 import com.portfolio.entities.ResumeDownload;
 import com.portfolio.enums.ExceptionCodeEnum;
-import com.portfolio.enums.ResourceTypeEnum;
-import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ResumePublicService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
-import java.net.URL;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 @Service
 @RequiredArgsConstructor
 public class ResumePublicServiceImpl implements ResumePublicService {
 
-    private final ProfileDao profileDao;
-    private final ResumeDao resumeDao;
+    private final ResumeAssetResolver resumeAssetResolver;
     private final ResumeDownloadDao resumeDownloadDao;
-    private final FileAssetDao fileAssetDao;
+    private final ExecutorService profileAggregationExecutor;
 
     @Override
     public void viewResume(String username, HttpServletResponse response) throws GenericException {
-        Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId(), ResourceTypeEnum.RESUME)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
-        streamPdf(asset.getPath(), response, false);
+        ActiveResumeAssetDTO asset = resumeAssetResolver.resolve(username);
+        redirectTo(asset.getPath(), response);
     }
 
     @Override
     public void downloadResume(String username, HttpServletResponse response) throws GenericException {
-        Resume resume = getActiveResume(username);
-        FileAsset asset = fileAssetDao.findByResourceIdAndResourceTypeAndIsPrimaryTrue(resume.getId(), ResourceTypeEnum.RESUME)
-                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.RESUME_NOT_FOUND, "Resume file not found"));
-        String fileName = asset.getMetaData();
-        if (fileName == null || fileName.isBlank()) {
-            fileName = "resume";
-        }
-        streamPdf(asset.getPath(), response, true, fileName);
-        resumeDownloadDao.save(ResumeDownload.builder()
-                .profileId(resume.getProfileId())
-                .resumeId(resume.getId())
+        ActiveResumeAssetDTO asset = resumeAssetResolver.resolve(username);
+        // Fire-and-forget: the client shouldn't wait on this analytics write to get redirected.
+        CompletableFuture.runAsync(() -> resumeDownloadDao.save(ResumeDownload.builder()
+                .profileId(asset.getProfileId())
+                .resumeId(asset.getResumeId())
                 .downloadedAt(LocalDateTime.now())
-                .build());
+                .build()), profileAggregationExecutor);
+        redirectTo(withAttachmentFlag(asset.getPath(), asset.getFileName()), response);
     }
 
     // ================= PRIVATE =================
 
-    private Resume getActiveResume(String username) throws GenericException {
-        Profile profile = profileDao.findByUserName(username)
-                .orElseThrow(() -> new GenericException(
-                        ExceptionCodeEnum.PROFILE_NOT_FOUND,
-                        "Profile not found"
-                ));
-
-        return resumeDao
-                .findByProfileIdAndStatus(profile.getId(), StatusEnum.ACTIVE)
-                .orElseThrow(() -> new GenericException(
-                        ExceptionCodeEnum.RESUME_NOT_FOUND,
-                        "Active resume not found"
-                ));
-    }
-
-    private void streamPdf(String fileUrl, HttpServletResponse response, boolean download) throws GenericException {
-        streamPdf(fileUrl, response, download, "resume.pdf");
-    }
-
-    private void streamPdf(
-            String fileUrl,
-            HttpServletResponse response,
-            boolean download,
-            String fileName
-    ) throws GenericException {
-        try (InputStream in = new URL(fileUrl).openStream()) {
-
-            response.setContentType("application/pdf");
-            response.setHeader(
-                    "Content-Disposition",
-                    download
-                            ? "attachment; filename=\"" + fileName + "\""
-                            : "inline"
-            );
-
-            in.transferTo(response.getOutputStream());
-            response.flushBuffer();
-
-        } catch (Exception e) {
+    // The file already lives on Cloudinary's CDN as a public URL, so the browser fetches it
+    // directly from there instead of this server proxying the bytes through itself (was slow —
+    // a blocking double hop with no read timeout — and left corrupted partial downloads on any
+    // mid-stream failure, since response headers/bytes were already committed by then).
+    private void redirectTo(String url, HttpServletResponse response) throws GenericException {
+        try {
+            response.sendRedirect(url);
+        } catch (IOException e) {
             throw new GenericException(
                     ExceptionCodeEnum.FILE_STREAM_FAILED,
-                    "Unable to stream resume"
+                    "Unable to redirect to resume"
             );
         }
+    }
+
+    // Cloudinary serves raw/upload URLs with a forced attachment Content-Disposition (and a
+    // chosen filename) when an "fl_attachment:<filename>" flag is inserted right after "/upload/".
+    private String withAttachmentFlag(String secureUrl, String fileName) {
+        String marker = "/upload/";
+        int idx = secureUrl.indexOf(marker);
+        if (idx < 0) return secureUrl;
+        String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        int afterMarker = idx + marker.length();
+        return secureUrl.substring(0, afterMarker) + "fl_attachment:" + encodedName + "/" + secureUrl.substring(afterMarker);
     }
 }

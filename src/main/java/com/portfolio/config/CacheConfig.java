@@ -38,7 +38,8 @@ public class CacheConfig {
             "navLinksGrouped", "navLinksAll", "landingPagePublic", "activeFaqs");
 
     private static final List<String> SHORT_LIVED_CACHES = List.of(
-            "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport");
+            "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport",
+            "activeResumeAsset");
 
     @Bean
     public CacheManager cacheManager() {
