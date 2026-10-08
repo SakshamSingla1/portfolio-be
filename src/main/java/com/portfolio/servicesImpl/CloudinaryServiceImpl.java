@@ -89,6 +89,22 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadBytes(byte[] data, String folder) throws IOException {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Data is required");
+        }
+        return cloudinary.uploader().upload(
+                data,
+                ObjectUtils.asMap(
+                        "folder", folder,
+                        "resource_type", "raw",
+                        "secure", true
+                )
+        );
+    }
+
+    @Override
     public void deleteFile(String publicId) throws IOException {
         cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
     }

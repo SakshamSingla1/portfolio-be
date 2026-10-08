@@ -37,6 +37,7 @@ import com.portfolio.services.ContactUsService;
 import com.portfolio.services.SocialLinkService;
 import com.portfolio.services.SubscriptionPlanService;
 import com.portfolio.services.TestimonialLinkService;
+import com.portfolio.utils.CloudinaryUrlUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -51,6 +52,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -224,17 +226,14 @@ public class PublicController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Export portfolio as PDF", description = "Generates and returns a downloadable PDF of the full portfolio for the given username.")
+    @Operation(summary = "Export portfolio as PDF", description = "Generates the portfolio PDF and redirects to it on Cloudinary's CDN, forcing a download with the correct filename.")
     @GetMapping("/portfolio-export/{username}")
-    public ResponseEntity<byte[]> exportPortfolio(@PathVariable String username) {
+    public void exportPortfolio(@PathVariable String username, HttpServletResponse response) throws IOException {
         try {
-            byte[] pdf = portfolioExportService.exportPdf(username);
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
-            headers.setContentDispositionFormData("attachment", "portfolio-" + username + ".pdf");
-            return ResponseEntity.ok().headers(headers).body(pdf);
+            String url = portfolioExportService.exportPdf(username);
+            response.sendRedirect(CloudinaryUrlUtils.withAttachmentFlag(url, "portfolio-" + username + ".pdf"));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 

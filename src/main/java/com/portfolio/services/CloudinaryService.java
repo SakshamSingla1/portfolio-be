@@ -17,5 +17,9 @@ public interface CloudinaryService {
 
     Map<String, Object> uploadRawDocument(MultipartFile file, String folder) throws IOException;
 
+    /** Uploads raw bytes (no MultipartFile involved) as a "raw" resource -- e.g. a PDF generated
+     *  in-memory, with nothing on disk to wrap. */
+    Map<String, Object> uploadBytes(byte[] data, String folder) throws IOException;
+
     void deleteFile(String publicId) throws IOException;
 }

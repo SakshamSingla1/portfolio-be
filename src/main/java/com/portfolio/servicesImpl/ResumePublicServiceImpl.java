@@ -6,13 +6,12 @@ import com.portfolio.entities.ResumeDownload;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
 import com.portfolio.services.ResumePublicService;
+import com.portfolio.utils.CloudinaryUrlUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +39,7 @@ public class ResumePublicServiceImpl implements ResumePublicService {
                 .resumeId(asset.getResumeId())
                 .downloadedAt(LocalDateTime.now())
                 .build()), profileAggregationExecutor);
-        redirectTo(withAttachmentFlag(asset.getPath(), asset.getFileName()), response);
+        redirectTo(CloudinaryUrlUtils.withAttachmentFlag(asset.getPath(), asset.getFileName()), response);
     }
 
     // ================= PRIVATE =================
@@ -58,16 +57,5 @@ public class ResumePublicServiceImpl implements ResumePublicService {
                     "Unable to redirect to resume"
             );
         }
-    }
-
-    // Cloudinary serves raw/upload URLs with a forced attachment Content-Disposition (and a
-    // chosen filename) when an "fl_attachment:<filename>" flag is inserted right after "/upload/".
-    private String withAttachmentFlag(String secureUrl, String fileName) {
-        String marker = "/upload/";
-        int idx = secureUrl.indexOf(marker);
-        if (idx < 0) return secureUrl;
-        String encodedName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
-        int afterMarker = idx + marker.length();
-        return secureUrl.substring(0, afterMarker) + "fl_attachment:" + encodedName + "/" + secureUrl.substring(afterMarker);
     }
 }

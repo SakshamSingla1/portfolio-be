@@ -24,8 +24,11 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
+import com.portfolio.services.CloudinaryService;
 import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.ProfileMasterService;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -34,11 +37,14 @@ import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -47,6 +53,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Renders a profile's data as an ATS-friendly resume-style PDF ("export portfolio as resume") and
+ * uploads it to Cloudinary, returning a URL -- same shape as SteelBazaar's PdfGenerator (Thymeleaf
+ * template -> HTML -> openhtmltopdf -> cloud upload -> URL) and the resume-download flow already
+ * in this app: the caller redirects the client straight to the returned URL instead of this server
+ * proxying PDF bytes through itself.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -55,6 +68,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private static final int EXPERIENCE_MAX_BULLETS = 6;
     private static final int PROJECT_MAX_BULLETS = 3;
     private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
+    private static final String EXPORT_FOLDER = "portfolio/exports";
+    private static final String TEMPLATE_NAME = "portfolio-export";
 
     // Registered under this family name (see exportPdf) instead of relying on the CSS 'Times New
     // Roman'/serif name resolving to whatever font a given host has installed. Without an explicitly
@@ -66,70 +81,75 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
     private final ProfileMasterService profileMasterService;
     private final ProfileDao profileDao;
+    private final CloudinaryService cloudinaryService;
+    private final TemplateEngine templateEngine;
 
     @Override
-    public byte[] exportPdf(String username) throws GenericException {
+    public String exportPdf(String username) throws GenericException {
         Profile profile = profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + username));
 
         ProfileMasterResponse data = profileMasterService.getForResumeExport(profile.getId());
 
         try {
-            String html = buildHtml(data);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfRendererBuilder builder = new PdfRendererBuilder();
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-solid-900.ttf"), "FASolid");
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-brands-400.ttf"), "FABrands");
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Regular.ttf"), BODY_FONT_FAMILY, 400, FontStyle.NORMAL, true);
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Bold.ttf"), BODY_FONT_FAMILY, 700, FontStyle.NORMAL, true);
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Italic.ttf"), BODY_FONT_FAMILY, 400, FontStyle.ITALIC, true);
-            builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-BoldItalic.ttf"), BODY_FONT_FAMILY, 700, FontStyle.ITALIC, true);
-            builder.withHtmlContent(html, null);
-            builder.toStream(baos);
-            builder.run();
-            return baos.toByteArray();
+            String html = renderHtml(data);
+            byte[] pdf = renderPdf(html);
+            Map<String, Object> uploaded = cloudinaryService.uploadBytes(pdf, EXPORT_FOLDER);
+            return (String) uploaded.get("secure_url");
+        } catch (GenericException e) {
+            throw e;
         } catch (Exception e) {
             log.error("PDF generation failed for username={}", username, e);
             throw new GenericException(ExceptionCodeEnum.INTERNAL_SERVER_ERROR, "Failed to generate PDF");
         }
     }
 
-    private String buildHtml(ProfileMasterResponse data) {
+    // ── HTML rendering (Thymeleaf) ──────────────────────────────────────────
+
+    private String renderHtml(ProfileMasterResponse data) {
         ProfileResponse profile = data.getProfile();
         Theme theme = Theme.from(data.getColorTheme());
 
-        StringBuilder sb = new StringBuilder();
+        Context context = new Context();
+        context.setVariable("fullName", s(profile.getFullName()));
+        context.setVariable("css", buildCss(theme));
+        context.setVariable("contactItems", buildContactItems(profile, data.getSocialLinks()));
+        context.setVariable("summaryHtml", notBlank(profile.getAboutMe()) ? richText(profile.getAboutMe()) : null);
+        context.setVariable("skillGroups", buildSkillGroups(data.getSkills()));
+        context.setVariable("experiences", buildExperiences(data.getExperiences()));
+        context.setVariable("projects", buildProjects(data.getProjects()));
+        context.setVariable("educations", buildEducations(data.getEducations()));
+        context.setVariable("certifications", buildCertifications(data.getCertifications()));
+        context.setVariable("publications", buildPublications(data.getPublications()));
+        context.setVariable("achievements", buildAchievements(data.getAchievements()));
+        context.setVariable("languagesLine", buildLanguagesLine(data.getLanguages()));
+        context.setVariable("services", buildServices(data.getServices()));
 
-        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-        sb.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-        sb.append("<html xmlns=\"http://www.w3.org/1999/xhtml\">\n");
-        sb.append("<head>\n");
-        sb.append("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n");
-        sb.append("<title>").append(esc(s(profile.getFullName()))).append(" — Resume</title>\n");
-        sb.append("<style type=\"text/css\">\n").append(buildCss(theme)).append("</style>\n");
-        sb.append("</head>\n");
-        sb.append("<body>\n");
+        return templateEngine.process(TEMPLATE_NAME, context);
+    }
 
-        sb.append(buildHeader(profile, data.getSocialLinks(), theme));
+    private byte[] renderPdf(String html) throws Exception {
+        // Thymeleaf's default HTML template mode is lenient (not strict XML), so -- same as
+        // SteelBazaar's PdfGenerator -- the rendered markup goes through jsoup's tolerant parser
+        // first and is normalized into a strict W3C DOM, rather than handing raw HTML straight to
+        // openhtmltopdf (which requires well-formed XML and would otherwise be one stray
+        // unescaped/unclosed tag away from failing).
+        Document jsoupDoc = Jsoup.parse(html);
+        jsoupDoc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        org.w3c.dom.Document w3cDoc = new org.jsoup.helper.W3CDom().fromJsoup(jsoupDoc);
 
-        sb.append("<div class=\"content\">\n");
-        if (notBlank(profile.getAboutMe())) {
-            sb.append("<div class=\"section-heading\">Professional Summary</div>\n");
-            sb.append("<div class=\"summary-text\">").append(richText(profile.getAboutMe())).append("</div>\n");
-        }
-        sb.append(buildSkills(data));
-        sb.append(buildExperience(data));
-        sb.append(buildProjects(data));
-        sb.append(buildEducation(data));
-        sb.append(buildCertifications(data));
-        sb.append(buildPublications(data));
-        sb.append(buildAchievements(data));
-        sb.append(buildLanguages(data));
-        sb.append(buildServices(data));
-        sb.append("</div>\n");
-
-        sb.append("</body>\n</html>");
-        return sb.toString();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfRendererBuilder builder = new PdfRendererBuilder();
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-solid-900.ttf"), "FASolid");
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-brands-400.ttf"), "FABrands");
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Regular.ttf"), BODY_FONT_FAMILY, 400, FontStyle.NORMAL, true);
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Bold.ttf"), BODY_FONT_FAMILY, 700, FontStyle.NORMAL, true);
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Italic.ttf"), BODY_FONT_FAMILY, 400, FontStyle.ITALIC, true);
+        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-BoldItalic.ttf"), BODY_FONT_FAMILY, 700, FontStyle.ITALIC, true);
+        builder.withW3cDocument(w3cDoc, "");
+        builder.toStream(baos);
+        builder.run();
+        return baos.toByteArray();
     }
 
     private String buildCss(Theme t) {
@@ -143,11 +163,11 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".name { font-size: 20pt; font-weight: bold; letter-spacing: 0.3px; }\n");
         css.append(".contact-line { font-size: 9.3pt; margin-top: 5px; }\n");
         css.append(".contact-item, .social-item { display: inline-block; margin: 0 8px; }\n");
-        css.append(".contact-item .icon, .social-item .icon { margin-right: 3px; color: ").append(t.accent).append("; }\n");
-        css.append(".social-item a { color: ").append(t.accent).append("; text-decoration: none; }\n");
+        css.append(".contact-item .icon, .social-item .icon { margin-right: 3px; color: ").append(t.getAccent()).append("; }\n");
+        css.append(".social-item a { color: ").append(t.getAccent()).append("; text-decoration: none; }\n");
 
         // Icon fonts (Font Awesome Free, bundled — see resources/fonts/FONT-AWESOME-LICENSE.txt).
-        // Registered programmatically via builder.useFont(...) in exportPdf(), not @font-face,
+        // Registered programmatically via builder.useFont(...) in renderPdf(), not @font-face,
         // since there's no base URL configured here for resolving a relative font src.
         css.append(".icon-phone::before { font-family: 'FASolid'; content: '\\f095'; }\n");
         css.append(".icon-envelope::before { font-family: 'FASolid'; content: '\\f0e0'; }\n");
@@ -179,7 +199,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".item-desc p { margin: 0 0 3px 0; }\n");
         css.append(".item-desc ul, .item-desc ol { margin: 2px 0 2px 15px; padding: 0; }\n");
         css.append(".item-desc li { margin-bottom: 2px; }\n");
-        css.append(".link { color: ").append(t.accent).append("; font-size: 9.3pt; }\n");
+        css.append(".link { color: ").append(t.getAccent()).append("; font-size: 9.3pt; }\n");
 
         // Skills — plain label:value lines, no pills (matches classic ATS-optimized format)
         css.append(".skill-row { font-size: 9.7pt; margin-bottom: 2px; }\n");
@@ -188,6 +208,8 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         css.append(".lang-line { font-size: 9.7pt; }\n");
         return css.toString();
     }
+
+    // ── Section builders (DTO -> view model) ────────────────────────────────
 
     // Platforms worth showing on a resume header — everything else (LeetCode, Twitter, Instagram,
     // YouTube, etc.) is left off intentionally, per "only the important ones".
@@ -214,233 +236,230 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
         PLATFORM_LABEL.put(PlatformEnum.WEBSITE, "Website");
     }
 
-    private String buildHeader(ProfileResponse profile, List<SocialLinkResponseDTO> socialLinks, Theme t) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"header\">\n");
-        sb.append("<div class=\"name\">").append(esc(s(profile.getFullName()))).append("</div>\n");
-
-        StringBuilder contact = new StringBuilder();
+    // Ordered exactly as the original header rendered: phone, email, social links
+    // (platform-priority order), then location.
+    private List<ContactItemVM> buildContactItems(ProfileResponse profile, List<SocialLinkResponseDTO> socialLinks) {
+        List<ContactItemVM> items = new ArrayList<>();
         if (notBlank(profile.getPhone())) {
-            contact.append("<span class=\"contact-item\"><i class=\"icon icon-phone\"></i>").append(esc(profile.getPhone())).append("</span>");
+            items.add(new ContactItemVM("icon-phone", profile.getPhone(), null));
         }
         if (notBlank(profile.getEmail())) {
-            contact.append("<span class=\"contact-item\"><i class=\"icon icon-envelope\"></i>").append(esc(profile.getEmail())).append("</span>");
+            items.add(new ContactItemVM("icon-envelope", profile.getEmail(), null));
         }
         if (nonEmpty(socialLinks)) {
             for (PlatformEnum platform : IMPORTANT_PLATFORMS) {
                 socialLinks.stream()
                         .filter(l -> l.getPlatform() == platform && l.getStatus() == StatusEnum.ACTIVE && notBlank(l.getUrl()))
                         .findFirst()
-                        .ifPresent(l -> {
-                            String icon = PLATFORM_ICON.getOrDefault(platform, "icon-globe");
-                            String label = PLATFORM_LABEL.getOrDefault(platform, platform.name());
-                            contact.append("<span class=\"social-item\"><i class=\"icon ").append(icon).append("\"></i>")
-                                    .append("<a href=\"").append(esc(l.getUrl())).append("\">")
-                                    .append(esc(label))
-                                    .append("</a></span>");
-                        });
+                        .ifPresent(l -> items.add(new ContactItemVM(
+                                PLATFORM_ICON.getOrDefault(platform, "icon-globe"),
+                                PLATFORM_LABEL.getOrDefault(platform, platform.name()),
+                                l.getUrl()
+                        )));
             }
         }
         if (notBlank(profile.getLocation())) {
-            contact.append("<span class=\"contact-item\"><i class=\"icon icon-location\"></i>").append(esc(profile.getLocation())).append("</span>");
+            items.add(new ContactItemVM("icon-location", profile.getLocation(), null));
         }
-        if (contact.length() > 0) {
-            sb.append("<div class=\"contact-line\">").append(contact).append("</div>\n");
-        }
-
-        sb.append("</div>\n");
-        return sb.toString();
+        return items;
     }
 
-    private String buildSkills(ProfileMasterResponse data) {
-        List<SkillResponse> skills = data.getSkills();
-        if (!nonEmpty(skills)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Skills</div>\n");
+    private List<SkillGroupVM> buildSkillGroups(List<SkillResponse> skills) {
+        if (!nonEmpty(skills)) return List.of();
         Map<SkillCategoryEnum, List<SkillResponse>> grouped = skills.stream()
                 .collect(Collectors.groupingBy(
                         sk -> sk.getCategory() != null ? sk.getCategory() : SkillCategoryEnum.OTHER,
                         LinkedHashMap::new, Collectors.toList()));
+        List<SkillGroupVM> groups = new ArrayList<>();
         for (Map.Entry<SkillCategoryEnum, List<SkillResponse>> entry : grouped.entrySet()) {
             String names = entry.getValue().stream()
                     .map(sk -> s(sk.getLogoName()))
                     .filter(n -> !n.isEmpty())
                     .collect(Collectors.joining(", "));
             if (!names.isEmpty()) {
-                sb.append("<div class=\"skill-row\"><span class=\"skill-cat\">").append(esc(entry.getKey().getDisplayName())).append(":</span> ")
-                        .append(esc(names)).append("</div>\n");
+                groups.add(new SkillGroupVM(entry.getKey().getDisplayName(), names));
             }
         }
-        return sb.toString();
+        return groups;
     }
 
-    private String buildExperience(ProfileMasterResponse data) {
-        List<ExperienceResponse> experiences = data.getExperiences();
-        if (!nonEmpty(experiences)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Experience</div>\n");
+    private List<ExperienceVM> buildExperiences(List<ExperienceResponse> experiences) {
+        if (!nonEmpty(experiences)) return List.of();
+        List<ExperienceVM> out = new ArrayList<>();
         for (ExperienceResponse exp : sortByDateDesc(experiences,
                 e -> nullSafe(parseDateSafe(e.getEndDate()), LocalDate.MAX),
                 e -> nullSafe(parseDateSafe(e.getStartDate()), LocalDate.MIN))) {
-            sb.append("<div class=\"item\">\n");
             String dates = formatMonthYear(exp.getStartDate()) + " – " + (notBlank(exp.getEndDate()) ? formatMonthYear(exp.getEndDate()) : "Present");
-            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(exp.getJobTitle()))).append("</span>")
-                    .append("<span class=\"right\">").append(esc(dates)).append("</span></div>\n");
             String companyLine = s(exp.getCompanyName()) + (notBlank(exp.getLocation()) ? " — " + exp.getLocation() : "");
-            if (notBlank(companyLine)) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(companyLine)).append("</div>\n");
-            }
-            if (notBlank(exp.getDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richTextLimited(exp.getDescription(), EXPERIENCE_MAX_BULLETS)).append("</div>\n");
-            }
-            sb.append("</div>\n");
+            String descriptionHtml = notBlank(exp.getDescription()) ? richTextLimited(exp.getDescription(), EXPERIENCE_MAX_BULLETS) : null;
+            out.add(new ExperienceVM(s(exp.getJobTitle()), dates, notBlank(companyLine) ? companyLine : null, descriptionHtml));
         }
-        return sb.toString();
+        return out;
     }
 
-    private String buildProjects(ProfileMasterResponse data) {
-        List<ProjectResponse> projects = data.getProjects();
-        if (!nonEmpty(projects)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Projects</div>\n");
+    private List<ProjectVM> buildProjects(List<ProjectResponse> projects) {
+        if (!nonEmpty(projects)) return List.of();
+        List<ProjectVM> out = new ArrayList<>();
         for (ProjectResponse proj : projects) {
-            sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(proj.getProjectName()))).append("</div>\n");
+            String techStack = null;
             if (proj.getSkills() != null && !proj.getSkills().isEmpty()) {
-                String techStack = proj.getSkills().stream()
+                String joined = proj.getSkills().stream()
                         .map(sk -> s(sk.getLogoName()))
                         .filter(n -> !n.isEmpty())
                         .collect(Collectors.joining(", "));
-                if (!techStack.isEmpty()) {
-                    sb.append("<div class=\"subtitle-italic\">").append(esc(techStack)).append("</div>\n");
-                }
+                techStack = joined.isEmpty() ? null : joined;
             }
-            if (notBlank(proj.getProjectDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richTextLimited(proj.getProjectDescription(), PROJECT_MAX_BULLETS)).append("</div>\n");
-            }
-            if (notBlank(proj.getProjectLink())) {
-                sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(proj.getProjectLink())).append("</span></div>\n");
-            }
-            sb.append("</div>\n");
+            String descriptionHtml = notBlank(proj.getProjectDescription()) ? richTextLimited(proj.getProjectDescription(), PROJECT_MAX_BULLETS) : null;
+            out.add(new ProjectVM(s(proj.getProjectName()), techStack, descriptionHtml,
+                    notBlank(proj.getProjectLink()) ? proj.getProjectLink() : null));
         }
-        return sb.toString();
+        return out;
     }
 
     // Education intentionally shows no description/bullets — institution, degree, and dates only.
-    private String buildEducation(ProfileMasterResponse data) {
-        List<EducationResponse> educations = data.getEducations();
-        if (!nonEmpty(educations)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Education</div>\n");
+    private List<EducationVM> buildEducations(List<EducationResponse> educations) {
+        if (!nonEmpty(educations)) return List.of();
+        List<EducationVM> out = new ArrayList<>();
         for (EducationResponse edu : sortByDateDesc(educations,
                 e -> e.getEndYear() != null ? e.getEndYear() : Integer.MAX_VALUE,
                 e -> e.getStartYear() != null ? e.getStartYear() : Integer.MIN_VALUE)) {
-            sb.append("<div class=\"item\">\n");
             String degreeField = (edu.getDegree() != null ? edu.getDegree().getDisplayName() : "") +
                     (notBlank(edu.getFieldOfStudy()) ? " in " + edu.getFieldOfStudy() : "");
             String yearRange = edu.getStartYear() != null
                     ? String.valueOf(edu.getStartYear()) + (edu.getEndYear() != null ? " – " + edu.getEndYear() : "")
                     : "";
-            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(edu.getInstitution()))).append("</span>")
-                    .append("<span class=\"right\">").append(esc(yearRange)).append("</span></div>\n");
-            if (notBlank(degreeField)) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(degreeField)).append("</div>\n");
-            }
-            if (notBlank(edu.getGrade())) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(edu.getGrade())).append("</div>\n");
-            }
-            sb.append("</div>\n");
+            out.add(new EducationVM(s(edu.getInstitution()), yearRange,
+                    notBlank(degreeField) ? degreeField : null, notBlank(edu.getGrade()) ? edu.getGrade() : null));
         }
-        return sb.toString();
+        return out;
     }
 
-    private String buildCertifications(ProfileMasterResponse data) {
-        List<CertificationResponseDTO> certs = data.getCertifications();
-        if (!nonEmpty(certs)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Certifications</div>\n");
-        for (CertificationResponseDTO cert : sortByDateDesc(certs,
-                c -> nullSafe(c.getIssueDate(), LocalDate.MIN))) {
-            sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(cert.getTitle()))).append("</span>")
-                    .append("<span class=\"right\">").append(esc(formatMonthYear(cert.getIssueDate()))).append("</span></div>\n");
-            if (notBlank(cert.getIssuer())) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(cert.getIssuer())).append("</div>\n");
-            }
-            if (notBlank(cert.getCredentialUrl())) {
-                sb.append("<div class=\"subtitle-italic\"><span class=\"link\">").append(esc(cert.getCredentialUrl())).append("</span></div>\n");
-            }
-            sb.append("</div>\n");
+    private List<CertificationVM> buildCertifications(List<CertificationResponseDTO> certs) {
+        if (!nonEmpty(certs)) return List.of();
+        List<CertificationVM> out = new ArrayList<>();
+        for (CertificationResponseDTO cert : sortByDateDesc(certs, c -> nullSafe(c.getIssueDate(), LocalDate.MIN))) {
+            out.add(new CertificationVM(s(cert.getTitle()), formatMonthYear(cert.getIssueDate()),
+                    notBlank(cert.getIssuer()) ? cert.getIssuer() : null,
+                    notBlank(cert.getCredentialUrl()) ? cert.getCredentialUrl() : null));
         }
-        return sb.toString();
+        return out;
     }
 
-    private String buildPublications(ProfileMasterResponse data) {
-        List<PublicationResponseDTO> publications = data.getPublications();
-        if (!nonEmpty(publications)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Publications</div>\n");
-        for (PublicationResponseDTO pub : sortByDateDesc(publications,
-                p -> nullSafe(p.getPublishedDate(), LocalDate.MIN))) {
-            sb.append("<div class=\"item\">\n");
+    private List<PublicationVM> buildPublications(List<PublicationResponseDTO> publications) {
+        if (!nonEmpty(publications)) return List.of();
+        List<PublicationVM> out = new ArrayList<>();
+        for (PublicationResponseDTO pub : sortByDateDesc(publications, p -> nullSafe(p.getPublishedDate(), LocalDate.MIN))) {
             String typeLabel = notBlank(pub.getType()) ? " (" + pub.getType() + ")" : "";
-            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(pub.getTitle()) + typeLabel)).append("</span>")
-                    .append("<span class=\"right\">").append(esc(formatMonthYear(pub.getPublishedDate()))).append("</span></div>\n");
-            if (notBlank(pub.getPublisher())) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(pub.getPublisher())).append("</div>\n");
-            }
-            if (notBlank(pub.getDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richText(pub.getDescription())).append("</div>\n");
-            }
-            sb.append("</div>\n");
+            String descriptionHtml = notBlank(pub.getDescription()) ? richText(pub.getDescription()) : null;
+            out.add(new PublicationVM(s(pub.getTitle()) + typeLabel, formatMonthYear(pub.getPublishedDate()),
+                    notBlank(pub.getPublisher()) ? pub.getPublisher() : null, descriptionHtml));
         }
-        return sb.toString();
+        return out;
     }
 
-    private String buildAchievements(ProfileMasterResponse data) {
-        List<AchievementResponseDTO> achievements = data.getAchievements();
-        if (!nonEmpty(achievements)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Achievements</div>\n");
-        for (AchievementResponseDTO ach : sortByDateDesc(achievements,
-                a -> nullSafe(a.getAchievedAt(), LocalDate.MIN))) {
-            sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"row\"><span class=\"left\">").append(esc(s(ach.getTitle()))).append("</span>")
-                    .append("<span class=\"right\">").append(esc(formatMonthYear(ach.getAchievedAt()))).append("</span></div>\n");
-            if (notBlank(ach.getDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richText(ach.getDescription())).append("</div>\n");
-            }
-            sb.append("</div>\n");
+    private List<AchievementVM> buildAchievements(List<AchievementResponseDTO> achievements) {
+        if (!nonEmpty(achievements)) return List.of();
+        List<AchievementVM> out = new ArrayList<>();
+        for (AchievementResponseDTO ach : sortByDateDesc(achievements, a -> nullSafe(a.getAchievedAt(), LocalDate.MIN))) {
+            String descriptionHtml = notBlank(ach.getDescription()) ? richText(ach.getDescription()) : null;
+            out.add(new AchievementVM(s(ach.getTitle()), formatMonthYear(ach.getAchievedAt()), descriptionHtml));
         }
-        return sb.toString();
+        return out;
     }
 
-    private String buildLanguages(ProfileMasterResponse data) {
-        List<ProfileLanguageResponse> languages = data.getLanguages();
-        if (!nonEmpty(languages)) return "";
-        String line = languages.stream()
+    private String buildLanguagesLine(List<ProfileLanguageResponse> languages) {
+        if (!nonEmpty(languages)) return null;
+        return languages.stream()
                 .map(l -> s(l.getLanguageName()) + (l.getProficiency() != null ? " (" + l.getProficiency().getDisplayName() + ")" : ""))
                 .collect(Collectors.joining(", "));
-        return "<div class=\"section-heading\">Languages</div>\n<div class=\"lang-line\">" + esc(line) + "</div>\n";
     }
 
-    private String buildServices(ProfileMasterResponse data) {
-        List<ServiceResponse> services = data.getServices();
-        if (!nonEmpty(services)) return "";
-        StringBuilder sb = new StringBuilder();
-        sb.append("<div class=\"section-heading\">Services</div>\n");
+    private List<ServiceVM> buildServices(List<ServiceResponse> services) {
+        if (!nonEmpty(services)) return List.of();
+        List<ServiceVM> out = new ArrayList<>();
         for (ServiceResponse svc : services) {
-            sb.append("<div class=\"item\">\n");
-            sb.append("<div class=\"item-title\">").append(esc(s(svc.getTitle()))).append("</div>\n");
-            if (notBlank(svc.getPriceRange())) {
-                sb.append("<div class=\"subtitle-italic\">").append(esc(svc.getPriceRange())).append("</div>\n");
-            }
-            if (notBlank(svc.getDescription())) {
-                sb.append("<div class=\"item-desc\">").append(richText(svc.getDescription())).append("</div>\n");
-            }
-            sb.append("</div>\n");
+            String descriptionHtml = notBlank(svc.getDescription()) ? richText(svc.getDescription()) : null;
+            out.add(new ServiceVM(s(svc.getTitle()), notBlank(svc.getPriceRange()) ? svc.getPriceRange() : null, descriptionHtml));
         }
-        return sb.toString();
+        return out;
+    }
+
+    // ── View models (plain JavaBean-style getters -- guaranteed Thymeleaf-compatible) ───────────
+
+    @Getter
+    @AllArgsConstructor
+    public static final class ContactItemVM {
+        private final String iconClass;
+        private final String text;
+        private final String url;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class SkillGroupVM {
+        private final String categoryLabel;
+        private final String names;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class ExperienceVM {
+        private final String jobTitle;
+        private final String dates;
+        private final String companyLine;
+        private final String descriptionHtml;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class ProjectVM {
+        private final String projectName;
+        private final String techStack;
+        private final String descriptionHtml;
+        private final String projectLink;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class EducationVM {
+        private final String institution;
+        private final String yearRange;
+        private final String degreeField;
+        private final String grade;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class CertificationVM {
+        private final String title;
+        private final String dateLabel;
+        private final String issuer;
+        private final String credentialUrl;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class PublicationVM {
+        private final String titleWithType;
+        private final String dateLabel;
+        private final String publisher;
+        private final String descriptionHtml;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class AchievementVM {
+        private final String title;
+        private final String dateLabel;
+        private final String descriptionHtml;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static final class ServiceVM {
+        private final String title;
+        private final String priceRange;
+        private final String descriptionHtml;
     }
 
     // ── Theme ────────────────────────────────────────────────────────────────
@@ -450,8 +469,9 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
      * selected portfolio color theme, falling back to a neutral blue if none is mapped. Everything
      * else in this classic ATS-style layout stays plain black for maximum parser compatibility.
      */
+    @Getter
     private static final class Theme {
-        final String accent;
+        private final String accent;
 
         private Theme(String accent) {
             this.accent = accent;
@@ -475,15 +495,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private String esc(String value) {
-        if (value == null) return "";
-        return value
-                .replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;");
-    }
 
     // Formats an ISO "yyyy-MM-dd" string (as produced by Experience's LocalDate.toString()) as
     // "MMM yyyy" (e.g. "Apr 2025"). Falls back to the raw string if it can't be parsed.

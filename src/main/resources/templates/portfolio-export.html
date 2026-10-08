@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${fullName} + ' — Resume'">Resume</title>
+    <style type="text/css" th:utext="${css}"></style>
+</head>
+<body>
+
+<div class="header">
+    <div class="name" th:text="${fullName}">Full Name</div>
+    <div class="contact-line" th:if="${not #lists.isEmpty(contactItems)}">
+        <th:block th:each="item : ${contactItems}">
+            <span th:if="${item.url == null}" class="contact-item">
+                <i th:class="'icon ' + ${item.iconClass}"></i><th:block th:text="${item.text}">value</th:block>
+            </span>
+            <span th:if="${item.url != null}" class="social-item">
+                <i th:class="'icon ' + ${item.iconClass}"></i><a th:href="${item.url}" th:text="${item.text}">label</a>
+            </span>
+        </th:block>
+    </div>
+</div>
+
+<div class="content">
+    <div th:if="${summaryHtml != null}">
+        <div class="section-heading">Professional Summary</div>
+        <div class="summary-text" th:utext="${summaryHtml}">Summary</div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(skillGroups)}">
+        <div class="section-heading">Skills</div>
+        <div class="skill-row" th:each="group : ${skillGroups}">
+            <span class="skill-cat" th:text="${group.categoryLabel} + ':'">Category:</span>
+            <th:block th:text="${group.names}">skill names</th:block>
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(experiences)}">
+        <div class="section-heading">Experience</div>
+        <div class="item" th:each="exp : ${experiences}">
+            <div class="row">
+                <span class="left" th:text="${exp.jobTitle}">Job Title</span>
+                <span class="right" th:text="${exp.dates}">Dates</span>
+            </div>
+            <div class="subtitle-italic" th:if="${exp.companyLine != null}" th:text="${exp.companyLine}">Company</div>
+            <div class="item-desc" th:if="${exp.descriptionHtml != null}" th:utext="${exp.descriptionHtml}">Description</div>
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(projects)}">
+        <div class="section-heading">Projects</div>
+        <div class="item" th:each="proj : ${projects}">
+            <div class="item-title" th:text="${proj.projectName}">Project Name</div>
+            <div class="subtitle-italic" th:if="${proj.techStack != null}" th:text="${proj.techStack}">Tech stack</div>
+            <div class="item-desc" th:if="${proj.descriptionHtml != null}" th:utext="${proj.descriptionHtml}">Description</div>
+            <div class="subtitle-italic" th:if="${proj.projectLink != null}">
+                <span class="link" th:text="${proj.projectLink}">Link</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Education intentionally shows no description/bullets — institution, degree, and dates only. -->
+    <div th:if="${not #lists.isEmpty(educations)}">
+        <div class="section-heading">Education</div>
+        <div class="item" th:each="edu : ${educations}">
+            <div class="row">
+                <span class="left" th:text="${edu.institution}">Institution</span>
+                <span class="right" th:text="${edu.yearRange}">Years</span>
+            </div>
+            <div class="subtitle-italic" th:if="${edu.degreeField != null}" th:text="${edu.degreeField}">Degree</div>
+            <div class="subtitle-italic" th:if="${edu.grade != null}" th:text="${edu.grade}">Grade</div>
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(certifications)}">
+        <div class="section-heading">Certifications</div>
+        <div class="item" th:each="cert : ${certifications}">
+            <div class="row">
+                <span class="left" th:text="${cert.title}">Title</span>
+                <span class="right" th:text="${cert.dateLabel}">Date</span>
+            </div>
+            <div class="subtitle-italic" th:if="${cert.issuer != null}" th:text="${cert.issuer}">Issuer</div>
+            <div class="subtitle-italic" th:if="${cert.credentialUrl != null}">
+                <span class="link" th:text="${cert.credentialUrl}">Credential URL</span>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(publications)}">
+        <div class="section-heading">Publications</div>
+        <div class="item" th:each="pub : ${publications}">
+            <div class="row">
+                <span class="left" th:text="${pub.titleWithType}">Title</span>
+                <span class="right" th:text="${pub.dateLabel}">Date</span>
+            </div>
+            <div class="subtitle-italic" th:if="${pub.publisher != null}" th:text="${pub.publisher}">Publisher</div>
+            <div class="item-desc" th:if="${pub.descriptionHtml != null}" th:utext="${pub.descriptionHtml}">Description</div>
+        </div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(achievements)}">
+        <div class="section-heading">Achievements</div>
+        <div class="item" th:each="ach : ${achievements}">
+            <div class="row">
+                <span class="left" th:text="${ach.title}">Title</span>
+                <span class="right" th:text="${ach.dateLabel}">Date</span>
+            </div>
+            <div class="item-desc" th:if="${ach.descriptionHtml != null}" th:utext="${ach.descriptionHtml}">Description</div>
+        </div>
+    </div>
+
+    <div th:if="${languagesLine != null}">
+        <div class="section-heading">Languages</div>
+        <div class="lang-line" th:text="${languagesLine}">Languages</div>
+    </div>
+
+    <div th:if="${not #lists.isEmpty(services)}">
+        <div class="section-heading">Services</div>
+        <div class="item" th:each="svc : ${services}">
+            <div class="item-title" th:text="${svc.title}">Title</div>
+            <div class="subtitle-italic" th:if="${svc.priceRange != null}" th:text="${svc.priceRange}">Price range</div>
+            <div class="item-desc" th:if="${svc.descriptionHtml != null}" th:utext="${svc.descriptionHtml}">Description</div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
