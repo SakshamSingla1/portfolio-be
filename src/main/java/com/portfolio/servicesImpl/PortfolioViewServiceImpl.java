@@ -2,12 +2,17 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dao.portfolio_view.PortfolioViewDao;
 import com.portfolio.dao.resume.ResumeDownloadDao;
+import com.portfolio.dtos.DashboardDTOs.AnalyticsComparisonDTO;
+import com.portfolio.dtos.DashboardDTOs.AnalyticsOverviewDTO;
+import com.portfolio.dtos.DashboardDTOs.AnalyticsRangeDTO;
 import com.portfolio.dtos.DashboardDTOs.DailyViewDTO;
+import com.portfolio.dtos.DashboardDTOs.MetricComparisonDTO;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewDTO;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.DashboardDTOs.ViewStatsDTO;
 import com.portfolio.entities.PortfolioView;
 import com.portfolio.services.PortfolioViewService;
+import com.portfolio.utils.AnalyticsRangeResolver;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,7 +85,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
         // Grouped in SQL (not pulled as raw rows like `recent`) since 90 days of
         // history on a high-traffic profile would be a much larger row set.
         CompletableFuture<List<Object[]>> heatmapRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getDailyViewCountsSince(profileId, now.minusDays(89).toLocalDate().atStartOfDay()));
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now));
 
         CompletableFuture.allOf(totalViewsFuture, resumeDownloadsFuture, recentFuture, heatmapRowsFuture).join();
 
@@ -260,5 +265,125 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
             case "TABLET" -> "TABLET";
             default       -> "DESKTOP";
         };
+    }
+
+    // ── Analytics Dashboard: date-range + period comparison ────────────────────
+    // Purely additive — getViewStats(Long) above is untouched (still powers the home
+    // Dashboard's fixed-window widget) except for the getDailyViewCountsBetween rename.
+
+    @Override
+    public AnalyticsOverviewDTO getViewStatsForRange(Long profileId, String rangeKey, String startDateParam, String endDateParam) {
+        AnalyticsRangeResolver.AnalyticsRange range = AnalyticsRangeResolver.resolve(rangeKey, startDateParam, endDateParam);
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        // Current-period queries
+        CompletableFuture<Long> viewsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.start(), range.end()));
+        CompletableFuture<Long> uniqueVisitorsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.start(), range.end()));
+        CompletableFuture<Long> resumeDownloadsFuture = CompletableFuture.supplyAsync(
+                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<Object[]>> trendRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<Object[]>> deviceRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getDeviceBreakdownBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<Object[]>> browserRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getBrowserBreakdownBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<Object[]>> locationRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getLocationBreakdownBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<Object[]>> referrerRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getReferrerBreakdownBetween(profileId, range.start(), range.end()));
+        CompletableFuture<List<PortfolioView>> recentViewsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.findTop200ByProfileIdAndTimestampBetweenOrderByTimestampDesc(profileId, range.start(), range.end()));
+
+        // Previous-period queries — totals only, for the comparison block.
+        CompletableFuture<Long> prevViewsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()));
+        CompletableFuture<Long> prevUniqueVisitorsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()));
+        CompletableFuture<Long> prevResumeDownloadsFuture = CompletableFuture.supplyAsync(
+                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.prevStart(), range.prevEnd()));
+
+        // Fixed trailing-90-day heatmap, independent of the selected range.
+        CompletableFuture<List<Object[]>> heatmapRowsFuture = CompletableFuture.supplyAsync(
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now));
+
+        CompletableFuture.allOf(
+                viewsFuture, uniqueVisitorsFuture, resumeDownloadsFuture, trendRowsFuture,
+                deviceRowsFuture, browserRowsFuture, locationRowsFuture, referrerRowsFuture, recentViewsFuture,
+                prevViewsFuture, prevUniqueVisitorsFuture, prevResumeDownloadsFuture, heatmapRowsFuture
+        ).join();
+
+        AnalyticsComparisonDTO comparison = AnalyticsComparisonDTO.builder()
+                .views(computeComparison(viewsFuture.join(), prevViewsFuture.join()))
+                .uniqueVisitors(computeComparison(uniqueVisitorsFuture.join(), prevUniqueVisitorsFuture.join()))
+                .resumeDownloads(computeComparison(resumeDownloadsFuture.join(), prevResumeDownloadsFuture.join()))
+                .build();
+
+        AnalyticsRangeDTO rangeDTO = AnalyticsRangeDTO.builder()
+                .key(range.key())
+                .startDate(range.startDate())
+                .endDate(range.endDate())
+                .label(range.label())
+                .build();
+
+        List<PortfolioViewDTO> recentViews = recentViewsFuture.join().stream()
+                .map(this::mapToViewDTO)
+                .toList();
+
+        return AnalyticsOverviewDTO.builder()
+                .range(rangeDTO)
+                .comparison(comparison)
+                .trend(buildTrend(trendRowsFuture.join(), range.startDate(), range.endDate()))
+                .deviceBreakdown(toLongMap(deviceRowsFuture.join()))
+                .browserBreakdown(toLongMap(browserRowsFuture.join()))
+                .locationBreakdown(toLongMap(locationRowsFuture.join()))
+                .referrerBreakdown(toLongMap(referrerRowsFuture.join()))
+                .recentViews(recentViews)
+                .viewsHeatmap(buildTrend(heatmapRowsFuture.join(), now.minusDays(89).toLocalDate(), now.toLocalDate()))
+                .build();
+    }
+
+    // Null when `previous` is 0 — see MetricComparisonDTO's javadoc for why that's treated
+    // as "no comparison available" rather than a misleading +Infinity%.
+    // Package-private (not private) so PortfolioViewServiceImplTest can exercise it directly.
+    MetricComparisonDTO computeComparison(long current, long previous) {
+        Double percentChange = previous == 0
+                ? null
+                : Math.round(((double) (current - previous) / previous) * 1000.0) / 10.0;
+        return MetricComparisonDTO.builder()
+                .current(current)
+                .previous(previous)
+                .percentChange(percentChange)
+                .build();
+    }
+
+    private Map<String, Long> toLongMap(List<Object[]> rows) {
+        Map<String, Long> map = new LinkedHashMap<>();
+        for (Object[] row : rows) {
+            map.put(String.valueOf(row[0]), ((Number) row[1]).longValue());
+        }
+        return map;
+    }
+
+    // Generalizes buildWeeklyTrend/buildHeatmap's zero-fill-per-day loop to an arbitrary
+    // date span, for the Analytics Dashboard's range-aware trend chart (and its own
+    // fixed-90-day heatmap call, kept separate from the legacy buildHeatmap above so that
+    // getViewStats's existing behavior/call path is never touched by this feature).
+    private List<DailyViewDTO> buildTrend(List<Object[]> rows, LocalDate start, LocalDate end) {
+        Map<LocalDate, Long> byDate = new HashMap<>();
+        for (Object[] row : rows) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            byDate.put(date, ((Number) row[1]).longValue());
+        }
+
+        List<DailyViewDTO> trend = new ArrayList<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            long count = byDate.getOrDefault(date, 0L);
+            String day = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+            String dateStr = date.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + " " + date.getDayOfMonth();
+            trend.add(DailyViewDTO.builder().day(day).date(dateStr).count(count).build());
+        }
+        return trend;
     }
 }

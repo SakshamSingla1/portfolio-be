@@ -5,6 +5,8 @@ import com.portfolio.repositories.ResumeDownloadRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+
 @Repository
 @Slf4j
 public class ResumeDownloadDao {
@@ -21,5 +23,9 @@ public class ResumeDownloadDao {
 
     public long countByProfileId(Long profileId) {
         return resumeDownloadRepository.countByProfileId(profileId);
+    }
+
+    public long countByProfileIdAndDownloadedAtBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return resumeDownloadRepository.countByProfileIdAndDownloadedAtBetween(profileId, start, end);
     }
 }
