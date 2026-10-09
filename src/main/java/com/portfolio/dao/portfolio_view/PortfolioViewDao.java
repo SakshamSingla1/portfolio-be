@@ -30,6 +30,10 @@ public class PortfolioViewDao {
         return portfolioViewRepository.countByProfileIdAndTimestampBetween(profileId, start, end);
     }
 
+    public long countDistinctSessionIdByProfileIdAndTimestampBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, start, end);
+    }
+
     public List<PortfolioView> findByProfileIdAndTimestampAfter(Long profileId, LocalDateTime after) {
         return portfolioViewRepository.findByProfileIdAndTimestampAfter(profileId, after);
     }
@@ -38,7 +42,28 @@ public class PortfolioViewDao {
         return portfolioViewRepository.findTop30ByProfileIdOrderByTimestampDesc(profileId);
     }
 
-    public List<Object[]> getDailyViewCountsSince(Long profileId, LocalDateTime since) {
-        return portfolioViewRepository.getDailyViewCountsSince(profileId, since);
+    public List<PortfolioView> findTop200ByProfileIdAndTimestampBetweenOrderByTimestampDesc(
+            Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.findTop200ByProfileIdAndTimestampBetweenOrderByTimestampDesc(profileId, start, end);
+    }
+
+    public List<Object[]> getDailyViewCountsBetween(Long profileId, LocalDateTime since, LocalDateTime until) {
+        return portfolioViewRepository.getDailyViewCountsBetween(profileId, since, until);
+    }
+
+    public List<Object[]> getDeviceBreakdownBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.getDeviceBreakdownBetween(profileId, start, end);
+    }
+
+    public List<Object[]> getBrowserBreakdownBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.getBrowserBreakdownBetween(profileId, start, end);
+    }
+
+    public List<Object[]> getLocationBreakdownBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.getLocationBreakdownBetween(profileId, start, end);
+    }
+
+    public List<Object[]> getReferrerBreakdownBetween(Long profileId, LocalDateTime start, LocalDateTime end) {
+        return portfolioViewRepository.getReferrerBreakdownBetween(profileId, start, end);
     }
 }
