@@ -23,10 +23,10 @@ public class AppConfig {
     /**
      * Used to fan out independent per-profile lookups (experiences, educations, skills, etc.)
      * concurrently instead of sequentially — sized to stay well within Hikari's max-pool-size
-     * (20) so parallel fetches can't exhaust the connection pool.
+     * (10) so parallel fetches can't exhaust the connection pool.
      */
     @Bean(destroyMethod = "shutdown")
     public ExecutorService profileAggregationExecutor() {
-        return Executors.newFixedThreadPool(12);
+        return Executors.newFixedThreadPool(8);
     }
 }
