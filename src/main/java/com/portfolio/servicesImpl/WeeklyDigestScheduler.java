@@ -2,7 +2,6 @@ package com.portfolio.servicesImpl;
 
 import com.portfolio.dao.portfolio_view.PortfolioViewDao;
 import com.portfolio.dao.profile.ProfileDao;
-import com.portfolio.entities.PortfolioView;
 import com.portfolio.entities.Profile;
 import com.portfolio.repositories.ContactUsRepository;
 import com.portfolio.services.NTService;
@@ -15,7 +14,6 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -30,12 +28,13 @@ public class WeeklyDigestScheduler {
     // Every Monday at 9:00 AM
     @Scheduled(cron = "0 0 9 * * MON")
     public void sendWeeklyDigests() {
-        LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime weekAgo = now.minusDays(7);
         List<Profile> profiles = profileDao.findAllDigestEnabled();
 
         for (Profile profile : profiles) {
             try {
-                sendDigest(profile, weekAgo);
+                sendDigest(profile, weekAgo, now);
                 profile.setDigestLastSentAt(LocalDateTime.now());
                 profileDao.save(profile);
             } catch (Exception e) {
@@ -45,21 +44,19 @@ public class WeeklyDigestScheduler {
         log.info("Weekly digest sent to {} profiles", profiles.size());
     }
 
-    private void sendDigest(Profile profile, LocalDateTime weekAgo) {
-        List<PortfolioView> weekViews = portfolioViewDao
-                .findByProfileIdAndTimestampAfter(profile.getId(), weekAgo);
-
-        long viewsThisWeek = weekViews.size();
+    private void sendDigest(Profile profile, LocalDateTime weekAgo, LocalDateTime now) {
+        // Aggregated in SQL rather than loading every raw PortfolioView row for the week just to
+        // .size()/group them in Java -- same reasoning as PortfolioViewServiceImpl's dashboard
+        // queries: on a high-traffic profile, a week of raw rows is a much larger (and more
+        // memory-expensive) result set than a handful of grouped counts.
+        long viewsThisWeek = portfolioViewDao.countByProfileIdAndTimestampBetween(profile.getId(), weekAgo, now);
 
         long newMessages = contactUsRepository
                 .countByProfileIdAndCreatedAtAfter(profile.getId(), weekAgo);
 
-        Map<String, Long> topReferrers = weekViews
-                .stream()
-                .map(v -> v.getReferrerDomain() != null ? v.getReferrerDomain() : "Direct")
-                .collect(Collectors.groupingBy(r -> r, Collectors.counting()));
-
-        List<Map.Entry<String, Long>> top3 = topReferrers.entrySet().stream()
+        List<Object[]> referrerRows = portfolioViewDao.getReferrerBreakdownBetween(profile.getId(), weekAgo, now);
+        List<Map.Entry<String, Long>> top3 = referrerRows.stream()
+                .map(row -> Map.entry((String) row[0], ((Number) row[1]).longValue()))
                 .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
                 .limit(3)
                 .toList();

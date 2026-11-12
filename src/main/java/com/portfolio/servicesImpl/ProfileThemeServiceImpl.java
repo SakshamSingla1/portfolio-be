@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,16 +29,21 @@ public class ProfileThemeServiceImpl implements ProfileThemeService {
     private final ProfileDao profileDao;
     private final ColorThemeDao colorThemeDao;
     private final Helper helper;
+    private final ExecutorService profileAggregationExecutor;
 
     @Override
     public ProfileThemeResponse getThemeByProfileId(Long profileId) throws GenericException {
         // The mapping and profile lookups are independent of each other — fetching them
         // concurrently instead of sequentially avoids paying two full cross-region round trips
-        // back-to-back (this call sits on the resume export's critical path).
+        // back-to-back (this call sits on the resume export's critical path). Explicitly bounded
+        // to profileAggregationExecutor (same pool ProfileMasterServiceImpl/DashboardServiceImpl
+        // use) rather than the default ForkJoinPool.commonPool() -- unbounded common-pool fan-out
+        // here would let concurrent callers oversubscribe Hikari's connection pool independently
+        // of the rest of this app's deliberate concurrency budget.
         java.util.concurrent.CompletableFuture<java.util.Optional<ProfileThemeMapping>> mappingF =
-                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileThemeMappingDao.findByProfileId(profileId));
+                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileThemeMappingDao.findByProfileId(profileId), profileAggregationExecutor);
         java.util.concurrent.CompletableFuture<java.util.Optional<Profile>> profileF =
-                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileDao.findById(profileId));
+                java.util.concurrent.CompletableFuture.supplyAsync(() -> profileDao.findById(profileId), profileAggregationExecutor);
 
         ProfileThemeMapping mapping = mappingF.join()
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.DATA_NOT_FOUND, "Theme mapping not found for profile: " + profileId));

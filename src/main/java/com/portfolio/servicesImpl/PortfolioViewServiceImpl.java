@@ -25,6 +25,7 @@ import java.time.ZoneOffset;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +35,7 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
     private final PortfolioViewDao portfolioViewDao;
     private final ResumeDownloadDao resumeDownloadDao;
     private final RestTemplate restTemplate;
+    private final ExecutorService profileAggregationExecutor;
 
     @Override
     public void trackView(PortfolioViewRequest request, String clientIp, String userAgent) {
@@ -76,16 +78,20 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
 
         // 3 queries in parallel instead of 8 sequential queries.
         // minusDays(32) covers startLastWeek (up to 13 days ago) and startMonth (up to 31 days ago).
+        // All bounded to profileAggregationExecutor rather than the default
+        // ForkJoinPool.commonPool() -- unbounded common-pool fan-out here would let concurrent
+        // dashboard/analytics loads oversubscribe Hikari's connection pool independently of the
+        // rest of this app's deliberate concurrency budget.
         CompletableFuture<Long> totalViewsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.countByProfileId(profileId));
+                () -> portfolioViewDao.countByProfileId(profileId), profileAggregationExecutor);
         CompletableFuture<Long> resumeDownloadsFuture = CompletableFuture.supplyAsync(
-                () -> resumeDownloadDao.countByProfileId(profileId));
+                () -> resumeDownloadDao.countByProfileId(profileId), profileAggregationExecutor);
         CompletableFuture<List<PortfolioView>> recentFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(32)));
+                () -> portfolioViewDao.findByProfileIdAndTimestampAfter(profileId, now.minusDays(32)), profileAggregationExecutor);
         // Grouped in SQL (not pulled as raw rows like `recent`) since 90 days of
         // history on a high-traffic profile would be a much larger row set.
         CompletableFuture<List<Object[]>> heatmapRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now));
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now), profileAggregationExecutor);
 
         CompletableFuture.allOf(totalViewsFuture, resumeDownloadsFuture, recentFuture, heatmapRowsFuture).join();
 
@@ -276,37 +282,40 @@ public class PortfolioViewServiceImpl implements PortfolioViewService {
         AnalyticsRangeResolver.AnalyticsRange range = AnalyticsRangeResolver.resolve(rangeKey, startDateParam, endDateParam);
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
-        // Current-period queries
+        // Current-period queries — all bounded to profileAggregationExecutor (see getViewStats
+        // above for why: unbounded ForkJoinPool.commonPool() fan-out here, across up to 13
+        // concurrent queries per call, is exactly the kind of connection-pool oversubscription
+        // risk this app otherwise takes care to avoid).
         CompletableFuture<Long> viewsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<Long> uniqueVisitorsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<Long> resumeDownloadsFuture = CompletableFuture.supplyAsync(
-                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.start(), range.end()));
+                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<Object[]>> trendRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<Object[]>> deviceRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getDeviceBreakdownBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.getDeviceBreakdownBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<Object[]>> browserRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getBrowserBreakdownBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.getBrowserBreakdownBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<Object[]>> locationRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getLocationBreakdownBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.getLocationBreakdownBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<Object[]>> referrerRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getReferrerBreakdownBetween(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.getReferrerBreakdownBetween(profileId, range.start(), range.end()), profileAggregationExecutor);
         CompletableFuture<List<PortfolioView>> recentViewsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.findTop200ByProfileIdAndTimestampBetweenOrderByTimestampDesc(profileId, range.start(), range.end()));
+                () -> portfolioViewDao.findTop200ByProfileIdAndTimestampBetweenOrderByTimestampDesc(profileId, range.start(), range.end()), profileAggregationExecutor);
 
         // Previous-period queries — totals only, for the comparison block.
         CompletableFuture<Long> prevViewsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()));
+                () -> portfolioViewDao.countByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()), profileAggregationExecutor);
         CompletableFuture<Long> prevUniqueVisitorsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()));
+                () -> portfolioViewDao.countDistinctSessionIdByProfileIdAndTimestampBetween(profileId, range.prevStart(), range.prevEnd()), profileAggregationExecutor);
         CompletableFuture<Long> prevResumeDownloadsFuture = CompletableFuture.supplyAsync(
-                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.prevStart(), range.prevEnd()));
+                () -> resumeDownloadDao.countByProfileIdAndDownloadedAtBetween(profileId, range.prevStart(), range.prevEnd()), profileAggregationExecutor);
 
         // Fixed trailing-90-day heatmap, independent of the selected range.
         CompletableFuture<List<Object[]>> heatmapRowsFuture = CompletableFuture.supplyAsync(
-                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now));
+                () -> portfolioViewDao.getDailyViewCountsBetween(profileId, now.minusDays(89).toLocalDate().atStartOfDay(), now), profileAggregationExecutor);
 
         CompletableFuture.allOf(
                 viewsFuture, uniqueVisitorsFuture, resumeDownloadsFuture, trendRowsFuture,

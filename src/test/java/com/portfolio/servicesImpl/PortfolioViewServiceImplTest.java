@@ -7,6 +7,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.concurrent.ExecutorService;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -17,8 +19,10 @@ import static org.mockito.Mockito.mock;
  */
 class PortfolioViewServiceImplTest {
 
+    // Never actually invoked by computeComparison -- just needs to satisfy the constructor.
     private final PortfolioViewServiceImpl service = new PortfolioViewServiceImpl(
-            mock(PortfolioViewDao.class), mock(ResumeDownloadDao.class), mock(RestTemplate.class));
+            mock(PortfolioViewDao.class), mock(ResumeDownloadDao.class), mock(RestTemplate.class),
+            mock(ExecutorService.class));
 
     @ParameterizedTest(name = "current={0}, previous={1} -> percentChange={2}")
     @CsvSource({
