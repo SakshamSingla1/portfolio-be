@@ -36,6 +36,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.safety.Safelist;
 import org.jsoup.select.Elements;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -51,6 +52,8 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -71,6 +74,20 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private static final String EXPORT_FOLDER = "portfolio/exports";
     private static final String TEMPLATE_NAME = "portfolio-export";
 
+    // openhtmltopdf's font embedding/subsetting is the single heaviest allocation in this app on a
+    // memory-capped (512MB container, 320MB heap) instance -- see the Dockerfile's -Xmx320m and its
+    // commit history. Left unbounded, a user double-clicking "Download" (or several users exporting
+    // at once) stacks that allocation N-deep and OOM-kills the JVM, which is what took the whole
+    // deployment down rather than just this one request. One export running at a time keeps peak
+    // heap usage for this feature bounded and predictable; anything that can't get a permit within
+    // the timeout fails fast with a clear "try again" instead of queuing up behind a slow render.
+    private static final Semaphore EXPORT_SEMAPHORE = new Semaphore(1);
+    // Short on purpose: a caller blocked here is a Tomcat request thread doing nothing, and this
+    // app's thread pool is also sized small for the 512MB instance, so waiting long behind a slow
+    // render risks exhausting that pool instead of just the heap. Failing fast lets the client
+    // (or the cache, on its next hit) retry cheaply rather than queuing.
+    private static final long EXPORT_ACQUIRE_TIMEOUT_SECONDS = 5;
+
     // Registered under this family name (see exportPdf) instead of relying on the CSS 'Times New
     // Roman'/serif name resolving to whatever font a given host has installed. Without an explicitly
     // embedded TTF, openhtmltopdf falls back to its built-in base-14 AFM "Times-Roman" substitute,
@@ -84,23 +101,49 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private final CloudinaryService cloudinaryService;
     private final TemplateEngine templateEngine;
 
+    // Cached for a few minutes (see CacheConfig's "portfolioExportPdfUrl") so repeat clicks on the
+    // same profile -- the exact pattern that used to pile up concurrent renders -- are served the
+    // already-uploaded Cloudinary URL instead of paying for another full render. A thrown exception
+    // is never cached by Spring, so a failed export doesn't poison this for the next attempt.
+    // sync = true additionally collapses concurrent calls for the *same* username into a single
+    // computation -- e.g. an impatient double-click on the Download button -- rather than letting
+    // both through to race for the EXPORT_SEMAPHORE permit below.
     @Override
+    @Cacheable(cacheNames = "portfolioExportPdfUrl", key = "#username", sync = true)
     public String exportPdf(String username) throws GenericException {
         Profile profile = profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + username));
 
         ProfileMasterResponse data = profileMasterService.getForResumeExport(profile.getId());
 
+        boolean acquired = false;
         try {
+            acquired = EXPORT_SEMAPHORE.tryAcquire(EXPORT_ACQUIRE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!acquired) {
+                throw new GenericException(ExceptionCodeEnum.SERVICE_BUSY,
+                        "Another resume export is already in progress, please try again in a moment");
+            }
             String html = renderHtml(data);
             byte[] pdf = renderPdf(html);
             Map<String, Object> uploaded = cloudinaryService.uploadBytes(pdf, EXPORT_FOLDER);
             return (String) uploaded.get("secure_url");
         } catch (GenericException e) {
             throw e;
-        } catch (Exception e) {
-            log.error("PDF generation failed for username={}", username, e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new GenericException(ExceptionCodeEnum.INTERNAL_SERVER_ERROR, "Export interrupted");
+        } catch (Throwable t) {
+            // Throwable, not Exception: openhtmltopdf's font/PDF assembly is exactly the kind of
+            // allocation that can throw OutOfMemoryError on this instance, and that's an Error, not
+            // an Exception -- letting it slip past this boundary uncaught is what used to surface
+            // as a broken download with no clean error, and risked taking other in-flight requests
+            // down with it.
+            log.error("PDF generation failed for username={}", username, t);
             throw new GenericException(ExceptionCodeEnum.INTERNAL_SERVER_ERROR, "Failed to generate PDF");
+        } finally {
+            if (acquired) {
+                EXPORT_SEMAPHORE.release();
+            }
         }
     }
 

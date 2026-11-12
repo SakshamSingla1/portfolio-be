@@ -41,6 +41,14 @@ public class CacheConfig {
             "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport",
             "activeResumeAsset");
 
+    // The generated portfolio-export PDF (PortfolioExportServiceImpl#exportPdf) is by far the most
+    // expensive thing this app computes per-request -- full HTML render + openhtmltopdf font
+    // embedding + a Cloudinary upload -- so it gets a longer TTL than the plain DB-lookup caches
+    // above: repeat downloads of the same profile within this window are served the already-uploaded
+    // URL instead of re-paying for a render, which is what makes it safe to also serialize renders
+    // (see PortfolioExportServiceImpl's EXPORT_SEMAPHORE) without every retry just queuing up again.
+    private static final List<String> PDF_EXPORT_CACHES = List.of("portfolioExportPdfUrl");
+
     @Bean
     public CacheManager cacheManager() {
         List<Cache> caches = new ArrayList<>();
@@ -49,6 +57,9 @@ public class CacheConfig {
         }
         for (String name : SHORT_LIVED_CACHES) {
             caches.add(buildCache(name, 60, TimeUnit.SECONDS, 500));
+        }
+        for (String name : PDF_EXPORT_CACHES) {
+            caches.add(buildCache(name, 5, TimeUnit.MINUTES, 200));
         }
 
         SimpleCacheManager cacheManager = new SimpleCacheManager();

@@ -100,6 +100,10 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.TESTIMONIAL_REQUEST_NOT_FOUND
     );
 
+    private static final Set<ExceptionCodeEnum> SERVICE_UNAVAILABLE_CODES = Set.of(
+            ExceptionCodeEnum.SERVICE_BUSY
+    );
+
     @ExceptionHandler(GenericException.class)
     public ResponseEntity<ResponseModel<Void>> handleGenericException(GenericException ex) {
         ExceptionCodeEnum code = ex.getExceptionCode();
@@ -208,6 +212,7 @@ public class GlobalExceptionHandler {
 
     private HttpStatus resolveStatus(ExceptionCodeEnum code) {
         if (code == null) return HttpStatus.INTERNAL_SERVER_ERROR;
+        if (SERVICE_UNAVAILABLE_CODES.contains(code)) return HttpStatus.SERVICE_UNAVAILABLE;
         if (UNAUTHORIZED_CODES.contains(code)) return HttpStatus.UNAUTHORIZED;
         if (code == ExceptionCodeEnum.FORBIDDEN) return HttpStatus.FORBIDDEN;
         if (NOT_FOUND_CODES.contains(code)) return HttpStatus.NOT_FOUND;

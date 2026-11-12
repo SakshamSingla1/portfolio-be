@@ -25,6 +25,7 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
+import lombok.extern.slf4j.Slf4j;
 import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.BlogPostService;
@@ -59,6 +60,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/v1/public")
 @RequiredArgsConstructor
+@Slf4j
 public class PublicController {
 
     private final ContactUsService contactUsService;
@@ -232,8 +234,19 @@ public class PublicController {
         try {
             String url = portfolioExportService.exportPdf(username);
             response.sendRedirect(CloudinaryUrlUtils.withAttachmentFlag(url, "portfolio-" + username + ".pdf"));
+        } catch (GenericException e) {
+            // SERVICE_BUSY means another export is already rendering (see the export semaphore in
+            // PortfolioExportServiceImpl) -- that's a "retry shortly", not a 404, and collapsing it
+            // into NOT_FOUND is exactly what made repeated download clicks look like the resume/
+            // profile didn't exist instead of telling the caller to back off.
+            if (e.getExceptionCode() == ExceptionCodeEnum.SERVICE_BUSY) {
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, e.getErrorMessage());
+            } else {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            log.error("Unexpected failure exporting portfolio PDF for username={}", username, e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
