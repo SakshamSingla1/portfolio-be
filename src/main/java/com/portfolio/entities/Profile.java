@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.portfolio.audit.Auditable;
+import com.portfolio.enums.ProfileVisibilityEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.TemplateKeyEnum;
 import com.portfolio.enums.VerificationStatusEnum;
@@ -80,4 +81,14 @@ public class Profile extends Auditable {
     @Enumerated(EnumType.STRING)
     @Column(name = "template_key", nullable = false)
     private TemplateKeyEnum templateKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false)
+    private ProfileVisibilityEnum visibility;
+
+    // BCrypt hash of the visitor-facing access code required when visibility is PRIVATE.
+    // Null until the owner sets one; switching to PRIVATE without a code set is rejected
+    // at the service layer (see ProfileServiceImpl#updateSettings).
+    @Column(name = "access_code_hash")
+    private String accessCodeHash;
 }

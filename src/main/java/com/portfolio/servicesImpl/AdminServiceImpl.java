@@ -14,6 +14,7 @@ import com.portfolio.entities.*;
 import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.enums.NotificationTypeEnum;
+import com.portfolio.enums.ProfileVisibilityEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.VerificationStatusEnum;
 import com.portfolio.exceptions.GenericException;
@@ -86,6 +87,7 @@ public class AdminServiceImpl implements AdminService {
                 .status(StatusEnum.INACTIVE)
                 .emailVerified(VerificationStatusEnum.PENDING)
                 .phoneVerified(VerificationStatusEnum.PENDING)
+                .visibility(ProfileVisibilityEnum.PUBLIC)
                 .build();
         profileDao.save(user);
 
@@ -160,6 +162,7 @@ public class AdminServiceImpl implements AdminService {
                 // would set once a self-registered user completes theirs.
                 .emailVerified(VerificationStatusEnum.VERIFIED)
                 .phoneVerified(VerificationStatusEnum.VERIFIED)
+                .visibility(ProfileVisibilityEnum.PUBLIC)
                 .build();
         profileDao.save(profile);
 

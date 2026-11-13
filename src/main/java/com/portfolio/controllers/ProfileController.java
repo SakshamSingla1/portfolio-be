@@ -6,6 +6,7 @@ import com.portfolio.dtos.Admin.BulkUserIdsRequest;
 import com.portfolio.dtos.Admin.RoleUpdateRequest;
 import com.portfolio.dtos.Admin.StatusUpdateRequest;
 import com.portfolio.dtos.Image.ImageUploadResponse;
+import com.portfolio.dtos.Profile.ProfileAccessCodeRequest;
 import com.portfolio.dtos.Profile.ProfileRequest;
 import com.portfolio.dtos.Profile.ProfileResponse;
 import com.portfolio.dtos.Profile.ProfileSettingsRequest;
@@ -223,7 +224,7 @@ public class ProfileController {
                                 "Failed to bulk delete users");
         }
 
-        @Operation(summary = "Update profile settings", description = "Toggles discoverability and weekly digest email for the authenticated user.")
+        @Operation(summary = "Update profile settings", description = "Toggles discoverability, weekly digest email, and portfolio visibility (PUBLIC/PRIVATE) for the authenticated user.")
         @PatchMapping("/settings")
         public ResponseEntity<ResponseModel<ProfileResponse>> updateSettings(
                         @RequestHeader(value = "Authorization", required = false) String auth,
@@ -231,5 +232,15 @@ public class ProfileController {
                 Long profileId = helper.getProfileIdFromHeader(auth);
                 return ApiResponse.respond(profileService.updateSettings(profileId, req),
                                 "Settings updated successfully", "Failed to update settings");
+        }
+
+        @Operation(summary = "Set portfolio access code", description = "Sets/replaces the access code required to view this profile's portfolio while visibility is PRIVATE.")
+        @PutMapping("/access-code")
+        public ResponseEntity<ResponseModel<ProfileResponse>> setAccessCode(
+                        @RequestHeader(value = "Authorization", required = false) String auth,
+                        @Valid @RequestBody ProfileAccessCodeRequest req) throws GenericException {
+                Long profileId = helper.getProfileIdFromHeader(auth);
+                return ApiResponse.respond(profileService.setAccessCode(profileId, req.getAccessCode()),
+                                "Access code updated successfully", "Failed to update access code");
         }
 }

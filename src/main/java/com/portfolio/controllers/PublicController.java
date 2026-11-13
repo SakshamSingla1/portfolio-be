@@ -14,7 +14,9 @@ import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
+import com.portfolio.dtos.Profile.ProfileAccessTokenResponse;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
+import com.portfolio.dtos.Profile.VerifyProfileAccessRequest;
 import com.portfolio.dtos.SocialLinks.SocialLinkResponseDTO;
 import com.portfolio.dtos.SubscriptionPlan.SubscriptionPlanPublicResponse;
 import com.portfolio.dtos.TestimonialLink.TestimonialLinkPublicResponse;
@@ -32,6 +34,7 @@ import com.portfolio.services.BlogPostService;
 import com.portfolio.services.FileService;
 import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.PortfolioViewService;
+import com.portfolio.services.ProfileAccessService;
 import com.portfolio.services.ProfileMasterService;
 import com.portfolio.services.ResumePublicService;
 import com.portfolio.services.ContactUsService;
@@ -72,6 +75,7 @@ public class PublicController {
     private final ProfileDao profileDao;
     private final TestimonialLinkService testimonialLinkService;
     private final PortfolioExportService portfolioExportService;
+    private final ProfileAccessService profileAccessService;
     private final SocialLinkService socialLinkService;
     private final SubscriptionPlanService subscriptionPlanService;
 
@@ -107,16 +111,31 @@ public class PublicController {
         resumePublicService.downloadResume(username, response);
     }
 
-    @Operation(summary = "Get profile master data", description = "Returns the complete public portfolio data (profile, experience, education, skills, projects, etc.) for the domain in the Referer header.")
+    @Operation(summary = "Get profile master data", description = "Returns the complete public portfolio data (profile, experience, education, skills, projects, etc.) for the domain in the Referer header. 401s with PROFILE_ACCESS_REQUIRED if that profile is PRIVATE and no valid X-Profile-Access-Token is supplied.")
     @GetMapping("/profile-master")
-    public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterByDomain(HttpServletRequest request) throws GenericException {
+    public ResponseEntity<ResponseModel<ProfileMasterResponse>> getProfileMasterByDomain(
+            HttpServletRequest request,
+            @RequestHeader(value = "X-Profile-Access-Token", required = false) String accessToken) throws GenericException {
         String domain = request.getHeader("Referer");
+        // Always runs fresh, ahead of the cached fetch below -- see ProfileAccessServiceImpl's
+        // javadoc for why this can't be folded into the cached method itself.
+        profileAccessService.assertAccessAllowed(domain, accessToken);
         ProfileMasterResponse response = profileMasterService.getProfileMasterData(domain);
         // Matches the server-side Caffeine TTL for profileMasterByHost (CacheConfig) so the
         // browser cache never outlives what the backend itself considers fresh. Without this,
         // Spring Security's default Cache-Control: no-store forces a full network round trip
         // on every single page load/reload, even seconds apart.
         return ApiResponse.respond(response, "Profile details fetched successfully", "Failed to fetch profile details", 60);
+    }
+
+    @Operation(summary = "Verify portfolio access code", description = "Checks an access code against the PRIVATE profile that owns the domain in the Referer header and returns a token to replay via X-Profile-Access-Token.")
+    @PostMapping("/profile-access/verify")
+    public ResponseEntity<ResponseModel<ProfileAccessTokenResponse>> verifyProfileAccess(
+            HttpServletRequest request,
+            @Valid @RequestBody VerifyProfileAccessRequest body) throws GenericException {
+        String domain = request.getHeader("Referer");
+        String token = profileAccessService.verifyAccessCode(domain, body.getAccessCode());
+        return ApiResponse.respond(new ProfileAccessTokenResponse(token), "Access granted", "Invalid access code");
     }
 
     @Operation(summary = "Create contact message", description = "Saves a new contact us message.")

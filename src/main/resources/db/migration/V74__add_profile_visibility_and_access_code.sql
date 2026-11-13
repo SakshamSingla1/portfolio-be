@@ -1,0 +1,2 @@
+ALTER TABLE profiles ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'PUBLIC';
+ALTER TABLE profiles ADD COLUMN access_code_hash VARCHAR(255);

@@ -39,7 +39,7 @@ public class CacheConfig {
 
     private static final List<String> SHORT_LIVED_CACHES = List.of(
             "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport",
-            "activeResumeAsset");
+            "activeResumeAsset", "profileIdByDomain");
 
     // The generated portfolio-export PDF (PortfolioExportServiceImpl#exportPdf) is by far the most
     // expensive thing this app computes per-request -- full HTML render + openhtmltopdf font

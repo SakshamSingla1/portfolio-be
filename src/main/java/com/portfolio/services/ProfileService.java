@@ -49,4 +49,8 @@ public interface ProfileService {
     int bulkDeleteUsers(java.util.List<Long> ids);
 
     ProfileResponse updateSettings(Long profileId, ProfileSettingsRequest req) throws GenericException;
+
+    /** Hashes and stores a new visitor-facing access code for this profile's PRIVATE-mode
+     * gate. Does not itself change visibility -- see {@link #updateSettings}. */
+    ProfileResponse setAccessCode(Long profileId, String rawAccessCode) throws GenericException;
 }

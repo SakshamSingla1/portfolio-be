@@ -59,6 +59,35 @@ public class JwtUtil {
         }
     }
 
+    // Issued once a visitor supplies the correct access code for a PRIVATE profile (see
+    // ProfileAccessServiceImpl); stored client-side and replayed on subsequent profile-master
+    // requests for that same domain. 24h so a visitor isn't re-prompted every page load, but a
+    // leaked/shared link doesn't grant indefinite access either.
+    public String generateProfileAccessToken(Long profileId) {
+        long oneDay = 24 * 60 * 60 * 1000L;
+        return Jwts.builder()
+                .subject(String.valueOf(profileId))
+                .claim("type", "PROFILE_ACCESS")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + oneDay))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public boolean isValidProfileAccessToken(String token, Long profileId) {
+        if (token == null || token.isBlank() || profileId == null) {
+            return false;
+        }
+        try {
+            Claims claims = getClaims(token);
+            return "PROFILE_ACCESS".equals(claims.get("type", String.class))
+                    && String.valueOf(profileId).equals(claims.getSubject())
+                    && claims.getExpiration().after(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // ================= EXTRACT =================
     public String extractEmail(String token) {
         return getClaims(token).getSubject();

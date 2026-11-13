@@ -20,6 +20,7 @@ import com.portfolio.entities.ProfileSubscription;
 import com.portfolio.entities.Role;
 import com.portfolio.entities.SubscriptionPlan;
 import com.portfolio.enums.ExceptionCodeEnum;
+import com.portfolio.enums.ProfileVisibilityEnum;
 import com.portfolio.enums.ResourceTypeEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.enums.TemplateKeyEnum;
@@ -33,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,6 +60,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final NTService ntService;
     private final ProfileSubscriptionDao profileSubscriptionDao;
     private final SubscriptionPlanDao subscriptionPlanDao;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -214,6 +217,8 @@ public class ProfileServiceImpl implements ProfileService {
                 .isDiscoverable(profile.isDiscoverable())
                 .digestEmailEnabled(profile.isDigestEmailEnabled())
                 .templateKey(profile.getTemplateKey() != null ? profile.getTemplateKey().name() : TemplateKeyEnum.CLASSIC.name())
+                .visibility(profile.getVisibility() != null ? profile.getVisibility().name() : ProfileVisibilityEnum.PUBLIC.name())
+                .hasAccessCode(profile.getAccessCodeHash() != null)
                 .build();
     }
 
@@ -390,6 +395,25 @@ public class ProfileServiceImpl implements ProfileService {
         if (req.getDigestEmailEnabled() != null) {
             profile.setDigestEmailEnabled(req.getDigestEmailEnabled());
         }
+        if (req.getVisibility() != null) {
+            // An access code has to exist before PRIVATE can be turned on, otherwise the public
+            // portfolio would be gated with no way for anyone (including the owner) to get past
+            // it -- setAccessCode must be called first.
+            if (req.getVisibility() == ProfileVisibilityEnum.PRIVATE && profile.getAccessCodeHash() == null) {
+                throw new GenericException(ExceptionCodeEnum.BAD_REQUEST,
+                        "Set an access code before making your portfolio private");
+            }
+            profile.setVisibility(req.getVisibility());
+        }
+        profile.setUpdatedAt(LocalDateTime.now());
+        return mapToResponse(profileDao.save(profile));
+    }
+
+    @Override
+    public ProfileResponse setAccessCode(Long profileId, String rawAccessCode) throws GenericException {
+        Profile profile = profileDao.findById(profileId)
+                .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found"));
+        profile.setAccessCodeHash(passwordEncoder.encode(rawAccessCode));
         profile.setUpdatedAt(LocalDateTime.now());
         return mapToResponse(profileDao.save(profile));
     }

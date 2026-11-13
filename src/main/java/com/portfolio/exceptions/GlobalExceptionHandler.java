@@ -27,7 +27,12 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.UNAUTHORIZED,
             ExceptionCodeEnum.INVALID_CREDENTIALS,
             ExceptionCodeEnum.TOKEN_EXPIRED,
-            ExceptionCodeEnum.TOKEN_INVALID
+            ExceptionCodeEnum.TOKEN_INVALID,
+            // Distinct codes (not folded into UNAUTHORIZED) so the portfolio-main visitor gate
+            // can tell "enter the code" from "wrong code" apart -- both still map to 401 since
+            // neither should be treated as a retryable client bug.
+            ExceptionCodeEnum.PROFILE_ACCESS_REQUIRED,
+            ExceptionCodeEnum.INVALID_ACCESS_CODE
     );
 
     private static final Set<ExceptionCodeEnum> BAD_REQUEST_CODES = Set.of(
