@@ -73,4 +73,8 @@ public class ContactUsDao {
     public boolean existsById(Long id) {
         return contactUsRepository.existsById(id);
     }
+
+    public Optional<ContactUs> findByReplyToken(String replyToken) {
+        return contactUsRepository.findByReplyToken(replyToken);
+    }
 }

@@ -1,6 +1,7 @@
 package com.portfolio.controllers;
 
 import com.portfolio.dtos.Common.BulkIdsRequest;
+import com.portfolio.dtos.ContactUs.ContactThreadResponse;
 import com.portfolio.dtos.ContactUs.ContactUsReplyDTO;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.enums.ContactUsStatusEnum;
@@ -69,6 +70,17 @@ public class ContactUsController {
     ) throws GenericException {
         ContactUsResponse response = contactUsService.reply(id, dto.getMessage(), auth);
         return ApiResponse.respond(response, "Reply sent successfully", ApiResponse.FAILED);
+    }
+
+    @Operation(summary = "Get conversation thread", description = "Returns the full conversation (original message + every reply) for a contact message belonging to the authenticated user's profile.")
+    @GetMapping("/{id}/thread")
+    public ResponseEntity<ResponseModel<ContactThreadResponse>> getThread(
+            @RequestHeader(value = "Authorization", required = false) String auth,
+            @PathVariable Long id
+    ) throws GenericException {
+        Long profileId = helper.getProfileIdFromHeader(auth);
+        return ApiResponse.respond(contactUsService.getThreadForOwner(id, profileId),
+                "Thread fetched successfully", "Failed to fetch thread");
     }
 
     @Operation(summary = "Delete contact message", description = "Permanently deletes a contact message belonging to the authenticated user's profile.")

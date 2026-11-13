@@ -81,6 +81,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         else if ("POST".equals(method) && path.contains("/api/v1/public/likes")) {
             bucket = resolveBucket("like:" + ip, 20, Duration.ofMinutes(1));
         }
+        // Contact thread replies: same budget as the contact form itself -- same spam-risk shape,
+        // and a genuine back-and-forth conversation is nowhere near this limit.
+        else if ("POST".equals(method) && path.contains("/api/v1/public/contact-thread")) {
+            bucket = resolveBucket("contact-thread:" + ip, 5, Duration.ofHours(1));
+        }
 
         if (bucket != null && !bucket.tryConsume(1)) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());

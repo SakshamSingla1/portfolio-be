@@ -76,4 +76,6 @@ public interface ContactUsRepository extends JpaRepository<ContactUs, Long> {
     Optional<ContactUs> findTop1ByProfileIdOrderByCreatedAtDesc(Long profileId);
 
     long countByProfileIdAndCreatedAtAfter(Long profileId, java.time.LocalDateTime after);
+
+    Optional<ContactUs> findByReplyToken(String replyToken);
 }

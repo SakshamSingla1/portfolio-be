@@ -9,6 +9,9 @@ import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.dtos.Blog.BlogPostResponse;
 import com.portfolio.dtos.Blog.BlogPostSummary;
 import com.portfolio.dtos.Blog.BlogTagResponse;
+import com.portfolio.dtos.ContactUs.ContactMessageResponse;
+import com.portfolio.dtos.ContactUs.ContactThreadReplyRequest;
+import com.portfolio.dtos.ContactUs.ContactThreadResponse;
 import com.portfolio.dtos.ContactUs.ContactUsRequest;
 import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
@@ -150,6 +153,22 @@ public class PublicController {
     public ResponseEntity<ResponseModel<ContactUsResponse>> create(@Valid @RequestBody ContactUsRequest request) throws GenericException {
         ContactUsResponse response = contactUsService.create(request);
         return ApiResponse.respond(response, ApiResponse.SUCCESS, ApiResponse.FAILED);
+    }
+
+    @Operation(summary = "Get conversation thread by token", description = "Lets the original visitor view the full conversation via the magic-link token emailed to them once the owner replies.")
+    @GetMapping("/contact-thread/{token}")
+    public ResponseEntity<ResponseModel<ContactThreadResponse>> getContactThread(@PathVariable String token) throws GenericException {
+        return ApiResponse.respond(contactUsService.getThreadByToken(token),
+                "Thread fetched successfully", "Failed to fetch thread");
+    }
+
+    @Operation(summary = "Reply in conversation thread", description = "Lets the original visitor reply in-app via their magic-link token instead of the conversation being a dead end.")
+    @PostMapping("/contact-thread/{token}/reply")
+    public ResponseEntity<ResponseModel<ContactMessageResponse>> replyToContactThread(
+            @PathVariable String token,
+            @Valid @RequestBody ContactThreadReplyRequest request) throws GenericException {
+        return ApiResponse.respond(contactUsService.addVisitorReply(token, request.getMessage()),
+                "Reply sent successfully", "Failed to send reply");
     }
 
     @Operation(summary = "Track portfolio view", description = "Records a page view from the public portfolio site.")

@@ -42,4 +42,10 @@ public class ContactUs extends Auditable {
 
     @Column(name = "replied_at")
     private LocalDateTime repliedAt;
+
+    // Generated on the owner's first reply (see ContactUsServiceImpl#reply) -- lets the visitor
+    // view and continue the conversation without an account via a token-based page in
+    // portfolio-main, the same pattern TestimonialRequestLink uses for its public submission page.
+    @Column(name = "reply_token")
+    private String replyToken;
 }
