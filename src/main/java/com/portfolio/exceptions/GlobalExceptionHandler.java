@@ -107,7 +107,8 @@ public class GlobalExceptionHandler {
     );
 
     private static final Set<ExceptionCodeEnum> SERVICE_UNAVAILABLE_CODES = Set.of(
-            ExceptionCodeEnum.SERVICE_BUSY
+            ExceptionCodeEnum.SERVICE_BUSY,
+            ExceptionCodeEnum.AI_SERVICE_NOT_CONFIGURED
     );
 
     @ExceptionHandler(GenericException.class)

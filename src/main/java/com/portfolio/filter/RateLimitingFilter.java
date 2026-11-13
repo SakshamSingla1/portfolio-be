@@ -86,6 +86,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         else if ("POST".equals(method) && path.contains("/api/v1/public/contact-thread")) {
             bucket = resolveBucket("contact-thread:" + ip, 5, Duration.ofHours(1));
         }
+        // AI draft generation: each call costs real money (Anthropic API usage), unlike every
+        // other rule above which is just abuse/spam prevention. 20/hour per IP is well above
+        // normal editing use but caps a runaway frontend loop or a shared/NAT'd IP's worst case.
+        else if ("POST".equals(method) && path.contains("/api/v1/ai/draft")) {
+            bucket = resolveBucket("ai-draft:" + ip, 20, Duration.ofHours(1));
+        }
 
         if (bucket != null && !bucket.tryConsume(1)) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
