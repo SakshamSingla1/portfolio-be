@@ -14,6 +14,9 @@ import com.portfolio.dtos.ContactUs.ContactUsResponse;
 import com.portfolio.dtos.DashboardDTOs.PortfolioViewRequest;
 import com.portfolio.dtos.Discover.DiscoverProfileResponse;
 import com.portfolio.dtos.File.FileAssetDTO;
+import com.portfolio.dtos.Guestbook.GuestbookEntryRequest;
+import com.portfolio.dtos.Guestbook.GuestbookEntryResponse;
+import com.portfolio.dtos.Like.LikeStatusResponse;
 import com.portfolio.dtos.Profile.ProfileAccessTokenResponse;
 import com.portfolio.dtos.Profile.ProfileMasterResponse;
 import com.portfolio.dtos.Profile.VerifyProfileAccessRequest;
@@ -32,7 +35,9 @@ import com.portfolio.payload.ApiResponse;
 import com.portfolio.payload.ResponseModel;
 import com.portfolio.services.BlogPostService;
 import com.portfolio.services.FileService;
+import com.portfolio.services.GuestbookService;
 import com.portfolio.services.PortfolioExportService;
+import com.portfolio.services.PortfolioLikeService;
 import com.portfolio.services.PortfolioViewService;
 import com.portfolio.services.ProfileAccessService;
 import com.portfolio.services.ProfileMasterService;
@@ -76,6 +81,8 @@ public class PublicController {
     private final TestimonialLinkService testimonialLinkService;
     private final PortfolioExportService portfolioExportService;
     private final ProfileAccessService profileAccessService;
+    private final PortfolioLikeService portfolioLikeService;
+    private final GuestbookService guestbookService;
     private final SocialLinkService socialLinkService;
     private final SubscriptionPlanService subscriptionPlanService;
 
@@ -152,6 +159,41 @@ public class PublicController {
         String ua = httpRequest.getHeader("User-Agent");
         portfolioViewService.trackView(request, ip, ua);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Get like status", description = "Returns the total like count for a profile and whether the given visitor has already liked it.")
+    @GetMapping("/likes/{profileId}")
+    public ResponseEntity<ResponseModel<LikeStatusResponse>> getLikeStatus(
+            @PathVariable Long profileId,
+            @RequestParam String visitorId) throws GenericException {
+        return ApiResponse.respond(portfolioLikeService.getStatus(profileId, visitorId),
+                "Like status fetched successfully", "Failed to fetch like status");
+    }
+
+    @Operation(summary = "Toggle like", description = "Likes the profile if the visitor hasn't already, otherwise unlikes it.")
+    @PostMapping("/likes/{profileId}/toggle")
+    public ResponseEntity<ResponseModel<LikeStatusResponse>> toggleLike(
+            @PathVariable Long profileId,
+            @RequestParam String visitorId) throws GenericException {
+        return ApiResponse.respond(portfolioLikeService.toggleLike(profileId, visitorId),
+                "Like updated successfully", "Failed to update like");
+    }
+
+    @Operation(summary = "Get guestbook entries", description = "Returns paginated, publicly-visible guestbook entries for a profile.")
+    @GetMapping("/guestbook/{profileId}")
+    public ResponseEntity<ResponseModel<Page<GuestbookEntryResponse>>> getGuestbookEntries(
+            @PathVariable Long profileId, Pageable pageable) {
+        return ApiResponse.respond(guestbookService.getPublicEntries(profileId, pageable),
+                "Guestbook entries fetched successfully", "Failed to fetch guestbook entries");
+    }
+
+    @Operation(summary = "Add guestbook entry", description = "Leaves a public guestbook message on a profile's portfolio.")
+    @PostMapping("/guestbook/{profileId}")
+    public ResponseEntity<ResponseModel<GuestbookEntryResponse>> addGuestbookEntry(
+            @PathVariable Long profileId,
+            @Valid @RequestBody GuestbookEntryRequest request) {
+        return ApiResponse.respond(guestbookService.addEntry(profileId, request),
+                "Guestbook entry added successfully", "Failed to add guestbook entry");
     }
 
     @Operation(summary = "Get published blog posts", description = "Returns paginated published posts for a given username, optionally filtered by tag.")

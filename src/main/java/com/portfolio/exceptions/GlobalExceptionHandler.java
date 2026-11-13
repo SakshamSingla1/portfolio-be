@@ -102,7 +102,8 @@ public class GlobalExceptionHandler {
             ExceptionCodeEnum.BLOG_TAG_NOT_FOUND,
             ExceptionCodeEnum.SERVICE_NOT_FOUND,
             ExceptionCodeEnum.PUBLICATION_NOT_FOUND,
-            ExceptionCodeEnum.TESTIMONIAL_REQUEST_NOT_FOUND
+            ExceptionCodeEnum.TESTIMONIAL_REQUEST_NOT_FOUND,
+            ExceptionCodeEnum.GUESTBOOK_ENTRY_NOT_FOUND
     );
 
     private static final Set<ExceptionCodeEnum> SERVICE_UNAVAILABLE_CODES = Set.of(

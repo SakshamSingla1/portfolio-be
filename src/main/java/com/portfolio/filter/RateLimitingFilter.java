@@ -71,6 +71,16 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         else if ("GET".equals(method) && path.contains("/api/v1/public/profile-master")) {
             bucket = resolveBucket("public:" + ip, 60, Duration.ofMinutes(1));
         }
+        // Guestbook submissions: 5 per hour per IP, same budget as the contact form -- both are
+        // open, unauthenticated public writes with the same spam-risk shape.
+        else if ("POST".equals(method) && path.contains("/api/v1/public/guestbook")) {
+            bucket = resolveBucket("guestbook:" + ip, 5, Duration.ofHours(1));
+        }
+        // Like toggles: cheap and low-stakes, but still capped well above normal human use
+        // (one real visitor toggles a handful of times at most) to blunt trivial script abuse.
+        else if ("POST".equals(method) && path.contains("/api/v1/public/likes")) {
+            bucket = resolveBucket("like:" + ip, 20, Duration.ofMinutes(1));
+        }
 
         if (bucket != null && !bucket.tryConsume(1)) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
