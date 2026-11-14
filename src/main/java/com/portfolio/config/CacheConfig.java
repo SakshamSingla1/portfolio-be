@@ -41,14 +41,6 @@ public class CacheConfig {
             "profileMasterByHost", "profileMasterByProfileId", "profileMasterResumeExport",
             "activeResumeAsset", "profileIdByDomain");
 
-    // The generated portfolio-export PDF (PortfolioExportServiceImpl#exportPdf) is by far the most
-    // expensive thing this app computes per-request -- full HTML render + openhtmltopdf font
-    // embedding + a Cloudinary upload -- so it gets a longer TTL than the plain DB-lookup caches
-    // above: repeat downloads of the same profile within this window are served the already-uploaded
-    // URL instead of re-paying for a render, which is what makes it safe to also serialize renders
-    // (see PortfolioExportServiceImpl's EXPORT_SEMAPHORE) without every retry just queuing up again.
-    private static final List<String> PDF_EXPORT_CACHES = List.of("portfolioExportPdfUrl");
-
     @Bean
     public CacheManager cacheManager() {
         List<Cache> caches = new ArrayList<>();
@@ -58,13 +50,32 @@ public class CacheConfig {
         for (String name : SHORT_LIVED_CACHES) {
             caches.add(buildCache(name, 60, TimeUnit.SECONDS, 500));
         }
-        for (String name : PDF_EXPORT_CACHES) {
-            caches.add(buildCache(name, 5, TimeUnit.MINUTES, 200));
-        }
+        caches.add(buildPdfBytesCache());
 
         SimpleCacheManager cacheManager = new SimpleCacheManager();
         cacheManager.setCaches(caches);
         return cacheManager;
+    }
+
+    // The generated portfolio-export PDF (PortfolioExportServiceImpl#exportPdf) is by far the most
+    // expensive thing this app computes per-request -- full HTML render + openhtmltopdf font
+    // embedding -- so repeat downloads of the same profile within this window are served the
+    // already-rendered bytes straight out of memory instead of paying for another render (which is
+    // also what makes it safe to serialize renders -- see PortfolioExportServiceImpl's
+    // EXPORT_SEMAPHORE -- without every retry just queuing up behind the one in flight). Caches the
+    // PDF bytes themselves (not a Cloudinary URL): nothing else in the app reads that URL, so
+    // skipping the upload and streaming the bytes straight back to the client removes a full
+    // external network round-trip from every cold request.
+    //
+    // Sized by total bytes, not entry count, unlike buildCache's other caches: a resume PDF is
+    // commonly 100-300KB, and an entry-count cap on a memory-constrained (512MB/320MB-heap)
+    // instance is the wrong knob for something whose size varies that much per entry.
+    private CaffeineCache buildPdfBytesCache() {
+        return new CaffeineCache("portfolioExportPdfBytes", Caffeine.newBuilder()
+                .expireAfterWrite(5, TimeUnit.MINUTES)
+                .maximumWeight(20L * 1024 * 1024) // 20MB total across every cached resume
+                .weigher((Object key, Object value) -> value instanceof byte[] bytes ? bytes.length : 1)
+                .build());
     }
 
     private CaffeineCache buildCache(String name, long ttl, TimeUnit unit, int maximumSize) {

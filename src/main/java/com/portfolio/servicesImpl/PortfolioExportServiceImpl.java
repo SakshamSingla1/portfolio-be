@@ -24,7 +24,6 @@ import com.portfolio.enums.PlatformEnum;
 import com.portfolio.enums.SkillCategoryEnum;
 import com.portfolio.enums.StatusEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.services.CloudinaryService;
 import com.portfolio.services.PortfolioExportService;
 import com.portfolio.services.ProfileMasterService;
 import lombok.AllArgsConstructor;
@@ -41,7 +40,10 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -58,10 +60,12 @@ import java.util.stream.Collectors;
 
 /**
  * Renders a profile's data as an ATS-friendly resume-style PDF ("export portfolio as resume") and
- * uploads it to Cloudinary, returning a URL -- same shape as SteelBazaar's PdfGenerator (Thymeleaf
- * template -> HTML -> openhtmltopdf -> cloud upload -> URL) and the resume-download flow already
- * in this app: the caller redirects the client straight to the returned URL instead of this server
- * proxying PDF bytes through itself.
+ * returns the bytes directly for the caller to stream back to the client. Previously uploaded the
+ * PDF to Cloudinary and returned a URL to redirect to -- but nothing else in the app ever reads
+ * that URL, so that upload was a pure-overhead external network round-trip on every cold request
+ * (and a second one again for the client's own follow-up GET of that URL). Caching the rendered
+ * bytes directly (see CacheConfig's "portfolioExportPdfBytes") covers the repeat-request case
+ * instead.
  */
 @Service
 @RequiredArgsConstructor
@@ -71,7 +75,6 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     private static final int EXPERIENCE_MAX_BULLETS = 6;
     private static final int PROJECT_MAX_BULLETS = 3;
     private static final DateTimeFormatter MONTH_YEAR = DateTimeFormatter.ofPattern("MMM yyyy");
-    private static final String EXPORT_FOLDER = "portfolio/exports";
     private static final String TEMPLATE_NAME = "portfolio-export";
 
     // openhtmltopdf's font embedding/subsetting is the single heaviest allocation in this app on a
@@ -96,21 +99,42 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
     // and page-fit are unaffected.
     private static final String BODY_FONT_FAMILY = "PortfolioSerif";
 
+    // Read from the classpath once per JVM (a static initializer, not per-render) rather than
+    // re-resolving each of these 6 classpath resources on every single export -- a small but free
+    // win on the cold-request latency path, and it means a missing/unreadable font fails fast at
+    // startup instead of surfacing as a broken PDF mid-render.
+    private static final byte[] FONT_FA_SOLID = loadFontBytes("/fonts/fa-solid-900.ttf");
+    private static final byte[] FONT_FA_BRANDS = loadFontBytes("/fonts/fa-brands-400.ttf");
+    private static final byte[] FONT_SERIF_REGULAR = loadFontBytes("/fonts/LiberationSerif-Regular.ttf");
+    private static final byte[] FONT_SERIF_BOLD = loadFontBytes("/fonts/LiberationSerif-Bold.ttf");
+    private static final byte[] FONT_SERIF_ITALIC = loadFontBytes("/fonts/LiberationSerif-Italic.ttf");
+    private static final byte[] FONT_SERIF_BOLD_ITALIC = loadFontBytes("/fonts/LiberationSerif-BoldItalic.ttf");
+
+    private static byte[] loadFontBytes(String classpathLocation) {
+        try (InputStream in = PortfolioExportServiceImpl.class.getResourceAsStream(classpathLocation)) {
+            if (in == null) {
+                throw new IllegalStateException("Missing bundled font resource: " + classpathLocation);
+            }
+            return in.readAllBytes();
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to load bundled font resource: " + classpathLocation, e);
+        }
+    }
+
     private final ProfileMasterService profileMasterService;
     private final ProfileDao profileDao;
-    private final CloudinaryService cloudinaryService;
     private final TemplateEngine templateEngine;
 
-    // Cached for a few minutes (see CacheConfig's "portfolioExportPdfUrl") so repeat clicks on the
+    // Cached for a few minutes (see CacheConfig's "portfolioExportPdfBytes") so repeat clicks on the
     // same profile -- the exact pattern that used to pile up concurrent renders -- are served the
-    // already-uploaded Cloudinary URL instead of paying for another full render. A thrown exception
-    // is never cached by Spring, so a failed export doesn't poison this for the next attempt.
+    // already-rendered bytes instead of paying for another render. A thrown exception is never
+    // cached by Spring, so a failed export doesn't poison this for the next attempt.
     // sync = true additionally collapses concurrent calls for the *same* username into a single
     // computation -- e.g. an impatient double-click on the Download button -- rather than letting
     // both through to race for the EXPORT_SEMAPHORE permit below.
     @Override
-    @Cacheable(cacheNames = "portfolioExportPdfUrl", key = "#username", sync = true)
-    public String exportPdf(String username) throws GenericException {
+    @Cacheable(cacheNames = "portfolioExportPdfBytes", key = "#username", sync = true)
+    public byte[] exportPdf(String username) throws GenericException {
         Profile profile = profileDao.findByUserName(username)
                 .orElseThrow(() -> new GenericException(ExceptionCodeEnum.PROFILE_NOT_FOUND, "Profile not found: " + username));
 
@@ -124,9 +148,7 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
                         "Another resume export is already in progress, please try again in a moment");
             }
             String html = renderHtml(data);
-            byte[] pdf = renderPdf(html);
-            Map<String, Object> uploaded = cloudinaryService.uploadBytes(pdf, EXPORT_FOLDER);
-            return (String) uploaded.get("secure_url");
+            return renderPdf(html);
         } catch (GenericException e) {
             throw e;
         } catch (InterruptedException e) {
@@ -183,12 +205,14 @@ public class PortfolioExportServiceImpl implements PortfolioExportService {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PdfRendererBuilder builder = new PdfRendererBuilder();
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-solid-900.ttf"), "FASolid");
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/fa-brands-400.ttf"), "FABrands");
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Regular.ttf"), BODY_FONT_FAMILY, 400, FontStyle.NORMAL, true);
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Bold.ttf"), BODY_FONT_FAMILY, 700, FontStyle.NORMAL, true);
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-Italic.ttf"), BODY_FONT_FAMILY, 400, FontStyle.ITALIC, true);
-        builder.useFont(() -> getClass().getResourceAsStream("/fonts/LiberationSerif-BoldItalic.ttf"), BODY_FONT_FAMILY, 700, FontStyle.ITALIC, true);
+        // Supplies a fresh stream over the already-in-memory font bytes (loaded once at class-init,
+        // see FONT_* fields) instead of re-resolving these 6 classpath resources on every render.
+        builder.useFont(() -> new ByteArrayInputStream(FONT_FA_SOLID), "FASolid");
+        builder.useFont(() -> new ByteArrayInputStream(FONT_FA_BRANDS), "FABrands");
+        builder.useFont(() -> new ByteArrayInputStream(FONT_SERIF_REGULAR), BODY_FONT_FAMILY, 400, FontStyle.NORMAL, true);
+        builder.useFont(() -> new ByteArrayInputStream(FONT_SERIF_BOLD), BODY_FONT_FAMILY, 700, FontStyle.NORMAL, true);
+        builder.useFont(() -> new ByteArrayInputStream(FONT_SERIF_ITALIC), BODY_FONT_FAMILY, 400, FontStyle.ITALIC, true);
+        builder.useFont(() -> new ByteArrayInputStream(FONT_SERIF_BOLD_ITALIC), BODY_FONT_FAMILY, 700, FontStyle.ITALIC, true);
         builder.withW3cDocument(w3cDoc, "");
         builder.toStream(baos);
         builder.run();

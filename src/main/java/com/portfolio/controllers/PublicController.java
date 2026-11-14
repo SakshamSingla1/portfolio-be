@@ -49,7 +49,6 @@ import com.portfolio.services.ContactUsService;
 import com.portfolio.services.SocialLinkService;
 import com.portfolio.services.SubscriptionPlanService;
 import com.portfolio.services.TestimonialLinkService;
-import com.portfolio.utils.CloudinaryUrlUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -308,12 +307,19 @@ public class PublicController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Export portfolio as PDF", description = "Generates the portfolio PDF and redirects to it on Cloudinary's CDN, forcing a download with the correct filename.")
+    @Operation(summary = "Export portfolio as PDF", description = "Generates the portfolio PDF and streams it straight back to the client, forcing a download with the correct filename.")
     @GetMapping("/portfolio-export/{username}")
     public void exportPortfolio(@PathVariable String username, HttpServletResponse response) throws IOException {
         try {
-            String url = portfolioExportService.exportPdf(username);
-            response.sendRedirect(CloudinaryUrlUtils.withAttachmentFlag(url, "portfolio-" + username + ".pdf"));
+            byte[] pdf = portfolioExportService.exportPdf(username);
+            // Streamed directly rather than uploaded to Cloudinary and redirected to: nothing else
+            // in the app reads that URL, so that upload was a pure-overhead network round-trip (and
+            // the client's own follow-up GET of it was a second one) on every cold request.
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=\"portfolio-" + username + ".pdf\"");
+            response.setContentLength(pdf.length);
+            response.getOutputStream().write(pdf);
+            response.getOutputStream().flush();
         } catch (GenericException e) {
             // SERVICE_BUSY means another export is already rendering (see the export semaphore in
             // PortfolioExportServiceImpl) -- that's a "retry shortly", not a 404, and collapsing it

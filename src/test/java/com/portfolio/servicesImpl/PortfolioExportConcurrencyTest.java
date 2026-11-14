@@ -4,7 +4,6 @@ import com.portfolio.dao.profile.ProfileDao;
 import com.portfolio.entities.Profile;
 import com.portfolio.enums.ExceptionCodeEnum;
 import com.portfolio.exceptions.GenericException;
-import com.portfolio.services.CloudinaryService;
 import com.portfolio.services.ProfileMasterService;
 import org.junit.jupiter.api.Test;
 import org.thymeleaf.TemplateEngine;
@@ -30,7 +29,6 @@ class PortfolioExportConcurrencyTest {
     void rejectsExportAsBusyWhenAnotherRenderHoldsTheOnlyPermit() throws Exception {
         ProfileMasterService profileMasterService = mock(ProfileMasterService.class);
         ProfileDao profileDao = mock(ProfileDao.class);
-        CloudinaryService cloudinaryService = mock(CloudinaryService.class);
         TemplateEngine templateEngine = mock(TemplateEngine.class);
 
         when(profileDao.findByUserName("janedoe"))
@@ -39,7 +37,7 @@ class PortfolioExportConcurrencyTest {
         when(profileMasterService.getForResumeExport(1L)).thenReturn(null);
 
         PortfolioExportServiceImpl service = new PortfolioExportServiceImpl(
-                profileMasterService, profileDao, cloudinaryService, templateEngine);
+                profileMasterService, profileDao, templateEngine);
 
         Semaphore permit = exportSemaphore();
         assertThat(permit.tryAcquire()).isTrue(); // hold the only permit, simulating an in-flight render
